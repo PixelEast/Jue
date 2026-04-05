@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'dart:math';
 import '../../../data/models/app_models.dart';
 import '../../../data/repositories/decision_repository.dart';
@@ -84,8 +84,9 @@ class _CreateDecisionPageState extends State<CreateDecisionPage> {
   Future<void> _saveDraft() async {
     if (_themeController.text.trim().isEmpty &&
         _optionGroups.length <= 1 &&
-        _optionGroups.first.options.length <= 1)
+        _optionGroups.first.options.length <= 1) {
       return;
+    }
     final decision = Decision(
       id: 'draft',
       theme: _themeController.text.trim(),
@@ -454,7 +455,7 @@ class _CreateDecisionPageState extends State<CreateDecisionPage> {
                         child: _buildOptionGroupCard(entry.key, entry.value),
                       ),
                     )
-                    .toList(),
+                    ,
                 const SizedBox(height: 24),
                 ElevatedButton(
                   onPressed: _saveDecision,
@@ -611,7 +612,7 @@ class _CreateDecisionPageState extends State<CreateDecisionPage> {
                           },
                           activeTrackColor: Colors.black,
                           inactiveTrackColor: const Color(0xFFC6C6C6),
-                          activeColor: Colors.white,
+                          activeThumbColor: Colors.white,
                           inactiveThumbColor: Colors.white,
                           materialTapTargetSize:
                               MaterialTapTargetSize.shrinkWrap,
@@ -720,7 +721,7 @@ class _CreateDecisionPageState extends State<CreateDecisionPage> {
                           entry.value,
                         ),
                       )
-                      .toList(),
+                      ,
                   TextButton.icon(
                     onPressed: () => _addOption(groupIndex),
                     icon: const Icon(

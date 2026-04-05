@@ -424,7 +424,7 @@ class _HomePageState extends State<HomePage> {
                 child: _buildGridCard(d),
               ),
             )
-            .toList(),
+            ,
         _buildGridCreateCard(),
       ],
     );
@@ -518,7 +518,7 @@ class _HomePageState extends State<HomePage> {
 
 class _CreateIconBox extends StatelessWidget {
   final bool gridSize;
-  const _CreateIconBox({this.gridSize = false});
+  const _CreateIconBox();
 
   @override
   Widget build(BuildContext context) {
