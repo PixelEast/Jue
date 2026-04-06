@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'dart:math';
 import '../../../data/models/app_models.dart';
 import '../../../data/repositories/decision_repository.dart';
@@ -445,16 +445,12 @@ class _CreateDecisionPageState extends State<CreateDecisionPage> {
                   ],
                 ),
                 const SizedBox(height: 12),
-                ..._optionGroups
-                    .asMap()
-                    .entries
-                    .map(
-                      (entry) => KeyedSubtree(
-                        key: _groupKeys[entry.key] ?? GlobalKey(),
-                        child: _buildOptionGroupCard(entry.key, entry.value),
-                      ),
-                    )
-                    ,
+                ..._optionGroups.asMap().entries.map(
+                  (entry) => KeyedSubtree(
+                    key: _groupKeys[entry.key] ?? GlobalKey(),
+                    child: _buildOptionGroupCard(entry.key, entry.value),
+                  ),
+                ),
                 const SizedBox(height: 24),
                 ElevatedButton(
                   onPressed: _saveDecision,
@@ -465,9 +461,11 @@ class _CreateDecisionPageState extends State<CreateDecisionPage> {
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16),
                     ),
+                    elevation: 8,
+                    shadowColor: Colors.black.withOpacity(0.2),
                   ),
                   child: const Text(
-                    '保存决定',
+                    '保存此决定',
                     style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                   ),
                 ),
@@ -589,6 +587,51 @@ class _CreateDecisionPageState extends State<CreateDecisionPage> {
                       );
                     },
                   ),
+                  const SizedBox(height: 4),
+                  Text(
+                    '此选项组已开启逻辑条件激活',
+                    style: TextStyle(fontSize: 12, color: Color(0xFF5E5E5E)),
+                  ),
+                  const SizedBox(height: 12),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.access_time,
+                          size: 20,
+                          color: Color(0xFF002FA7),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                '选项组激活条件',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Color(0xFF5E5E5E),
+                                ),
+                              ),
+                              Text(
+                                '时间范围 00:00 - 10:00',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
+                                  color: Color(0xFF1B1B1B),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                   const SizedBox(height: 12),
                   Row(
                     children: [
@@ -618,6 +661,11 @@ class _CreateDecisionPageState extends State<CreateDecisionPage> {
                         ),
                       ),
                     ],
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    '通过设置此选项动态调控选项概率',
+                    style: TextStyle(fontSize: 12, color: Color(0xFF5E5E5E)),
                   ),
                   if (group.dynamicWeightEnabled) ...[
                     const SizedBox(height: 8),
@@ -708,29 +756,40 @@ class _CreateDecisionPageState extends State<CreateDecisionPage> {
                         ],
                       ),
                     ),
+                    const SizedBox(height: 8),
+                    Text(
+                      '"降低权重"：选择此选项在每次决定结果产生时，将最终结果选项的权重降低60%，可以一定程度上降低连续产生同一结果的概率。',
+                      style: TextStyle(fontSize: 12, color: Color(0xFF5E5E5E)),
+                    ),
                     const SizedBox(height: 12),
                   ],
-                  ...group.options
-                      .asMap()
-                      .entries
-                      .map(
-                        (entry) => _buildOptionItem(
-                          groupIndex,
-                          entry.key,
-                          entry.value,
-                        ),
-                      )
-                      ,
+                  ...group.options.asMap().entries.map(
+                    (entry) =>
+                        _buildOptionItem(groupIndex, entry.key, entry.value),
+                  ),
                   TextButton.icon(
                     onPressed: () => _addOption(groupIndex),
                     icon: const Icon(
-                      Icons.add,
+                      Icons.add_circle_outline,
                       size: 18,
-                      color: Color(0xFF002FA7),
+                      color: Colors.white,
                     ),
                     label: const Text(
-                      '添加选项',
-                      style: TextStyle(color: Color(0xFF002FA7)),
+                      '添加新选项',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    style: TextButton.styleFrom(
+                      backgroundColor: Colors.black,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
                     ),
                   ),
                 ],
@@ -784,116 +843,131 @@ class _CreateDecisionPageState extends State<CreateDecisionPage> {
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
-      child: Row(
-        children: [
-          Expanded(
-            flex: 3,
-            child: ValueListenableBuilder<bool>(
-              valueListenable: isOptionFocused,
-              builder: (context, focused, child) {
-                return Row(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    IntrinsicWidth(
-                      child: TextField(
-                        controller: optionNameController,
-                        focusNode: optionFocusNode,
-                        onEditingComplete: () {
-                          final trimmed = optionNameController.text.trim();
-                          option.name = trimmed.isEmpty ? '选项' : trimmed;
-                          optionFocusNode.unfocus();
-                          _saveDraft();
-                        },
-                        onTapOutside: (_) {
-                          final trimmed = optionNameController.text.trim();
-                          option.name = trimmed.isEmpty ? '选项' : trimmed;
-                          optionFocusNode.unfocus();
-                          _saveDraft();
-                        },
-                        decoration: const InputDecoration(
-                          isDense: true,
-                          contentPadding: EdgeInsets.zero,
-                          border: InputBorder.none,
-                        ),
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                          color: focused
-                              ? const Color(0xFFBCBCBC)
-                              : const Color(0xFF1B1B1B),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 2),
-                    GestureDetector(
-                      onTap: () {
-                        optionFocusNode.requestFocus();
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.all(2),
-                        child: const Icon(
-                          Icons.edit_outlined,
-                          size: 14,
-                          color: Color(0xFF5E5E5E),
-                        ),
-                      ),
-                    ),
-                  ],
-                );
-              },
-            ),
-          ),
-          Expanded(
-            flex: 4,
-            child: Row(
-              children: [
-                Text(
-                  option.weight.toStringAsFixed(1),
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: Color(0xFF5E5E5E),
-                  ),
-                ),
-                Expanded(
-                  child: SliderTheme(
-                    data: SliderThemeData(
-                      trackHeight: 2,
-                      thumbShape: const RoundSliderThumbShape(
-                        enabledThumbRadius: 6,
-                      ),
-                      overlayShape: const RoundSliderOverlayShape(
-                        overlayRadius: 12,
-                      ),
-                      activeTrackColor: const Color(0xFF004EE8),
-                      inactiveTrackColor: const Color(0xFFEEEEEE),
-                      thumbColor: Colors.black,
-                    ),
-                    child: Slider(
-                      value: option.weight,
-                      min: 0.1,
-                      max: 3.0,
-                      divisions: 29,
-                      onChanged: (value) {
-                        setState(
-                          () => option.weight = double.parse(
-                            value.toStringAsFixed(1),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Row(
+          children: [
+            Icon(Icons.drag_indicator, size: 18, color: Color(0xFF5E5E5E)),
+            const SizedBox(width: 8),
+            Expanded(
+              flex: 3,
+              child: ValueListenableBuilder<bool>(
+                valueListenable: isOptionFocused,
+                builder: (context, focused, child) {
+                  return Row(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      IntrinsicWidth(
+                        child: TextField(
+                          controller: optionNameController,
+                          focusNode: optionFocusNode,
+                          onEditingComplete: () {
+                            final trimmed = optionNameController.text.trim();
+                            option.name = trimmed.isEmpty ? '选项' : trimmed;
+                            optionFocusNode.unfocus();
+                            _saveDraft();
+                          },
+                          onTapOutside: (_) {
+                            final trimmed = optionNameController.text.trim();
+                            option.name = trimmed.isEmpty ? '选项' : trimmed;
+                            optionFocusNode.unfocus();
+                            _saveDraft();
+                          },
+                          decoration: const InputDecoration(
+                            isDense: true,
+                            contentPadding: EdgeInsets.zero,
+                            border: InputBorder.none,
                           ),
-                        );
-                        _saveDraft();
-                      },
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                            color: focused
+                                ? const Color(0xFFBCBCBC)
+                                : const Color(0xFF1B1B1B),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 2),
+                      GestureDetector(
+                        onTap: () {
+                          optionFocusNode.requestFocus();
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.all(2),
+                          child: const Icon(
+                            Icons.edit_outlined,
+                            size: 14,
+                            color: Color(0xFF5E5E5E),
+                          ),
+                        ),
+                      ),
+                    ],
+                  );
+                },
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              flex: 4,
+              child: Row(
+                children: [
+                  Expanded(
+                    child: SliderTheme(
+                      data: SliderThemeData(
+                        trackHeight: 2,
+                        thumbShape: const RoundSliderThumbShape(
+                          enabledThumbRadius: 6,
+                        ),
+                        overlayShape: const RoundSliderOverlayShape(
+                          overlayRadius: 12,
+                        ),
+                        activeTrackColor: const Color(0xFF004EE8),
+                        inactiveTrackColor: const Color(0xFFEEEEEE),
+                        thumbColor: Colors.black,
+                      ),
+                      child: Slider(
+                        value: option.weight,
+                        min: 0.1,
+                        max: 3.0,
+                        divisions: 29,
+                        onChanged: (value) {
+                          setState(
+                            () => option.weight = double.parse(
+                              value.toStringAsFixed(1),
+                            ),
+                          );
+                          _saveDraft();
+                        },
+                      ),
                     ),
                   ),
+                  const SizedBox(width: 8),
+                  Text(
+                    '权重：${option.weight.toStringAsFixed(1)}',
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: Color(0xFF5E5E5E),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            if (_optionGroups[groupIndex].options.length > 1)
+              IconButton(
+                icon: const Icon(
+                  Icons.close,
+                  size: 18,
+                  color: Color(0xFF5E5E5E),
                 ),
-              ],
-            ),
-          ),
-          if (_optionGroups[groupIndex].options.length > 1)
-            IconButton(
-              icon: const Icon(Icons.close, size: 18, color: Color(0xFF5E5E5E)),
-              onPressed: () => _removeOption(groupIndex, optionIndex),
-            ),
-        ],
+                onPressed: () => _removeOption(groupIndex, optionIndex),
+              ),
+          ],
+        ),
       ),
     );
   }

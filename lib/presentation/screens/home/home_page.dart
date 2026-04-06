@@ -417,14 +417,12 @@ class _HomePageState extends State<HomePage> {
       physics: const NeverScrollableScrollPhysics(),
       childAspectRatio: 0.95,
       children: [
-        ..._decisions
-            .map(
-              (d) => GestureDetector(
-                onTap: () => _navigateToExecute(d),
-                child: _buildGridCard(d),
-              ),
-            )
-            ,
+        ..._decisions.map(
+          (d) => GestureDetector(
+            onTap: () => _navigateToExecute(d),
+            child: _buildGridCard(d),
+          ),
+        ),
         _buildGridCreateCard(),
       ],
     );
@@ -518,7 +516,7 @@ class _HomePageState extends State<HomePage> {
 
 class _CreateIconBox extends StatelessWidget {
   final bool gridSize;
-  const _CreateIconBox();
+  const _CreateIconBox({this.gridSize = false});
 
   @override
   Widget build(BuildContext context) {
