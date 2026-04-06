@@ -42,7 +42,8 @@ class _HomePageState extends State<HomePage> {
     if (!mounted) return;
     setState(() => _isLoading = true);
     final decisions = await _decisionRepo.getAllDecisions();
-    final sorted = _sorter.sortDecisions(decisions);
+    final nonDraftDecisions = decisions.where((d) => !d.isDraft).toList();
+    final sorted = _sorter.sortDecisions(nonDraftDecisions);
     if (!mounted) return;
     setState(() {
       _decisions = sorted;
