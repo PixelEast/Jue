@@ -2,7 +2,6 @@
 import 'dart:math';
 import '../../../data/models/app_models.dart';
 import '../../../data/repositories/decision_repository.dart';
-import '../../../data/local/app_storage.dart';
 import '../condition/condition_time_page.dart';
 import '../condition/condition_location_page.dart';
 
