@@ -70,7 +70,9 @@ class _ConditionLocationPageState extends State<ConditionLocationPage> {
                   decoration: BoxDecoration(
                     color: const Color(0xFFF7F7F7),
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.black.withOpacity(0.05)),
+                    border: Border.all(
+                      color: Colors.black.withValues(alpha: 0.05),
+                    ),
                   ),
                   child: Row(
                     children: [
@@ -123,7 +125,7 @@ class _ConditionLocationPageState extends State<ConditionLocationPage> {
               decoration: BoxDecoration(
                 color: const Color(0xFFF7F7F7),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.black.withOpacity(0.05)),
+                border: Border.all(color: Colors.black.withValues(alpha: 0.05)),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -209,7 +211,7 @@ class _ConditionLocationPageState extends State<ConditionLocationPage> {
       decoration: BoxDecoration(
         color: const Color(0xFFF7F7F7),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.black.withOpacity(0.05)),
+        border: Border.all(color: Colors.black.withValues(alpha: 0.05)),
       ),
       child: Column(
         children: [
@@ -256,7 +258,7 @@ class _ConditionLocationPageState extends State<ConditionLocationPage> {
                       borderRadius: BorderRadius.circular(20),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.1),
+                          color: Colors.black.withValues(alpha: 0.1),
                           blurRadius: 4,
                         ),
                       ],
@@ -281,7 +283,7 @@ class _ConditionLocationPageState extends State<ConditionLocationPage> {
                       borderRadius: BorderRadius.circular(8),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.1),
+                          color: Colors.black.withValues(alpha: 0.1),
                           blurRadius: 4,
                         ),
                       ],
@@ -357,7 +359,7 @@ class _GridPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = const Color(0xFFC6C6C6).withOpacity(0.3)
+      ..color = const Color(0xFFC6C6C6).withValues(alpha: 0.3)
       ..strokeWidth = 1;
 
     for (double i = 0; i < size.width; i += 20) {
@@ -376,7 +378,7 @@ class _CirclePainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = const Color(0xFF002FA7).withOpacity(0.2)
+      ..color = const Color(0xFF002FA7).withValues(alpha: 0.2)
       ..style = PaintingStyle.fill;
 
     final borderPaint = Paint()

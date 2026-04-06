@@ -131,12 +131,12 @@ class _MainScreenState extends State<MainScreen> {
         child: Container(
           height: 58,
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.80),
+            color: Colors.white.withValues(alpha: 0.80),
             borderRadius: BorderRadius.circular(32),
-            border: Border.all(color: Colors.black.withOpacity(0.1)),
+            border: Border.all(color: Colors.black.withValues(alpha: 0.1)),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.25),
+                color: Colors.black.withValues(alpha: 0.25),
                 blurRadius: 50,
                 offset: const Offset(0, 25),
               ),

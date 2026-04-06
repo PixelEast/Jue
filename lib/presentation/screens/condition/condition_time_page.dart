@@ -84,7 +84,9 @@ class _ConditionTimePageState extends State<ConditionTimePage> {
                   decoration: BoxDecoration(
                     color: const Color(0xFFF7F7F7),
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.black.withOpacity(0.05)),
+                    border: Border.all(
+                      color: Colors.black.withValues(alpha: 0.05),
+                    ),
                   ),
                   child: Row(
                     children: [
@@ -176,7 +178,7 @@ class _ConditionTimePageState extends State<ConditionTimePage> {
           padding: const EdgeInsets.only(bottom: 8),
           child: Container(
             decoration: BoxDecoration(
-              color: colors[index % colors.length].withOpacity(0.1),
+              color: colors[index % colors.length].withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
                 color: colors[index % colors.length],

@@ -78,7 +78,10 @@ class _HomePageState extends State<HomePage> {
               gradient: RadialGradient(
                 center: const Alignment(0, -0.8),
                 radius: 0.8,
-                colors: [Colors.black.withOpacity(0.03), Colors.transparent],
+                colors: [
+                  Colors.black.withValues(alpha: 0.03),
+                  Colors.transparent,
+                ],
               ),
             ),
           ),
@@ -111,7 +114,7 @@ class _HomePageState extends State<HomePage> {
                           height: 255,
                           decoration: BoxDecoration(
                             border: Border.all(
-                              color: Colors.black.withOpacity(0.05),
+                              color: Colors.black.withValues(alpha: 0.05),
                             ),
                             borderRadius: BorderRadius.circular(16),
                           ),
@@ -213,7 +216,7 @@ class _HomePageState extends State<HomePage> {
       gradient: LinearGradient(
         colors: [
           Colors.transparent,
-          color.withOpacity(0.05),
+          color.withValues(alpha: 0.05),
           Colors.transparent,
         ],
       ),
@@ -232,7 +235,7 @@ class _HomePageState extends State<HomePage> {
         decoration: BoxDecoration(
           color: const Color(0xFFF7F7F7),
           borderRadius: BorderRadius.circular(21),
-          border: Border.all(color: Colors.black.withOpacity(0.05)),
+          border: Border.all(color: Colors.black.withValues(alpha: 0.05)),
         ),
         child: Stack(
           children: [
@@ -311,10 +314,10 @@ class _HomePageState extends State<HomePage> {
       decoration: BoxDecoration(
         color: const Color(0xFFF7F7F7),
         borderRadius: BorderRadius.circular(32),
-        border: Border.all(color: Colors.black.withOpacity(0.05)),
+        border: Border.all(color: Colors.black.withValues(alpha: 0.05)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 1,
             offset: const Offset(0, 1),
           ),
@@ -381,7 +384,7 @@ class _HomePageState extends State<HomePage> {
         decoration: BoxDecoration(
           color: Colors.black,
           borderRadius: BorderRadius.circular(32),
-          border: Border.all(color: Colors.white.withOpacity(0.5)),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.5)),
         ),
         child: const Padding(
           padding: EdgeInsets.all(25),
@@ -433,7 +436,7 @@ class _HomePageState extends State<HomePage> {
       decoration: BoxDecoration(
         color: const Color(0xFFF7F7F7),
         borderRadius: BorderRadius.circular(32),
-        border: Border.all(color: Colors.black.withOpacity(0.05)),
+        border: Border.all(color: Colors.black.withValues(alpha: 0.05)),
       ),
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -478,7 +481,7 @@ class _HomePageState extends State<HomePage> {
         decoration: BoxDecoration(
           color: Colors.black,
           borderRadius: BorderRadius.circular(32),
-          border: Border.all(color: Colors.white.withOpacity(0.5)),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.5)),
         ),
         child: Padding(
           padding: const EdgeInsets.all(16),
@@ -489,9 +492,11 @@ class _HomePageState extends State<HomePage> {
                 width: 48,
                 height: 48,
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.1),
+                  color: Colors.white.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.white.withOpacity(0.2)),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.2),
+                  ),
                 ),
                 child: const Center(
                   child: Icon(Icons.add, color: Colors.white, size: 22),
@@ -515,21 +520,20 @@ class _HomePageState extends State<HomePage> {
 }
 
 class _CreateIconBox extends StatelessWidget {
-  final bool gridSize;
-  const _CreateIconBox({this.gridSize = false});
+  const _CreateIconBox();
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: gridSize ? 48 : 56,
-      height: gridSize ? 48 : 56,
+      width: 56,
+      height: 56,
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.1),
+        color: Colors.white.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.white.withOpacity(0.2)),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
       ),
-      child: Center(
-        child: Icon(Icons.add, color: Colors.white, size: gridSize ? 22 : 24),
+      child: const Center(
+        child: Icon(Icons.add, color: Colors.white, size: 24),
       ),
     );
   }

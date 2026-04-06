@@ -38,7 +38,7 @@ class AppTheme {
       cardTheme: CardThemeData(
         color: AppColors.pureWhite,
         elevation: AppDimensions.cardElevation,
-        shadowColor: Colors.black.withOpacity(0.08),
+        shadowColor: Colors.black.withValues(alpha: 0.08),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppDimensions.radiusMedium),
         ),
@@ -95,7 +95,7 @@ class AppTheme {
           if (states.contains(WidgetState.selected)) {
             return AppColors.pureBlack;
           }
-          return AppColors.mediumGray.withOpacity(0.5);
+          return AppColors.mediumGray.withValues(alpha: 0.5);
         }),
       ),
 

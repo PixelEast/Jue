@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../data/models/app_models.dart';
 import '../../../data/repositories/history_repository.dart';
-import '../../../data/repositories/decision_repository.dart';
 
 class HistoryPage extends StatefulWidget {
   const HistoryPage({super.key});
@@ -12,7 +11,6 @@ class HistoryPage extends StatefulWidget {
 
 class _HistoryPageState extends State<HistoryPage> {
   final HistoryRepository _historyRepo = HistoryRepository();
-  final DecisionRepository _decisionRepo = DecisionRepository();
   List<HistoryRecord> _records = [];
   int _totalCount = 0;
   Map<String, int> _dailyCounts = {};
@@ -87,7 +85,7 @@ class _HistoryPageState extends State<HistoryPage> {
                         color: const Color(0xFFF7F7F7),
                         borderRadius: BorderRadius.circular(32),
                         border: Border.all(
-                          color: Colors.black.withOpacity(0.05),
+                          color: Colors.black.withValues(alpha: 0.05),
                         ),
                       ),
                       child: Column(
@@ -119,7 +117,9 @@ class _HistoryPageState extends State<HistoryPage> {
                               Container(
                                 width: 0.61,
                                 height: 24,
-                                color: const Color(0xFFC6C6C6).withOpacity(0.3),
+                                color: const Color(
+                                  0xFFC6C6C6,
+                                ).withValues(alpha: 0.3),
                               ),
                               const SizedBox(width: 16),
                               Expanded(
@@ -234,7 +234,7 @@ class _HistoryPageState extends State<HistoryPage> {
               decoration: BoxDecoration(
                 color: isToday
                     ? const Color(0xFF004EE8)
-                    : const Color(0xFFC6C6C6).withOpacity(0.2),
+                    : const Color(0xFFC6C6C6).withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -295,13 +295,15 @@ class _HistoryPageState extends State<HistoryPage> {
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
                         colors: [
-                          const Color(0xFFC6C6C6).withOpacity(0.3),
+                          const Color(0xFFC6C6C6).withValues(alpha: 0.3),
                           Colors.transparent,
                         ],
                       ),
                     )
                   : null,
-              color: isLast ? null : const Color(0xFFC6C6C6).withOpacity(0.3),
+              color: isLast
+                  ? null
+                  : const Color(0xFFC6C6C6).withValues(alpha: 0.3),
             ),
           ],
         ),
@@ -313,7 +315,7 @@ class _HistoryPageState extends State<HistoryPage> {
             decoration: BoxDecoration(
               color: const Color(0xFFF7F7F7),
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: Colors.black.withOpacity(0.05)),
+              border: Border.all(color: Colors.black.withValues(alpha: 0.05)),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,

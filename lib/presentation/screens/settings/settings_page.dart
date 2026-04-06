@@ -74,7 +74,7 @@ class SettingsPage extends StatelessWidget {
                       width: 40,
                       height: 40,
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.1),
+                        color: Colors.white.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: const Icon(
@@ -131,7 +131,7 @@ class SettingsPage extends StatelessWidget {
         decoration: BoxDecoration(
           color: const Color(0xFFF7F7F7),
           borderRadius: BorderRadius.circular(32),
-          border: Border.all(color: Colors.black.withOpacity(0.05)),
+          border: Border.all(color: Colors.black.withValues(alpha: 0.05)),
         ),
         child: Row(
           children: [

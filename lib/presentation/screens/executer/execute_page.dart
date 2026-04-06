@@ -17,7 +17,6 @@ class ExecutePage extends StatefulWidget {
 class _ExecutePageState extends State<ExecutePage>
     with SingleTickerProviderStateMixin {
   late AnimationController _animationController;
-  late Animation<double> _scaleAnimation;
 
   bool _isExecuting = false;
   bool _isLongPress = false;
@@ -36,9 +35,6 @@ class _ExecutePageState extends State<ExecutePage>
     _animationController = AnimationController(
       duration: const Duration(milliseconds: 300),
       vsync: this,
-    );
-    _scaleAnimation = Tween<double>(begin: 1.0, end: 50.0).animate(
-      CurvedAnimation(parent: _animationController, curve: Curves.easeOut),
     );
   }
 
@@ -193,7 +189,7 @@ class _ExecutePageState extends State<ExecutePage>
                                     BoxShadow(
                                       color: const Color(
                                         0xFF002FA7,
-                                      ).withOpacity(0.3),
+                                      ).withValues(alpha: 0.3),
                                       blurRadius: 20,
                                       spreadRadius: 5,
                                     ),
