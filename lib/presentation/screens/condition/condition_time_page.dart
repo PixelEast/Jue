@@ -18,8 +18,14 @@ class _ConditionTimePageState extends State<ConditionTimePage> {
   late List<TimeRangeData> _timeRanges;
   late List<int> _groupOrder;
   int? _draggingBoundaryIndex;
-  final ScrollController _scrollController = ScrollController();
+
+  // Card drag state
+  int? _draggingGroupIndex;
+  double _dragCardOffsetY = 0;
+  double _dragStartGlobalY = 0;
+  int _dragStartOrderIndex = 0;
   final GlobalKey _timelineKey = GlobalKey();
+  final ScrollController _scrollController = ScrollController();
 
   static const Color _primary = Color(0xFF000000);
   static const Color _surface = Color(0xFFF9F9F9);
@@ -303,17 +309,23 @@ class _ConditionTimePageState extends State<ConditionTimePage> {
     final bgColor = _cardColors[groupIndex % _cardColors.length];
     final isDark = _isDarkCard(groupIndex);
     final cardHeight = (range.endHour - range.startHour) * hourIntervalHeight;
-    final topPosition = range.startHour * hourIntervalHeight;
+    final baseTopPosition = range.startHour * hourIntervalHeight;
+    final isDragging = _draggingGroupIndex == groupIndex;
+    final isSmall = cardHeight < 80;
+    final isTiny = cardHeight < 50;
 
-    return Positioned(
-      top: topPosition,
+    return AnimatedPositioned(
+      key: ValueKey(groupIndex),
+      duration: isDragging ? Duration.zero : const Duration(milliseconds: 300),
+      curve: Curves.easeInOutCubic,
+      top: isDragging ? baseTopPosition + _dragCardOffsetY : baseTopPosition,
       left: 0,
       right: 0,
       height: cardHeight,
       child: Container(
-        padding: const EdgeInsets.all(24),
+        padding: EdgeInsets.all(isSmall ? 8 : 24),
         decoration: BoxDecoration(
-          color: bgColor,
+          color: isDragging ? bgColor.withValues(alpha: 0.3) : bgColor,
           border: Border(
             bottom: BorderSide(
               color: isDark
@@ -324,46 +336,94 @@ class _ConditionTimePageState extends State<ConditionTimePage> {
         ),
         child: Stack(
           children: [
-            Positioned(
-              left: 16,
-              top: 0,
-              bottom: 0,
-              child: Center(
-                child: Opacity(
-                  opacity: 0.4,
-                  child: Icon(
-                    Icons.drag_indicator,
-                    size: 20,
-                    color: isDark ? Colors.white : _primary,
+            if (!isTiny)
+              Positioned(
+                left: isSmall ? 8 : 16,
+                top: 0,
+                bottom: 0,
+                child: Center(
+                  child: GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onVerticalDragStart: (details) {
+                      final currentOrder = _groupOrder.indexOf(groupIndex);
+                      setState(() {
+                        _draggingGroupIndex = groupIndex;
+                        _dragStartGlobalY = details.globalPosition.dy;
+                        _dragStartOrderIndex = currentOrder;
+                        _dragCardOffsetY = 0;
+                      });
+                    },
+                    onVerticalDragUpdate: (details) {
+                      if (_draggingGroupIndex == groupIndex) {
+                        setState(() {
+                          _dragCardOffsetY =
+                              details.globalPosition.dy - _dragStartGlobalY;
+                        });
+                      }
+                    },
+                    onVerticalDragEnd: (_) {
+                      if (_draggingGroupIndex == groupIndex) {
+                        final avgCardHeight = 1440.0 / _groupOrder.length;
+                        final orderShift = (_dragCardOffsetY / avgCardHeight)
+                            .round();
+                        final targetOrder = (_dragStartOrderIndex + orderShift)
+                            .clamp(0, _groupOrder.length - 1);
+
+                        if (targetOrder != _dragStartOrderIndex) {
+                          final group = _groupOrder.removeAt(
+                            _dragStartOrderIndex,
+                          );
+                          _groupOrder.insert(targetOrder, group);
+                          _redistributeTimeRanges();
+                        }
+                      }
+                      setState(() {
+                        _draggingGroupIndex = null;
+                        _dragCardOffsetY = 0;
+                      });
+                    },
+                    child: Opacity(
+                      opacity: 0.4,
+                      child: Icon(
+                        Icons.drag_indicator,
+                        size: isSmall ? 14 : 20,
+                        color: isDark ? Colors.white : _primary,
+                      ),
+                    ),
                   ),
                 ),
               ),
-            ),
             Center(
               child: Column(
+                mainAxisSize: MainAxisSize.min,
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text(
                     range.name,
                     style: TextStyle(
-                      fontSize: 14,
+                      fontSize: isSmall ? 11 : 14,
                       fontWeight: FontWeight.w800,
                       color: isDark ? Colors.white : _primary,
                       letterSpacing: 0.2,
+                      height: isSmall ? 1.1 : 1.2,
                     ),
+                    overflow: TextOverflow.ellipsis,
+                    maxLines: 1,
                   ),
-                  const SizedBox(height: 4),
-                  Text(
-                    '${range.startHour.toString().padLeft(2, '0')}:00 — ${range.endHour.toString().padLeft(2, '0')}:00',
-                    style: TextStyle(
-                      fontSize: 9,
-                      fontWeight: FontWeight.w500,
-                      color: isDark
-                          ? Colors.white.withValues(alpha: 0.6)
-                          : _secondary,
-                      letterSpacing: 1.5,
+                  if (!isTiny) const SizedBox(height: 2),
+                  if (!isTiny)
+                    Text(
+                      '${range.startHour.toString().padLeft(2, '0')}:00 — ${range.endHour.toString().padLeft(2, '0')}:00',
+                      style: TextStyle(
+                        fontSize: isSmall ? 8 : 9,
+                        fontWeight: FontWeight.w500,
+                        color: isDark
+                            ? Colors.white.withValues(alpha: 0.6)
+                            : _secondary,
+                        letterSpacing: 1.5,
+                        height: 1.1,
+                      ),
                     ),
-                  ),
                 ],
               ),
             ),
@@ -371,6 +431,24 @@ class _ConditionTimePageState extends State<ConditionTimePage> {
         ),
       ),
     );
+  }
+
+  void _redistributeTimeRanges() {
+    final count = _timeRanges.length;
+    int currentHour = 0;
+    final hoursPerGroup = 24 ~/ count;
+    final remainder = 24 % count;
+
+    for (int i = 0; i < count; i++) {
+      final startHour = currentHour;
+      currentHour += hoursPerGroup;
+      if (i < remainder) currentHour += 1;
+      final endHour = i == count - 1 ? 24 : currentHour;
+
+      final groupIndex = _groupOrder[i];
+      _timeRanges[groupIndex].startHour = startHour;
+      _timeRanges[groupIndex].endHour = endHour;
+    }
   }
 
   Widget _buildBoundary(int boundaryIndex, double hourIntervalHeight) {
@@ -393,7 +471,6 @@ class _ConditionTimePageState extends State<ConditionTimePage> {
         },
         onVerticalDragUpdate: (details) {
           if (_draggingBoundaryIndex == boundaryIndex) {
-            // 将全局坐标转换为时间轴容器内的本地坐标
             final renderBox =
                 _timelineKey.currentContext?.findRenderObject() as RenderBox?;
             if (renderBox != null) {
