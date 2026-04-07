@@ -35,14 +35,25 @@ class _ConditionTimePageState extends State<ConditionTimePage> {
   static const Color _secondary = Color(0xFF5E5E5E);
   static const Color _outlineVariant = Color(0xFFC6C6C6);
 
-  final List<Color> _cardColors = [
-    Color(0xFF000000),
-    Color(0xFF1C1C1E),
-    Color(0xFF27272A),
-    Color(0xFFE4E4E7),
-    Color(0xFFF4F4F5),
-    Color(0xFFFAFAFA),
-  ];
+  Color _getColorForHour(double hour) {
+    if (hour <= 13) {
+      final t = hour / 13;
+      return Color.lerp(const Color(0xFF000000), const Color(0xFFFFFFFF), t)!;
+    } else {
+      final t = (hour - 13) / 11;
+      return Color.lerp(const Color(0xFFFFFFFF), const Color(0xFF000000), t)!;
+    }
+  }
+
+  Color _getCardColor(TimeRangeData range) {
+    final midHour = (range.startHour + range.endHour) / 2;
+    return _getColorForHour(midHour);
+  }
+
+  bool _isDarkColor(Color color) {
+    final luminance = color.computeLuminance();
+    return luminance < 0.5;
+  }
 
   @override
   void initState() {
@@ -73,8 +84,6 @@ class _ConditionTimePageState extends State<ConditionTimePage> {
       );
     }
   }
-
-  bool _isDarkCard(int colorIndex) => colorIndex < 3;
 
   @override
   void dispose() {
@@ -255,7 +264,7 @@ class _ConditionTimePageState extends State<ConditionTimePage> {
             left: timeAxisWidth,
             top: 0,
             height: totalHeight,
-            width: 2,
+            width: 4,
             child: Container(color: _primary),
           ),
           Positioned(
@@ -287,17 +296,20 @@ class _ConditionTimePageState extends State<ConditionTimePage> {
             height: hour == 0 || hour == 24
                 ? hourIntervalHeight / 2
                 : hourIntervalHeight,
-            child: Align(
-              alignment: hour == 0
-                  ? Alignment.topCenter
-                  : (hour == 24 ? Alignment.bottomCenter : Alignment.center),
-              child: Text(
-                '${hour.toString().padLeft(2, '0')}:00',
-                style: TextStyle(
-                  fontSize: hour % 6 == 0 ? 11 : 10,
-                  fontWeight: hour % 6 == 0 ? FontWeight.w600 : FontWeight.w500,
-                  color: hour % 6 == 0 ? _primary : _secondary,
-                  fontFeatures: [FontFeature.tabularFigures()],
+            child: Padding(
+              padding: const EdgeInsets.only(right: 20),
+              child: Align(
+                alignment: Alignment.centerRight,
+                child: Text(
+                  '${hour.toString().padLeft(2, '0')}:00',
+                  style: TextStyle(
+                    fontSize: hour % 6 == 0 ? 13 : 11,
+                    fontWeight: hour % 6 == 0
+                        ? FontWeight.w600
+                        : FontWeight.w500,
+                    color: hour % 6 == 0 ? _primary : _secondary,
+                    fontFeatures: [FontFeature.tabularFigures()],
+                  ),
                 ),
               ),
             ),
@@ -309,8 +321,8 @@ class _ConditionTimePageState extends State<ConditionTimePage> {
   Widget _buildCard(int orderIndex, double hourIntervalHeight) {
     final groupIndex = _groupOrder[orderIndex];
     final range = _timeRanges[groupIndex];
-    final bgColor = _cardColors[groupIndex % _cardColors.length];
-    final isDark = _isDarkCard(groupIndex);
+    final bgColor = _getCardColor(range);
+    final isDark = _isDarkColor(bgColor);
     final cardHeight = (range.endHour - range.startHour) * hourIntervalHeight;
     final baseTopPosition = range.startHour * hourIntervalHeight;
     final isDragging = _draggingGroupIndex == groupIndex;
@@ -470,7 +482,8 @@ class _ConditionTimePageState extends State<ConditionTimePage> {
   Widget _buildBoundary(int boundaryIndex, double hourIntervalHeight) {
     final prevGroupIndex = _groupOrder[boundaryIndex];
     final range = _timeRanges[prevGroupIndex];
-    final isDark = _isDarkCard(prevGroupIndex);
+    final bgColor = _getCardColor(range);
+    final isDark = _isDarkColor(bgColor);
     final boundaryPosition = range.endHour * hourIntervalHeight;
 
     return AnimatedPositioned(
