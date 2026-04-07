@@ -23,7 +23,10 @@ class _ConditionTimePageState extends State<ConditionTimePage> {
   int? _draggingGroupIndex;
   double _dragCardOffsetY = 0;
   double _dragStartGlobalY = 0;
+  double _dragOriginalTop = 0;
   int _dragStartOrderIndex = 0;
+  bool _hideBoundaries = false;
+
   final GlobalKey _timelineKey = GlobalKey();
   final ScrollController _scrollController = ScrollController();
 
@@ -318,7 +321,7 @@ class _ConditionTimePageState extends State<ConditionTimePage> {
       key: ValueKey(groupIndex),
       duration: isDragging ? Duration.zero : const Duration(milliseconds: 300),
       curve: Curves.easeInOutCubic,
-      top: isDragging ? baseTopPosition + _dragCardOffsetY : baseTopPosition,
+      top: isDragging ? _dragOriginalTop + _dragCardOffsetY : baseTopPosition,
       left: 0,
       right: 0,
       height: cardHeight,
@@ -350,33 +353,60 @@ class _ConditionTimePageState extends State<ConditionTimePage> {
                         _draggingGroupIndex = groupIndex;
                         _dragStartGlobalY = details.globalPosition.dy;
                         _dragStartOrderIndex = currentOrder;
+                        _dragOriginalTop = baseTopPosition;
                         _dragCardOffsetY = 0;
                       });
                     },
                     onVerticalDragUpdate: (details) {
-                      if (_draggingGroupIndex == groupIndex) {
+                      if (_draggingGroupIndex != groupIndex) return;
+
+                      final deltaY =
+                          details.globalPosition.dy - _dragStartGlobalY;
+                      final avgCardHeight = 1440.0 / _groupOrder.length;
+                      final orderShift = (deltaY / avgCardHeight).round();
+                      int targetOrder = (_dragStartOrderIndex + orderShift)
+                          .clamp(0, _groupOrder.length - 1);
+
+                      final currentOrder = _groupOrder.indexOf(groupIndex);
+                      if (targetOrder != currentOrder) {
                         setState(() {
-                          _dragCardOffsetY =
-                              details.globalPosition.dy - _dragStartGlobalY;
+                          final group = _groupOrder.removeAt(currentOrder);
+                          _groupOrder.insert(targetOrder, group);
+                          // Swap time ranges between adjacent cards
+                          final start = targetOrder < currentOrder
+                              ? targetOrder
+                              : currentOrder;
+                          final end = targetOrder > currentOrder
+                              ? targetOrder
+                              : currentOrder;
+                          for (int i = start; i < end; i++) {
+                            _swapTimeRanges(i, i + 1);
+                          }
+                          // Hide boundaries during reorder animation
+                          _hideBoundaries = true;
+                          // Reset drag state to maintain smooth dragging
+                          _dragStartOrderIndex = targetOrder;
+                          _dragOriginalTop =
+                              _timeRanges[groupIndex].startHour *
+                              hourIntervalHeight;
+                          _dragStartGlobalY = details.globalPosition.dy;
+                          _dragCardOffsetY = 0;
+                        });
+                        // Show boundaries again after animation completes
+                        Future.delayed(const Duration(milliseconds: 300), () {
+                          if (mounted) {
+                            setState(() {
+                              _hideBoundaries = false;
+                            });
+                          }
+                        });
+                      } else {
+                        setState(() {
+                          _dragCardOffsetY = deltaY;
                         });
                       }
                     },
                     onVerticalDragEnd: (_) {
-                      if (_draggingGroupIndex == groupIndex) {
-                        final avgCardHeight = 1440.0 / _groupOrder.length;
-                        final orderShift = (_dragCardOffsetY / avgCardHeight)
-                            .round();
-                        final targetOrder = (_dragStartOrderIndex + orderShift)
-                            .clamp(0, _groupOrder.length - 1);
-
-                        if (targetOrder != _dragStartOrderIndex) {
-                          final group = _groupOrder.removeAt(
-                            _dragStartOrderIndex,
-                          );
-                          _groupOrder.insert(targetOrder, group);
-                          _redistributeTimeRanges();
-                        }
-                      }
                       setState(() {
                         _draggingGroupIndex = null;
                         _dragCardOffsetY = 0;
@@ -433,22 +463,18 @@ class _ConditionTimePageState extends State<ConditionTimePage> {
     );
   }
 
-  void _redistributeTimeRanges() {
-    final count = _timeRanges.length;
-    int currentHour = 0;
-    final hoursPerGroup = 24 ~/ count;
-    final remainder = 24 % count;
+  void _swapTimeRanges(int orderIndexA, int orderIndexB) {
+    final groupA = _groupOrder[orderIndexA];
+    final groupB = _groupOrder[orderIndexB];
 
-    for (int i = 0; i < count; i++) {
-      final startHour = currentHour;
-      currentHour += hoursPerGroup;
-      if (i < remainder) currentHour += 1;
-      final endHour = i == count - 1 ? 24 : currentHour;
+    final tempStart = _timeRanges[groupA].startHour;
+    final tempEnd = _timeRanges[groupA].endHour;
 
-      final groupIndex = _groupOrder[i];
-      _timeRanges[groupIndex].startHour = startHour;
-      _timeRanges[groupIndex].endHour = endHour;
-    }
+    _timeRanges[groupA].startHour = _timeRanges[groupB].startHour;
+    _timeRanges[groupA].endHour = _timeRanges[groupB].endHour;
+
+    _timeRanges[groupB].startHour = tempStart;
+    _timeRanges[groupB].endHour = tempEnd;
   }
 
   Widget _buildBoundary(int boundaryIndex, double hourIntervalHeight) {
@@ -462,51 +488,58 @@ class _ConditionTimePageState extends State<ConditionTimePage> {
       left: 0,
       right: 0,
       height: 20,
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onVerticalDragStart: (details) {
-          setState(() {
-            _draggingBoundaryIndex = boundaryIndex;
-          });
-        },
-        onVerticalDragUpdate: (details) {
-          if (_draggingBoundaryIndex == boundaryIndex) {
-            final renderBox =
-                _timelineKey.currentContext?.findRenderObject() as RenderBox?;
-            if (renderBox != null) {
-              final localPos = renderBox.globalToLocal(details.globalPosition);
-              final targetHour = (localPos.dy / hourIntervalHeight)
-                  .round()
-                  .clamp(0, 24);
+      child: AnimatedOpacity(
+        opacity: _hideBoundaries ? 0.0 : 1.0,
+        duration: const Duration(milliseconds: 200),
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onVerticalDragStart: (details) {
+            setState(() {
+              _draggingBoundaryIndex = boundaryIndex;
+            });
+          },
+          onVerticalDragUpdate: (details) {
+            if (_draggingBoundaryIndex == boundaryIndex) {
+              final renderBox =
+                  _timelineKey.currentContext?.findRenderObject() as RenderBox?;
+              if (renderBox != null) {
+                final localPos = renderBox.globalToLocal(
+                  details.globalPosition,
+                );
+                final targetHour = (localPos.dy / hourIntervalHeight)
+                    .round()
+                    .clamp(0, 24);
 
-              final prevCard = _timeRanges[_groupOrder[boundaryIndex]];
-              final nextCard = _timeRanges[_groupOrder[boundaryIndex + 1]];
-              final minHour = prevCard.startHour + 1;
-              final maxHour = nextCard.endHour - 1;
-              final clampedHour = targetHour.clamp(minHour, maxHour);
+                final prevCard = _timeRanges[_groupOrder[boundaryIndex]];
+                final nextCard = _timeRanges[_groupOrder[boundaryIndex + 1]];
+                final minHour = prevCard.startHour + 1;
+                final maxHour = nextCard.endHour - 1;
+                final clampedHour = targetHour.clamp(minHour, maxHour);
 
-              if (clampedHour != range.endHour) {
-                setState(() {
-                  prevCard.endHour = clampedHour;
-                  nextCard.startHour = clampedHour;
-                });
+                if (clampedHour != range.endHour) {
+                  setState(() {
+                    prevCard.endHour = clampedHour;
+                    nextCard.startHour = clampedHour;
+                  });
+                }
               }
             }
-          }
-        },
-        onVerticalDragEnd: (_) => setState(() => _draggingBoundaryIndex = null),
-        child: Center(
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 100),
-            height: _draggingBoundaryIndex == boundaryIndex ? 8 : 5,
-            width: 72,
-            decoration: BoxDecoration(
-              color: _draggingBoundaryIndex == boundaryIndex
-                  ? (isDark ? Colors.white : _primary)
-                  : (isDark
-                        ? Colors.white.withValues(alpha: 0.8)
-                        : _primary.withValues(alpha: 0.4)),
-              borderRadius: BorderRadius.circular(999),
+          },
+          onVerticalDragEnd: (_) =>
+              setState(() => _draggingBoundaryIndex = null),
+          child: Center(
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 100),
+              height: _draggingBoundaryIndex == boundaryIndex ? 8 : 5,
+              width: 72,
+              decoration: BoxDecoration(
+                color: _draggingBoundaryIndex == boundaryIndex
+                    ? (isDark ? Colors.white : _primary)
+                    : (isDark
+                          ? Colors.white.withValues(alpha: 0.8)
+                          : _primary.withValues(alpha: 0.4)),
+                borderRadius: BorderRadius.circular(999),
+              ),
             ),
           ),
         ),
