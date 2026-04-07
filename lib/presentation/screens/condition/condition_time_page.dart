@@ -166,68 +166,65 @@ class _ConditionTimePageState extends State<ConditionTimePage> {
                     ),
                   ),
                   const SizedBox(height: 32),
-                  Center(
-                    child: Container(
-                      height: 48,
-                      constraints: const BoxConstraints(maxWidth: 320),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(999),
-                        border: Border.all(
-                          color: _primary.withValues(alpha: 0.1),
-                          width: 1,
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.05),
-                            blurRadius: 4,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
+                  Container(
+                    height: 55,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(999),
+                      border: Border.all(
+                        color: _primary.withValues(alpha: 0.1),
+                        width: 1,
                       ),
-                      child: Row(
-                        children: [
-                          Expanded(
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.05),
+                          blurRadius: 4,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Container(
+                            margin: const EdgeInsets.all(6),
+                            decoration: BoxDecoration(
+                              color: _primary,
+                              borderRadius: BorderRadius.circular(999),
+                            ),
+                            child: const Center(
+                              child: Text(
+                                '时间范围',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w800,
+                                  color: Colors.white,
+                                  letterSpacing: 0.2,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        Expanded(
+                          child: GestureDetector(
+                            onTap: widget.onSwitchToLocation ?? () {},
                             child: Container(
                               margin: const EdgeInsets.all(6),
-                              decoration: BoxDecoration(
-                                color: _primary,
-                                borderRadius: BorderRadius.circular(999),
-                              ),
                               child: const Center(
                                 child: Text(
-                                  '时间范围',
+                                  '位置范围',
                                   style: TextStyle(
-                                    fontSize: 11,
+                                    fontSize: 13,
                                     fontWeight: FontWeight.w800,
-                                    color: Colors.white,
+                                    color: _secondary,
                                     letterSpacing: 0.2,
                                   ),
                                 ),
                               ),
                             ),
                           ),
-                          Expanded(
-                            child: GestureDetector(
-                              onTap: widget.onSwitchToLocation ?? () {},
-                              child: Container(
-                                margin: const EdgeInsets.all(6),
-                                child: const Center(
-                                  child: Text(
-                                    '位置范围',
-                                    style: TextStyle(
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.w800,
-                                      color: _secondary,
-                                      letterSpacing: 0.2,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
                   ),
                   const SizedBox(height: 32),
@@ -272,13 +269,19 @@ class _ConditionTimePageState extends State<ConditionTimePage> {
             top: 0,
             right: 0,
             height: totalHeight,
-            child: Stack(
-              children: [
-                for (int i = 0; i < _groupOrder.length; i++)
-                  _buildCard(i, hourIntervalHeight),
-                for (int i = 0; i < _groupOrder.length - 1; i++)
-                  _buildBoundary(i, hourIntervalHeight),
-              ],
+            child: ClipRRect(
+              borderRadius: const BorderRadius.only(
+                topRight: Radius.circular(16),
+                bottomRight: Radius.circular(16),
+              ),
+              child: Stack(
+                children: [
+                  for (int i = 0; i < _groupOrder.length; i++)
+                    _buildCard(i, hourIntervalHeight),
+                  for (int i = 0; i < _groupOrder.length - 1; i++)
+                    _buildBoundary(i, hourIntervalHeight),
+                ],
+              ),
             ),
           ),
         ],
@@ -300,15 +303,20 @@ class _ConditionTimePageState extends State<ConditionTimePage> {
               padding: const EdgeInsets.only(right: 20),
               child: Align(
                 alignment: Alignment.centerRight,
-                child: Text(
-                  '${hour.toString().padLeft(2, '0')}:00',
-                  style: TextStyle(
-                    fontSize: hour % 6 == 0 ? 13 : 11,
-                    fontWeight: hour % 6 == 0
-                        ? FontWeight.w600
-                        : FontWeight.w500,
-                    color: hour % 6 == 0 ? _primary : _secondary,
-                    fontFeatures: [FontFeature.tabularFigures()],
+                child: Transform.translate(
+                  offset: hour == 0
+                      ? const Offset(0, -7)
+                      : (hour == 24 ? const Offset(0, 7) : Offset.zero),
+                  child: Text(
+                    '${hour.toString().padLeft(2, '0')}:00',
+                    style: TextStyle(
+                      fontSize: hour % 6 == 0 ? 13 : 11,
+                      fontWeight: hour % 6 == 0
+                          ? FontWeight.w600
+                          : FontWeight.w500,
+                      color: hour % 6 == 0 ? _primary : _secondary,
+                      fontFeatures: [FontFeature.tabularFigures()],
+                    ),
                   ),
                 ),
               ),
