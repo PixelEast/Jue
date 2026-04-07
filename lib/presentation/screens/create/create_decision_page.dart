@@ -125,6 +125,10 @@ class _CreateDecisionPageState extends State<CreateDecisionPage> {
   void _addGroupAndScroll() {
     if (_optionGroups.length < 6) {
       final newIndex = _optionGroups.length;
+      if (_optionGroups.length + 1 >= 2 && !_showLogicCondition) {
+        _showLogicCondition = true;
+        _redistributeTimeConditions();
+      }
       setState(() {
         _optionGroups.add(
           OptionGroupData(
@@ -134,8 +138,10 @@ class _CreateDecisionPageState extends State<CreateDecisionPage> {
         );
         _groupDeleting.add(false);
         _groupKeys[newIndex] = GlobalKey();
-        if (_optionGroups.length >= 2) _showLogicCondition = true;
       });
+      if (_showLogicCondition) {
+        _redistributeTimeConditions();
+      }
       _saveDraft();
       WidgetsBinding.instance.addPostFrameCallback((_) {
         final key = _groupKeys[newIndex];
@@ -151,6 +157,22 @@ class _CreateDecisionPageState extends State<CreateDecisionPage> {
     }
   }
 
+  void _redistributeTimeConditions() {
+    if (_optionGroups.isEmpty) return;
+    final count = _optionGroups.length;
+    final hoursPerGroup = 24 ~/ count;
+    final remainder = 24 % count;
+    int currentHour = 0;
+    for (int i = 0; i < count; i++) {
+      final startHour = currentHour;
+      currentHour += hoursPerGroup;
+      if (i < remainder) currentHour += 1;
+      final endHour = i == count - 1 ? 24 : currentHour;
+      _optionGroups[i].conditionSummary =
+          '时间范围 ${startHour.toString().padLeft(2, '0')}:00 - ${endHour.toString().padLeft(2, '0')}:00';
+    }
+  }
+
   void _removeGroupAnimated(int index) {
     if (_optionGroups.length > 1) {
       setState(() => _groupDeleting[index] = true);
@@ -159,7 +181,11 @@ class _CreateDecisionPageState extends State<CreateDecisionPage> {
         setState(() {
           _optionGroups.removeAt(index);
           _groupDeleting.removeAt(index);
-          if (_optionGroups.length < 2) _showLogicCondition = false;
+          if (_optionGroups.length < 2) {
+            _showLogicCondition = false;
+          } else {
+            _redistributeTimeConditions();
+          }
         });
         _saveDraft();
       });
@@ -235,9 +261,9 @@ class _CreateDecisionPageState extends State<CreateDecisionPage> {
     if (mounted) Navigator.pop(context, true);
   }
 
-  void _navigateToCondition() {
+  Future<void> _navigateToCondition() async {
     final groupNames = _optionGroups.map((g) => g.name).toList();
-    Navigator.push(
+    final result = await Navigator.push<Map<String, String>>(
       context,
       MaterialPageRoute(
         builder: (context) => ConditionTimePage(
@@ -266,6 +292,15 @@ class _CreateDecisionPageState extends State<CreateDecisionPage> {
         ),
       ),
     );
+    if (result != null && mounted) {
+      for (var entry in result.entries) {
+        final groupIndex = _optionGroups.indexWhere((g) => g.name == entry.key);
+        if (groupIndex != -1) {
+          _optionGroups[groupIndex].conditionSummary = entry.value;
+        }
+      }
+      _saveDraft();
+    }
   }
 
   @override
@@ -570,58 +605,69 @@ class _CreateDecisionPageState extends State<CreateDecisionPage> {
                     },
                   ),
                   const SizedBox(height: 4),
-                  Text(
-                    '此选项组已开启逻辑条件激活',
-                    style: TextStyle(fontSize: 12, color: Color(0xFF5E5E5E)),
-                  ),
-                  const SizedBox(height: 12),
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(8),
+                  if (_showLogicCondition) ...[
+                    Text(
+                      '此选项组已开启逻辑条件激活',
+                      style: TextStyle(fontSize: 12, color: Color(0xFF5E5E5E)),
                     ),
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.access_time,
-                          size: 20,
-                          color: Color(0xFF002FA7),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                '选项组激活条件',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: Color(0xFF5E5E5E),
-                                ),
-                              ),
-                              Text(
-                                '时间范围 00:00 - 10:00',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w500,
-                                  color: Color(0xFF1B1B1B),
-                                ),
-                              ),
-                            ],
+                    const SizedBox(height: 12),
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.access_time,
+                            size: 20,
+                            color: Color(0xFF002FA7),
                           ),
-                        ),
-                      ],
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  '选项组激活条件',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Color(0xFF5E5E5E),
+                                  ),
+                                ),
+                                Text(
+                                  group.conditionSummary.isNotEmpty
+                                      ? group.conditionSummary
+                                      : '时间范围 00:00 - 12:00',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w500,
+                                    color: Color(0xFF1B1B1B),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 12),
+                    const SizedBox(height: 12),
+                  ],
                   Row(
                     children: [
+                      const Icon(
+                        Icons.balance_outlined,
+                        size: 14,
+                        color: Colors.black,
+                      ),
+                      const SizedBox(width: 8),
                       const Text(
                         '动态权重',
                         style: TextStyle(
-                          fontSize: 14,
-                          color: Color(0xFF5E5E5E),
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.black,
                         ),
                       ),
                       const Spacer(),
@@ -1115,11 +1161,13 @@ class OptionGroupData {
   List<OptionData> options;
   bool dynamicWeightEnabled;
   WeightMode weightMode;
+  String conditionSummary;
   OptionGroupData({
     required this.name,
     required this.options,
     this.dynamicWeightEnabled = true,
     this.weightMode = WeightMode.lowerWeight,
+    this.conditionSummary = '',
   });
 }
 

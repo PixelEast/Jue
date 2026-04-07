@@ -55,9 +55,10 @@ dependencies:
   
   # 小组件
   home_widget: ^0.4.0
-  
+
   # 图标
   cupertino_icons: ^1.0.8
+  flutter_svg: ^2.0.9
 
 dev_dependencies:
   flutter_test:
@@ -85,6 +86,7 @@ flutter:
   # App logo asset
   assets:
     - figma_exports/Logo.svg
+    - figma_exports/icons/
 
   # To add assets to your application, add an assets section, like this:
   # assets:

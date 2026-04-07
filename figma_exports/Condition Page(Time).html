@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Condition Logic Config</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Manrope:wght@700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#000000",
+                        "on-background": "#1b1b1b",
+                        "on-surface": "#1b1b1b",
+                        "surface": "#f9f9f9",
+                        "background": "#f9f9f9",
+                        "secondary": "#5e5e5e",
+                        "outline": "#777777",
+                        "outline-variant": "#c6c6c6",
+                        "surface-container-low": "#f3f3f3",
+                        "surface-container-highest": "#e2e2e2",
+                        "surface-container-lowest": "#ffffff",
+                    },
+                    fontFamily: {
+                        "headline": ["Manrope"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    },
+                    borderRadius: { "DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "9999px" },
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        .timeline-tick::before {
+            content: '';
+            position: absolute;
+            right: 0px;
+            top: 50%;
+            width: 12px;
+            height: 1px;
+            background: #000000;
+            opacity: 0.15;
+        }
+        .timeline-tick-bold::before {
+            opacity: 0.6;
+            width: 20px;
+            height: 2px;
+        }
+        
+        /* Minimal Drag Handle Styles */
+        .drag-handle-line {
+            height: 4px;
+            width: 48px;
+            border-radius: 999px;
+            transition: all 0.2s ease;
+        }
+    </style>
+</head>
+<body class="bg-surface font-body text-on-surface selection:bg-black selection:text-white antialiased">
+<!-- Floating Back Button -->
+<nav class="fixed top-4 left-4 z-50">
+<button class="bg-white border border-outline-variant/30 text-black rounded-full w-12 h-12 flex items-center justify-center hover:bg-gray-100 transition-all active:scale-95 shadow-sm" style="">
+<span class="material-symbols-outlined" data-icon="arrow_back" style="">arrow_back</span>
+</button>
+</nav>
+<main class="min-h-screen max-w-2xl mx-auto px-6 pt-24 pb-40">
+<!-- Header -->
+<header class="mb-10">
+<div class="flex items-center gap-3 mb-6">
+<span class="font-headline font-extrabold tracking-widest text-[10px] uppercase text-secondary" style=""><br/></span>
+</div>
+<h1 class="font-headline font-extrabold text-5xl leading-tight tracking-tighter mb-4 uppercase text-black" style=""><div><span style="font-size: 3rem; letter-spacing: -0.05em;">设置逻辑条件</span></div></h1>
+<p class="font-body text-secondary text-base leading-relaxed opacity-80 mb-10" style="">
+            为你的决定设置逻辑条件，以此在多个选项组存在时，决定每个选项组改在什么情况下启用。</p>
+<!-- Centered Segmented Control -->
+<div class="flex justify-center mb-8">
+<div class="bg-white border border-black/10 rounded-full p-1.5 flex items-center shadow-sm w-full max-w-xs">
+<button class="flex-1 px-5 py-3 rounded-full bg-black text-white text-[11px] font-headline font-extrabold uppercase tracking-[0.2em] transition-all" style="">时间范围</button>
+<button class="flex-1 px-5 py-3 rounded-full bg-transparent text-secondary text-[11px] font-headline font-extrabold uppercase tracking-[0.2em] hover:text-black transition-all" style="">位置范围</button>
+</div>
+</div>
+</header>
+<!-- Architectural Vertical Timeline -->
+<section class="relative flex">
+<!-- 24h Vertical Axis -->
+<div class="flex flex-col justify-between text-right w-16 shrink-0 h-[1600px] border-r-2 border-black pr-4">
+<div class="relative h-0 timeline-tick timeline-tick-bold flex items-center justify-end"><span class="font-label text-[11px] font-extrabold tabular-nums text-black" style="">00:00</span></div>
+<div class="relative h-0 timeline-tick flex items-center justify-end"><span class="font-label text-[10px] font-medium text-secondary tabular-nums" style="">01:00</span></div>
+<div class="relative h-0 timeline-tick flex items-center justify-end"><span class="font-label text-[10px] font-medium text-secondary tabular-nums" style="">02:00</span></div>
+<div class="relative h-0 timeline-tick flex items-center justify-end"><span class="font-label text-[10px] font-medium text-secondary tabular-nums" style="">03:00</span></div>
+<div class="relative h-0 timeline-tick flex items-center justify-end"><span class="font-label text-[10px] font-medium text-secondary tabular-nums" style="">04:00</span></div>
+<div class="relative h-0 timeline-tick flex items-center justify-end"><span class="font-label text-[10px] font-medium text-secondary tabular-nums" style="">05:00</span></div>
+<div class="relative h-0 timeline-tick timeline-tick-bold flex items-center justify-end"><span class="font-label text-[11px] font-extrabold tabular-nums text-black" style="">06:00</span></div>
+<div class="relative h-0 timeline-tick flex items-center justify-end"><span class="font-label text-[10px] font-medium text-secondary tabular-nums" style="">07:00</span></div>
+<div class="relative h-0 timeline-tick flex items-center justify-end"><span class="font-label text-[10px] font-medium text-secondary tabular-nums" style="">08:00</span></div>
+<div class="relative h-0 timeline-tick flex items-center justify-end"><span class="font-label text-[10px] font-medium text-secondary tabular-nums" style="">09:00</span></div>
+<div class="relative h-0 timeline-tick flex items-center justify-end"><span class="font-label text-[10px] font-medium text-secondary tabular-nums" style="">10:00</span></div>
+<div class="relative h-0 timeline-tick flex items-center justify-end"><span class="font-label text-[10px] font-medium text-secondary tabular-nums" style="">11:00</span></div>
+<div class="relative h-0 timeline-tick timeline-tick-bold flex items-center justify-end"><span class="font-label text-[11px] font-extrabold tabular-nums text-black" style="">12:00</span></div>
+<div class="relative h-0 timeline-tick flex items-center justify-end"><span class="font-label text-[10px] font-medium text-secondary tabular-nums" style="">13:00</span></div>
+<div class="relative h-0 timeline-tick flex items-center justify-end"><span class="font-label text-[10px] font-medium text-secondary tabular-nums" style="">14:00</span></div>
+<div class="relative h-0 timeline-tick flex items-center justify-end"><span class="font-label text-[10px] font-medium text-secondary tabular-nums" style="">15:00</span></div>
+<div class="relative h-0 timeline-tick flex items-center justify-end"><span class="font-label text-[10px] font-medium text-secondary tabular-nums" style="">16:00</span></div>
+<div class="relative h-0 timeline-tick flex items-center justify-end"><span class="font-label text-[10px] font-medium text-secondary tabular-nums" style="">17:00</span></div>
+<div class="relative h-0 timeline-tick timeline-tick-bold flex items-center justify-end"><span class="font-label text-[11px] font-extrabold tabular-nums text-black" style="">18:00</span></div>
+<div class="relative h-0 timeline-tick flex items-center justify-end"><span class="font-label text-[10px] font-medium text-secondary tabular-nums" style="">19:00</span></div>
+<div class="relative h-0 timeline-tick flex items-center justify-end"><span class="font-label text-[10px] font-medium text-secondary tabular-nums" style="">20:00</span></div>
+<div class="relative h-0 timeline-tick flex items-center justify-end"><span class="font-label text-[10px] font-medium text-secondary tabular-nums" style="">21:00</span></div>
+<div class="relative h-0 timeline-tick flex items-center justify-end"><span class="font-label text-[10px] font-medium text-secondary tabular-nums" style="">22:00</span></div>
+<div class="relative h-0 timeline-tick flex items-center justify-end"><span class="font-label text-[10px] font-medium text-secondary tabular-nums" style="">23:00</span></div>
+<div class="relative h-0 timeline-tick timeline-tick-bold flex items-center justify-end"><span class="font-label text-[11px] font-extrabold tabular-nums text-black" style="">24:00</span></div>
+</div>
+<!-- Monochrome Multi-Group Timeline with Physical Handles -->
+<div class="flex-grow flex flex-col h-[1600px] bg-white">
+<!-- Group 1 -->
+<div class="relative w-full h-[12.5%] bg-black text-white p-6 flex flex-col items-center justify-center border-b border-white/10">
+<div class="absolute left-4 top-1/2 -translate-y-1/2 opacity-40 hover:opacity-100 transition-opacity cursor-grab active:cursor-grabbing"><span class="material-symbols-outlined text-xl text-white" style="">drag_indicator</span></div>
+<h3 class="font-headline font-extrabold text-sm uppercase tracking-[0.2em] mb-1" style="">选项组1</h3>
+<span class="font-label text-[9px] tracking-widest opacity-60" style="">00:00 — 03:00</span>
+<div class="absolute -bottom-0.5 left-0 w-full z-30 flex justify-center cursor-ns-resize group"><div class="drag-handle-line bg-white/80 hover:bg-white group-active:scale-x-125"></div></div>
+</div>
+<!-- Group 2 -->
+<div class="relative w-full h-[12.5%] bg-zinc-900 text-white p-6 flex flex-col items-center justify-center border-b border-white/10">
+<div class="absolute left-4 top-1/2 -translate-y-1/2 opacity-40 hover:opacity-100 transition-opacity cursor-grab active:cursor-grabbing"><span class="material-symbols-outlined text-xl text-white" style="">drag_indicator</span></div>
+<h3 class="font-headline font-extrabold text-sm uppercase tracking-[0.2em] mb-1" style="">选项组2</h3>
+<span class="font-label text-[9px] tracking-widest opacity-60" style="">03:00 — 06:00</span>
+<div class="absolute -bottom-0.5 left-0 w-full z-30 flex justify-center cursor-ns-resize group"><div class="drag-handle-line bg-white/80 hover:bg-white group-active:scale-x-125"></div></div>
+</div>
+<!-- Group 3 -->
+<div class="relative w-full h-[12.5%] bg-zinc-800 text-white p-6 flex flex-col items-center justify-center border-b border-white/10">
+<div class="absolute left-4 top-1/2 -translate-y-1/2 opacity-40 hover:opacity-100 transition-opacity cursor-grab active:cursor-grabbing"><span class="material-symbols-outlined text-xl text-white" style="">drag_indicator</span></div>
+<h3 class="font-headline font-extrabold text-sm uppercase tracking-[0.2em] mb-1" style="">选项组3</h3>
+<span class="font-label text-[9px] tracking-widest opacity-60" style="">06:00 — 09:00</span>
+<div class="absolute -bottom-0.5 left-0 w-full z-30 flex justify-center cursor-ns-resize group"><div class="drag-handle-line bg-white/80 hover:bg-white group-active:scale-x-125"></div></div>
+</div>
+<!-- Group 4 -->
+<div class="relative w-full h-[12.5%] bg-zinc-200 text-black p-6 flex flex-col items-center justify-center border-b border-black/10">
+<div class="absolute left-4 top-1/2 -translate-y-1/2 opacity-40 hover:opacity-100 transition-opacity cursor-grab active:cursor-grabbing"><span class="material-symbols-outlined text-xl text-black" style="">drag_indicator</span></div>
+<h3 class="font-headline font-extrabold text-sm uppercase tracking-[0.2em] mb-1" style="">选项组4</h3>
+<span class="font-label text-[9px] tracking-widest text-secondary" style="">09:00 — 12:00</span>
+<div class="absolute -bottom-0.5 left-0 w-full z-30 flex justify-center cursor-ns-resize group"><div class="drag-handle-line bg-black/40 hover:bg-black group-active:scale-x-125"></div></div>
+</div>
+<!-- Group 5 -->
+<div class="relative w-full h-[12.5%] bg-zinc-100 text-black p-6 flex flex-col items-center justify-center border-b border-black/10">
+<div class="absolute left-4 top-1/2 -translate-y-1/2 opacity-40 hover:opacity-100 transition-opacity cursor-grab active:cursor-grabbing"><span class="material-symbols-outlined text-xl text-black" style="">drag_indicator</span></div>
+<h3 class="font-headline font-extrabold text-sm uppercase tracking-[0.2em] mb-1" style="">选项组5</h3>
+<span class="font-label text-[9px] tracking-widest text-secondary" style="">12:00 — 15:00</span>
+<div class="absolute -bottom-0.5 left-0 w-full z-30 flex justify-center cursor-ns-resize group"><div class="drag-handle-line bg-black/40 hover:bg-black group-active:scale-x-125"></div></div>
+</div>
+<!-- Group 6 -->
+<div class="relative w-full h-[12.5%] bg-zinc-50 text-black p-6 flex flex-col items-center justify-center border-b border-black/10">
+<div class="absolute left-4 top-1/2 -translate-y-1/2 opacity-40 hover:opacity-100 transition-opacity cursor-grab active:cursor-grabbing"><span class="material-symbols-outlined text-xl text-black" style="">drag_indicator</span></div>
+<h3 class="font-headline font-extrabold text-sm uppercase tracking-[0.2em] mb-1" style="">选项组6</h3>
+<span class="font-label text-[9px] tracking-widest text-secondary" style="">15:00 — 18:00</span>
+<div class="absolute -bottom-0.5 left-0 w-full z-30 flex justify-center cursor-ns-resize group"><div class="drag-handle-line bg-black/40 hover:bg-black group-active:scale-x-125"></div></div>
+</div>
+<!-- Group 7 -->
+<div class="relative w-full h-[12.5%] bg-zinc-200 text-black p-6 flex flex-col items-center justify-center border-b border-black/10">
+<div class="absolute left-4 top-1/2 -translate-y-1/2 opacity-40 hover:opacity-100 transition-opacity cursor-grab active:cursor-grabbing"><span class="material-symbols-outlined text-xl text-black" style="">drag_indicator</span></div>
+<h3 class="font-headline font-extrabold text-sm uppercase tracking-[0.2em] mb-1" style="">选项组7</h3>
+<span class="font-label text-[9px] tracking-widest text-secondary" style="">18:00 — 21:00</span>
+<div class="absolute -bottom-0.5 left-0 w-full z-30 flex justify-center cursor-ns-resize group"><div class="drag-handle-line bg-black/40 hover:bg-black group-active:scale-x-125"></div></div>
+</div>
+<!-- Group 8 -->
+<div class="relative w-full flex-grow bg-zinc-800 text-white p-6 flex flex-col items-center justify-center">
+<div class="absolute left-4 top-1/2 -translate-y-1/2 opacity-20 cursor-not-allowed"><span class="material-symbols-outlined text-xl text-white" style="">drag_indicator</span></div>
+<h3 class="font-headline font-extrabold text-sm uppercase tracking-[0.2em] mb-1" style="">选项组8</h3>
+<span class="font-label text-[9px] tracking-widest opacity-60" style="">21:00 — 24:00</span>
+<div class="absolute bottom-4 opacity-20">
+<span class="material-symbols-outlined text-xs" style="">lock</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Aesthetic Grain Overlay -->
+<div class="fixed inset-0 pointer-events-none z-[100] opacity-[0.03] mix-blend-overlay">
+<svg viewbox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+<filter id="noise">
+<feturbulence basefrequency="0.65" numoctaves="3" stitchtiles="stitch" type="fractalNoise"></feturbulence>
+</filter>
+<rect filter="url(#noise)" height="100%" width="100%"></rect>
+</svg>
+</div>
+<!-- Inline Apply Button at bottom -->
+<div class="mt-12 px-2">
+<button class="w-full h-16 bg-black text-white font-headline font-extrabold text-xs uppercase tracking-[0.4em] transition-all flex items-center justify-center gap-4 shadow-[0_10px_30px_-10px_rgba(0,0,0,0.5)] active:scale-[0.98] rounded-2xl font-bold" style="font-size: 18px;">应用逻辑条件</button>
+</div>
+</main>
+</body></html>

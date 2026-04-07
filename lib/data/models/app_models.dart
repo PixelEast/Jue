@@ -28,13 +28,15 @@ class Option {
   };
 
   factory Option.fromJson(Map<String, dynamic> json) => Option(
-    id: json['id'] as String,
-    name: json['name'] as String,
-    baseWeight: (json['baseWeight'] as num).toDouble(),
-    currentWeight: (json['currentWeight'] as num).toDouble(),
-    timesSelected: json['timesSelected'] as int,
+    id:
+        json['id'] as String? ??
+        DateTime.now().millisecondsSinceEpoch.toString(),
+    name: json['name'] as String? ?? '选项',
+    baseWeight: (json['baseWeight'] as num?)?.toDouble() ?? 1.0,
+    currentWeight: (json['currentWeight'] as num?)?.toDouble() ?? 1.0,
+    timesSelected: json['timesSelected'] as int? ?? 0,
     lastSelectedAt: json['lastSelectedAt'] != null
-        ? DateTime.parse(json['lastSelectedAt'] as String)
+        ? DateTime.tryParse(json['lastSelectedAt'] as String)
         : null,
     pendingRecovery: json['pendingRecovery'] as bool? ?? false,
   );
