@@ -340,7 +340,7 @@ class _ConditionTimePageState extends State<ConditionTimePage> {
             clipBehavior: Clip.none,
             children: [
               Positioned(
-                left: 16,
+                left: 8,
                 top: 0,
                 bottom: 0,
                 child: Center(
@@ -409,7 +409,7 @@ class _ConditionTimePageState extends State<ConditionTimePage> {
                       opacity: 0.4,
                       child: Icon(
                         Icons.drag_indicator,
-                        size: 20,
+                        size: 26,
                         color: isDark ? Colors.white : _primary,
                       ),
                     ),
@@ -473,7 +473,9 @@ class _ConditionTimePageState extends State<ConditionTimePage> {
     final isDark = _isDarkCard(prevGroupIndex);
     final boundaryPosition = range.endHour * hourIntervalHeight;
 
-    return Positioned(
+    return AnimatedPositioned(
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeInOutCubic,
       top: boundaryPosition - 10,
       left: 0,
       right: 0,
