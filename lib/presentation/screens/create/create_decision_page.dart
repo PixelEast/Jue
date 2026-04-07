@@ -2,8 +2,7 @@ import 'package:flutter/material.dart';
 import 'dart:math';
 import '../../../data/models/app_models.dart';
 import '../../../data/repositories/decision_repository.dart';
-import '../condition/condition_time_page.dart';
-import '../condition/condition_location_page.dart';
+import '../condition/condition_page.dart';
 
 class CreateDecisionPage extends StatefulWidget {
   const CreateDecisionPage({super.key});
@@ -68,6 +67,7 @@ class _CreateDecisionPageState extends State<CreateDecisionPage> {
               weightMode: group.dynamicWeightMode == 'nextRemove'
                   ? WeightMode.nextRemove
                   : WeightMode.lowerWeight,
+              conditionSummary: group.conditionSummary,
             ),
           );
           _groupDeleting.add(false);
@@ -108,6 +108,7 @@ class _CreateDecisionPageState extends State<CreateDecisionPage> {
                   .toList(),
               dynamicWeightEnabled: g.dynamicWeightEnabled,
               dynamicWeightMode: g.weightMode.name,
+              conditionSummary: g.conditionSummary,
             ),
           )
           .toList(),
@@ -263,42 +264,32 @@ class _CreateDecisionPageState extends State<CreateDecisionPage> {
 
   Future<void> _navigateToCondition() async {
     final groupNames = _optionGroups.map((g) => g.name).toList();
+    final existingConditions = <String, String>{};
+    for (var group in _optionGroups) {
+      if (group.conditionSummary.isNotEmpty) {
+        existingConditions[group.name] = group.conditionSummary;
+      }
+    }
     final result = await Navigator.push<Map<String, String>>(
       context,
       MaterialPageRoute(
-        builder: (context) => ConditionTimePage(
+        builder: (context) => ConditionPage(
           optionGroupNames: groupNames,
-          onSwitchToLocation: () {
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(
-                builder: (context) => ConditionLocationPage(
-                  optionGroupNames: groupNames,
-                  onSwitchToTime: () {
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => ConditionTimePage(
-                          optionGroupNames: groupNames,
-                          onSwitchToLocation: () {},
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              ),
-            );
-          },
+          existingConditions: existingConditions,
         ),
       ),
     );
     if (result != null && mounted) {
-      for (var entry in result.entries) {
-        final groupIndex = _optionGroups.indexWhere((g) => g.name == entry.key);
-        if (groupIndex != -1) {
-          _optionGroups[groupIndex].conditionSummary = entry.value;
+      setState(() {
+        for (var entry in result.entries) {
+          final groupIndex = _optionGroups.indexWhere(
+            (g) => g.name == entry.key,
+          );
+          if (groupIndex != -1) {
+            _optionGroups[groupIndex].conditionSummary = entry.value;
+          }
         }
-      }
+      });
       _saveDraft();
     }
   }
