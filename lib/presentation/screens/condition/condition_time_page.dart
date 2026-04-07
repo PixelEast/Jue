@@ -314,8 +314,6 @@ class _ConditionTimePageState extends State<ConditionTimePage> {
     final cardHeight = (range.endHour - range.startHour) * hourIntervalHeight;
     final baseTopPosition = range.startHour * hourIntervalHeight;
     final isDragging = _draggingGroupIndex == groupIndex;
-    final isSmall = cardHeight < 80;
-    final isTiny = cardHeight < 50;
 
     return AnimatedPositioned(
       key: ValueKey(groupIndex),
@@ -325,23 +323,24 @@ class _ConditionTimePageState extends State<ConditionTimePage> {
       left: 0,
       right: 0,
       height: cardHeight,
-      child: Container(
-        padding: EdgeInsets.all(isSmall ? 8 : 24),
-        decoration: BoxDecoration(
-          color: isDragging ? bgColor.withValues(alpha: 0.3) : bgColor,
-          border: Border(
-            bottom: BorderSide(
-              color: isDark
-                  ? Colors.white.withValues(alpha: 0.1)
-                  : _primary.withValues(alpha: 0.1),
+      child: ClipRect(
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+          decoration: BoxDecoration(
+            color: isDragging ? bgColor.withValues(alpha: 0.3) : bgColor,
+            border: Border(
+              bottom: BorderSide(
+                color: isDark
+                    ? Colors.white.withValues(alpha: 0.1)
+                    : _primary.withValues(alpha: 0.1),
+              ),
             ),
           ),
-        ),
-        child: Stack(
-          children: [
-            if (!isTiny)
+          child: Stack(
+            clipBehavior: Clip.none,
+            children: [
               Positioned(
-                left: isSmall ? 8 : 16,
+                left: 16,
                 top: 0,
                 bottom: 0,
                 child: Center(
@@ -359,20 +358,17 @@ class _ConditionTimePageState extends State<ConditionTimePage> {
                     },
                     onVerticalDragUpdate: (details) {
                       if (_draggingGroupIndex != groupIndex) return;
-
                       final deltaY =
                           details.globalPosition.dy - _dragStartGlobalY;
                       final avgCardHeight = 1440.0 / _groupOrder.length;
                       final orderShift = (deltaY / avgCardHeight).round();
-                      int targetOrder = (_dragStartOrderIndex + orderShift)
+                      final targetOrder = (_dragStartOrderIndex + orderShift)
                           .clamp(0, _groupOrder.length - 1);
-
                       final currentOrder = _groupOrder.indexOf(groupIndex);
                       if (targetOrder != currentOrder) {
                         setState(() {
                           final group = _groupOrder.removeAt(currentOrder);
                           _groupOrder.insert(targetOrder, group);
-                          // Swap time ranges between adjacent cards
                           final start = targetOrder < currentOrder
                               ? targetOrder
                               : currentOrder;
@@ -382,9 +378,7 @@ class _ConditionTimePageState extends State<ConditionTimePage> {
                           for (int i = start; i < end; i++) {
                             _swapTimeRanges(i, i + 1);
                           }
-                          // Hide boundaries during reorder animation
                           _hideBoundaries = true;
-                          // Reset drag state to maintain smooth dragging
                           _dragStartOrderIndex = targetOrder;
                           _dragOriginalTop =
                               _timeRanges[groupIndex].startHour *
@@ -392,7 +386,6 @@ class _ConditionTimePageState extends State<ConditionTimePage> {
                           _dragStartGlobalY = details.globalPosition.dy;
                           _dragCardOffsetY = 0;
                         });
-                        // Show boundaries again after animation completes
                         Future.delayed(const Duration(milliseconds: 300), () {
                           if (mounted) {
                             setState(() {
@@ -416,36 +409,35 @@ class _ConditionTimePageState extends State<ConditionTimePage> {
                       opacity: 0.4,
                       child: Icon(
                         Icons.drag_indicator,
-                        size: isSmall ? 14 : 20,
+                        size: 20,
                         color: isDark ? Colors.white : _primary,
                       ),
                     ),
                   ),
                 ),
               ),
-            Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    range.name,
-                    style: TextStyle(
-                      fontSize: isSmall ? 11 : 14,
-                      fontWeight: FontWeight.w800,
-                      color: isDark ? Colors.white : _primary,
-                      letterSpacing: 0.2,
-                      height: isSmall ? 1.1 : 1.2,
+              Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      range.name,
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w800,
+                        color: isDark ? Colors.white : _primary,
+                        letterSpacing: 0.2,
+                        height: 1.2,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 1,
                     ),
-                    overflow: TextOverflow.ellipsis,
-                    maxLines: 1,
-                  ),
-                  if (!isTiny) const SizedBox(height: 2),
-                  if (!isTiny)
+                    const SizedBox(height: 4),
                     Text(
                       '${range.startHour.toString().padLeft(2, '0')}:00 — ${range.endHour.toString().padLeft(2, '0')}:00',
                       style: TextStyle(
-                        fontSize: isSmall ? 8 : 9,
+                        fontSize: 9,
                         fontWeight: FontWeight.w500,
                         color: isDark
                             ? Colors.white.withValues(alpha: 0.6)
@@ -454,10 +446,11 @@ class _ConditionTimePageState extends State<ConditionTimePage> {
                         height: 1.1,
                       ),
                     ),
-                ],
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -466,13 +459,10 @@ class _ConditionTimePageState extends State<ConditionTimePage> {
   void _swapTimeRanges(int orderIndexA, int orderIndexB) {
     final groupA = _groupOrder[orderIndexA];
     final groupB = _groupOrder[orderIndexB];
-
     final tempStart = _timeRanges[groupA].startHour;
     final tempEnd = _timeRanges[groupA].endHour;
-
     _timeRanges[groupA].startHour = _timeRanges[groupB].startHour;
     _timeRanges[groupA].endHour = _timeRanges[groupB].endHour;
-
     _timeRanges[groupB].startHour = tempStart;
     _timeRanges[groupB].endHour = tempEnd;
   }
@@ -509,13 +499,11 @@ class _ConditionTimePageState extends State<ConditionTimePage> {
                 final targetHour = (localPos.dy / hourIntervalHeight)
                     .round()
                     .clamp(0, 24);
-
                 final prevCard = _timeRanges[_groupOrder[boundaryIndex]];
                 final nextCard = _timeRanges[_groupOrder[boundaryIndex + 1]];
                 final minHour = prevCard.startHour + 1;
                 final maxHour = nextCard.endHour - 1;
                 final clampedHour = targetHour.clamp(minHour, maxHour);
-
                 if (clampedHour != range.endHour) {
                   setState(() {
                     prevCard.endHour = clampedHour;
