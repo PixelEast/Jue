@@ -716,7 +716,11 @@ class _ConditionPageState extends State<ConditionPage> {
       left: 0,
       right: 0,
       height: cardHeight,
-      child: Container(
+      child: AnimatedContainer(
+        duration: isDragging
+            ? Duration.zero
+            : const Duration(milliseconds: 300),
+        curve: Curves.easeInOutCubic,
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
         decoration: BoxDecoration(
           color: isDragging ? bgColor.withValues(alpha: 0.3) : bgColor,
@@ -796,12 +800,26 @@ class _ConditionPageState extends State<ConditionPage> {
                       _dragCardOffsetY = 0;
                     });
                   },
-                  child: Opacity(
+                  child: AnimatedOpacity(
+                    duration: isDragging
+                        ? Duration.zero
+                        : const Duration(milliseconds: 300),
+                    curve: Curves.easeInOutCubic,
                     opacity: 0.4,
-                    child: Icon(
-                      Icons.drag_indicator,
-                      size: 26,
-                      color: isDark ? Colors.white : _primary,
+                    child: AnimatedSwitcher(
+                      duration: isDragging
+                          ? Duration.zero
+                          : const Duration(milliseconds: 300),
+                      switchInCurve: Curves.easeInOutCubic,
+                      switchOutCurve: Curves.easeInOutCubic,
+                      transitionBuilder: (child, animation) =>
+                          FadeTransition(opacity: animation, child: child),
+                      child: Icon(
+                        Icons.drag_indicator,
+                        key: ValueKey<Color>(isDark ? Colors.white : _primary),
+                        size: 26,
+                        color: isDark ? Colors.white : _primary,
+                      ),
                     ),
                   ),
                 ),
@@ -812,8 +830,11 @@ class _ConditionPageState extends State<ConditionPage> {
                 mainAxisSize: MainAxisSize.min,
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text(
-                    range.name,
+                  AnimatedDefaultTextStyle(
+                    duration: isDragging
+                        ? Duration.zero
+                        : const Duration(milliseconds: 300),
+                    curve: Curves.easeInOutCubic,
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w800,
@@ -821,12 +842,18 @@ class _ConditionPageState extends State<ConditionPage> {
                       letterSpacing: 0.2,
                       height: 1.2,
                     ),
-                    overflow: TextOverflow.ellipsis,
-                    maxLines: 1,
+                    child: Text(
+                      range.name,
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 1,
+                    ),
                   ),
                   const SizedBox(height: 4),
-                  Text(
-                    '${range.startHour.toString().padLeft(2, '0')}:00 — ${range.endHour.toString().padLeft(2, '0')}:00',
+                  AnimatedDefaultTextStyle(
+                    duration: isDragging
+                        ? Duration.zero
+                        : const Duration(milliseconds: 300),
+                    curve: Curves.easeInOutCubic,
                     style: TextStyle(
                       fontSize: 9,
                       fontWeight: FontWeight.w500,
@@ -835,6 +862,9 @@ class _ConditionPageState extends State<ConditionPage> {
                           : _secondary,
                       letterSpacing: 1.5,
                       height: 1.1,
+                    ),
+                    child: Text(
+                      '${range.startHour.toString().padLeft(2, '0')}:00 — ${range.endHour.toString().padLeft(2, '0')}:00',
                     ),
                   ),
                 ],
