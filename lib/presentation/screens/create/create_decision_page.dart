@@ -15,6 +15,7 @@ class _CreateDecisionPageState extends State<CreateDecisionPage> {
   final List<OptionGroupData> _optionGroups = [];
   final List<bool> _groupDeleting = [];
   bool _showLogicCondition = false;
+  String _logicConditionType = 'time';
   final DecisionRepository _decisionRepo = DecisionRepository();
   final ScrollController _scrollController = ScrollController();
   final Map<int, GlobalKey> _groupKeys = {};
@@ -68,10 +69,19 @@ class _CreateDecisionPageState extends State<CreateDecisionPage> {
                   ? WeightMode.nextRemove
                   : WeightMode.lowerWeight,
               conditionSummary: group.conditionSummary,
+              startHour: group.startHour,
+              endHour: group.endHour,
+              latitude: group.latitude,
+              longitude: group.longitude,
+              radiusMeters: group.radiusMeters,
+              isDefaultGroup: group.isDefaultGroup,
             ),
           );
           _groupDeleting.add(false);
         }
+        _logicConditionType = draft.logicConditionType == 'none'
+            ? 'time'
+            : draft.logicConditionType;
         if (_optionGroups.length >= 2) _showLogicCondition = true;
         setState(() {});
       } else {
@@ -89,6 +99,8 @@ class _CreateDecisionPageState extends State<CreateDecisionPage> {
     final decision = Decision(
       id: 'draft',
       theme: _themeController.text.trim(),
+      isLogicConditionEnabled: _showLogicCondition,
+      logicConditionType: _logicConditionType,
       isDraft: true,
       draftUpdatedAt: DateTime.now(),
       optionGroups: _optionGroups
@@ -109,6 +121,12 @@ class _CreateDecisionPageState extends State<CreateDecisionPage> {
               dynamicWeightEnabled: g.dynamicWeightEnabled,
               dynamicWeightMode: g.weightMode.name,
               conditionSummary: g.conditionSummary,
+              startHour: g.startHour,
+              endHour: g.endHour,
+              latitude: g.latitude,
+              longitude: g.longitude,
+              radiusMeters: g.radiusMeters,
+              isDefaultGroup: g.isDefaultGroup,
             ),
           )
           .toList(),
@@ -236,6 +254,8 @@ class _CreateDecisionPageState extends State<CreateDecisionPage> {
     final decision = Decision(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
       theme: _themeController.text.trim(),
+      isLogicConditionEnabled: _showLogicCondition,
+      logicConditionType: _logicConditionType,
       optionGroups: _optionGroups
           .map(
             (g) => OptionGroup(
@@ -253,6 +273,13 @@ class _CreateDecisionPageState extends State<CreateDecisionPage> {
                   .toList(),
               dynamicWeightEnabled: g.dynamicWeightEnabled,
               dynamicWeightMode: g.weightMode.name,
+              conditionSummary: g.conditionSummary,
+              startHour: g.startHour,
+              endHour: g.endHour,
+              latitude: g.latitude,
+              longitude: g.longitude,
+              radiusMeters: g.radiusMeters,
+              isDefaultGroup: g.isDefaultGroup,
             ),
           )
           .toList(),
@@ -265,28 +292,60 @@ class _CreateDecisionPageState extends State<CreateDecisionPage> {
   Future<void> _navigateToCondition() async {
     final groupNames = _optionGroups.map((g) => g.name).toList();
     final existingConditions = <String, String>{};
+    final existingGroupData = <String, Map<String, dynamic>>{};
     for (var group in _optionGroups) {
       if (group.conditionSummary.isNotEmpty) {
         existingConditions[group.name] = group.conditionSummary;
       }
+      existingGroupData[group.name] = {
+        'startHour': group.startHour,
+        'endHour': group.endHour,
+        'latitude': group.latitude,
+        'longitude': group.longitude,
+        'radiusMeters': group.radiusMeters,
+        'isDefaultGroup': group.isDefaultGroup,
+      };
     }
-    final result = await Navigator.push<Map<String, String>>(
+    final result = await Navigator.push<Map<String, dynamic>>(
       context,
       MaterialPageRoute(
         builder: (context) => ConditionPage(
           optionGroupNames: groupNames,
           existingConditions: existingConditions,
+          existingGroupData: existingGroupData,
+          initialMode: _logicConditionType,
         ),
       ),
     );
     if (result != null && mounted) {
+      final summaries =
+          (result['summaries'] as Map?)?.cast<String, String>() ?? {};
+      final groupData =
+          (result['groupData'] as Map?)?.cast<String, Map<String, dynamic>>() ??
+          {};
+      final selectedMode =
+          (result['selectedMode'] as String?) ?? _logicConditionType;
       setState(() {
-        for (var entry in result.entries) {
+        _logicConditionType = selectedMode;
+        for (var entry in summaries.entries) {
           final groupIndex = _optionGroups.indexWhere(
             (g) => g.name == entry.key,
           );
           if (groupIndex != -1) {
             _optionGroups[groupIndex].conditionSummary = entry.value;
+            final data = groupData[entry.key];
+            if (data != null) {
+              _optionGroups[groupIndex].startHour = data['startHour'] as int?;
+              _optionGroups[groupIndex].endHour = data['endHour'] as int?;
+              _optionGroups[groupIndex].latitude = (data['latitude'] as num?)
+                  ?.toDouble();
+              _optionGroups[groupIndex].longitude = (data['longitude'] as num?)
+                  ?.toDouble();
+              _optionGroups[groupIndex].radiusMeters =
+                  (data['radiusMeters'] as num?)?.toDouble();
+              _optionGroups[groupIndex].isDefaultGroup =
+                  data['isDefaultGroup'] as bool? ?? false;
+            }
           }
         }
       });
@@ -1153,12 +1212,24 @@ class OptionGroupData {
   bool dynamicWeightEnabled;
   WeightMode weightMode;
   String conditionSummary;
+  int? startHour;
+  int? endHour;
+  double? latitude;
+  double? longitude;
+  double? radiusMeters;
+  bool isDefaultGroup;
   OptionGroupData({
     required this.name,
     required this.options,
     this.dynamicWeightEnabled = true,
     this.weightMode = WeightMode.lowerWeight,
     this.conditionSummary = '',
+    this.startHour,
+    this.endHour,
+    this.latitude,
+    this.longitude,
+    this.radiusMeters,
+    this.isDefaultGroup = false,
   });
 }
 

@@ -49,6 +49,9 @@ dependencies:
   intl: ^0.18.1
   permission_handler: ^11.0.1
   shared_preferences: ^2.2.2
+  geolocator: ^13.0.1
+  geocoding: ^3.0.0
+  http: ^1.2.2
   
   # 图表
   fl_chart: ^0.65.0
