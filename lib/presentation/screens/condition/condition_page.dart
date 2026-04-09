@@ -46,7 +46,7 @@ class _ConditionPageState extends State<ConditionPage>
   final Map<int, MapController> _mapControllers = {};
   final Map<int, LatLng> _mapCenters = {};
   final Map<int, String> _placeLabels = {};
-  bool _locationModeReady = false;
+  final Map<int, bool> _locationLoading = {};
   final Map<int, AnimationController> _zoomControllers = {};
   final Map<int, double> _animatedZooms = {};
   final GlobalKey _defaultGroupFieldKey = GlobalKey();
@@ -141,6 +141,7 @@ class _ConditionPageState extends State<ConditionPage>
         duration: const Duration(milliseconds: 180),
       );
       _animatedZooms[i] = _getZoomLevel(defaultRadius);
+      _locationLoading[i] = true;
       _placeLabels[i] = '获取中';
     }
 
@@ -163,6 +164,7 @@ class _ConditionPageState extends State<ConditionPage>
           );
           _mapCenters[i] = LatLng(latitude, longitude);
           _animatedZooms[i] = _getZoomLevel(radius);
+          _locationLoading[i] = false;
         }
         if (isDefault) {
           _selectedDefaultGroupIndex = i;
@@ -188,12 +190,10 @@ class _ConditionPageState extends State<ConditionPage>
     }
 
     if (hasAnySavedLocation) {
-      _locationModeReady = true;
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _refreshAllPlaceLabelsSequentially();
       });
     } else {
-      _locationModeReady = false;
       _initializeCurrentLocationDefaults();
     }
   }
@@ -203,8 +203,8 @@ class _ConditionPageState extends State<ConditionPage>
     if (!serviceEnabled) {
       for (int i = 0; i < widget.optionGroupNames.length; i++) {
         _placeLabels[i] = '请开启定位';
+        _locationLoading[i] = false;
       }
-      _locationModeReady = true;
       if (mounted) setState(() {});
       return;
     }
@@ -217,8 +217,8 @@ class _ConditionPageState extends State<ConditionPage>
         permission == LocationPermission.deniedForever) {
       for (int i = 0; i < widget.optionGroupNames.length; i++) {
         _placeLabels[i] = '定位未授权';
+        _locationLoading[i] = false;
       }
-      _locationModeReady = true;
       if (mounted) setState(() {});
       return;
     }
@@ -248,9 +248,9 @@ class _ConditionPageState extends State<ConditionPage>
           hasSavedCustomCenter ? existing.latitude : lat,
           hasSavedCustomCenter ? existing.longitude : lng,
         );
+        _locationLoading[i] = false;
       }
 
-      _locationModeReady = true;
       if (mounted) {
         setState(() {});
         WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -260,8 +260,8 @@ class _ConditionPageState extends State<ConditionPage>
     } catch (_) {
       for (int i = 0; i < widget.optionGroupNames.length; i++) {
         _placeLabels[i] = '当前位置';
+        _locationLoading[i] = false;
       }
-      _locationModeReady = true;
       if (mounted) setState(() {});
     }
   }
@@ -286,6 +286,7 @@ class _ConditionPageState extends State<ConditionPage>
         if (mounted) {
           setState(() {
             _placeLabels[index] = label;
+            _locationLoading[index] = false;
           });
         }
         return;
@@ -307,17 +308,20 @@ class _ConditionPageState extends State<ConditionPage>
         if (mounted) {
           setState(() {
             _placeLabels[index] = label;
+            _locationLoading[index] = false;
           });
         }
       } else if (mounted) {
         setState(() {
           _placeLabels[index] = '当前位置';
+          _locationLoading[index] = false;
         });
       }
     } catch (_) {
       if (mounted) {
         setState(() {
           _placeLabels[index] = '当前位置';
+          _locationLoading[index] = false;
         });
       }
     }
@@ -404,13 +408,13 @@ class _ConditionPageState extends State<ConditionPage>
       candidate = segments.last;
     }
 
-    final compactParts = plainPart
-        .split(RegExp(r'省|市|区|县'))
-        .map((e) => e.trim())
-        .where((e) => e.isNotEmpty)
-        .toList();
-    if (compactParts.isNotEmpty) {
-      candidate = compactParts.last;
+    final adminPrefixPattern = RegExp(r'^(.*省)?(.*市)?(.*?(区|县))');
+    final adminMatch = adminPrefixPattern.firstMatch(plainPart);
+    if (adminMatch != null) {
+      final trimmed = plainPart.substring(adminMatch.end).trim();
+      if (trimmed.isNotEmpty) {
+        candidate = trimmed;
+      }
     }
 
     candidate = candidate.trim();
@@ -454,8 +458,8 @@ class _ConditionPageState extends State<ConditionPage>
     final filtered = candidates.where((e) {
       return !(e.endsWith('省') ||
           e.endsWith('市') ||
-          e.endsWith('区') ||
-          e.endsWith('县'));
+          ((e.endsWith('区') || e.endsWith('县')) &&
+              !(e.endsWith('小区') || e.endsWith('社区'))));
     }).toList();
 
     if (filtered.isNotEmpty) {
@@ -1082,33 +1086,6 @@ class _ConditionPageState extends State<ConditionPage>
   }
 
   Widget _buildLocationContent() {
-    if (!_locationModeReady) {
-      return Container(
-        width: double.infinity,
-        padding: const EdgeInsets.symmetric(vertical: 48),
-        alignment: Alignment.center,
-        child: const Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            SizedBox(
-              width: 24,
-              height: 24,
-              child: CircularProgressIndicator(strokeWidth: 2),
-            ),
-            SizedBox(height: 16),
-            Text(
-              '正在获取当前位置...',
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-                color: _secondary,
-              ),
-            ),
-          ],
-        ),
-      );
-    }
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -1236,9 +1213,11 @@ class _ConditionPageState extends State<ConditionPage>
   Widget _buildLocationCard(int index, {required bool isLast}) {
     final location = _locations[index]!;
     final groupName = widget.optionGroupNames[index];
-    final placeLabel = (_placeLabels[index]?.trim().isNotEmpty ?? false)
-        ? _placeLabels[index]!
-        : '当前位置';
+    final placeLabel = (_locationLoading[index] ?? false)
+        ? '载入中'
+        : ((_placeLabels[index]?.trim().isNotEmpty ?? false)
+              ? _placeLabels[index]!
+              : '当前位置');
 
     return Container(
       margin: EdgeInsets.only(bottom: isLast ? 0 : 24),
@@ -1279,7 +1258,9 @@ class _ConditionPageState extends State<ConditionPage>
                     maxZoom: 19,
                     enableScrollWheel: false,
                     enableMultiFingerGestureRace: false,
-                    interactiveFlags: InteractiveFlag.drag,
+                    interactiveFlags: (_locationLoading[index] ?? false)
+                        ? InteractiveFlag.none
+                        : InteractiveFlag.drag,
                     onPositionChanged: (position, hasGesture) {
                       if (hasGesture && position.center != null) {
                         setState(() {
@@ -1309,6 +1290,36 @@ class _ConditionPageState extends State<ConditionPage>
                 Positioned.fill(
                   child: IgnorePointer(
                     child: CustomPaint(painter: _MapGridPainter()),
+                  ),
+                ),
+                AnimatedOpacity(
+                  opacity: (_locationLoading[index] ?? false) ? 1 : 0,
+                  duration: const Duration(milliseconds: 220),
+                  child: IgnorePointer(
+                    ignoring: !(_locationLoading[index] ?? false),
+                    child: Container(
+                      color: Colors.white.withValues(alpha: 0.72),
+                      alignment: Alignment.center,
+                      child: const Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          SizedBox(
+                            width: 24,
+                            height: 24,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          ),
+                          SizedBox(height: 12),
+                          Text(
+                            '载入中.',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                              color: _secondary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
                 ),
                 Positioned(

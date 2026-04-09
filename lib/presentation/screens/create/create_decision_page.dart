@@ -146,19 +146,45 @@ class _CreateDecisionPageState extends State<CreateDecisionPage> {
       final newIndex = _optionGroups.length;
       if (_optionGroups.length + 1 >= 2 && !_showLogicCondition) {
         _showLogicCondition = true;
-        _redistributeTimeConditions();
+        if (_logicConditionType == 'time') {
+          _redistributeTimeConditions();
+        }
       }
       setState(() {
+        final shouldInheritLocation =
+            _showLogicCondition && _logicConditionType == 'location';
+        OptionGroupData? firstLocatedGroup;
+        for (final group in _optionGroups) {
+          if (group.latitude != null && group.longitude != null) {
+            firstLocatedGroup = group;
+            break;
+          }
+        }
         _optionGroups.add(
           OptionGroupData(
             name: '选项组 ${_optionGroups.length + 1}',
             options: [OptionData(name: '选项 1')],
+            conditionSummary: _logicConditionType == 'time'
+                ? ''
+                : (firstLocatedGroup?.conditionSummary.isNotEmpty == true
+                      ? firstLocatedGroup!.conditionSummary
+                      : '位置范围: 当前位置'),
+            latitude: shouldInheritLocation
+                ? firstLocatedGroup?.latitude
+                : null,
+            longitude: shouldInheritLocation
+                ? firstLocatedGroup?.longitude
+                : null,
+            radiusMeters: shouldInheritLocation
+                ? (firstLocatedGroup?.radiusMeters ?? 200)
+                : null,
+            isDefaultGroup: false,
           ),
         );
         _groupDeleting.add(false);
         _groupKeys[newIndex] = GlobalKey();
       });
-      if (_showLogicCondition) {
+      if (_showLogicCondition && _logicConditionType == 'time') {
         _redistributeTimeConditions();
       }
       _saveDraft();
@@ -202,7 +228,7 @@ class _CreateDecisionPageState extends State<CreateDecisionPage> {
           _groupDeleting.removeAt(index);
           if (_optionGroups.length < 2) {
             _showLogicCondition = false;
-          } else {
+          } else if (_logicConditionType == 'time') {
             _redistributeTimeConditions();
           }
         });
