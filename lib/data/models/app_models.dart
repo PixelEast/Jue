@@ -55,6 +55,7 @@ class OptionGroup {
   double? radiusMeters;
   bool isDefaultGroup;
   String conditionSummary;
+  String locationLabel;
 
   OptionGroup({
     required this.id,
@@ -69,6 +70,7 @@ class OptionGroup {
     this.radiusMeters,
     this.isDefaultGroup = false,
     this.conditionSummary = '',
+    this.locationLabel = '',
   });
 
   Map<String, dynamic> toJson() => {
@@ -84,6 +86,7 @@ class OptionGroup {
     'radiusMeters': radiusMeters,
     'isDefaultGroup': isDefaultGroup,
     'conditionSummary': conditionSummary,
+    'locationLabel': locationLabel,
   };
 
   factory OptionGroup.fromJson(Map<String, dynamic> json) => OptionGroup(
@@ -101,6 +104,7 @@ class OptionGroup {
     radiusMeters: (json['radiusMeters'] as num?)?.toDouble(),
     isDefaultGroup: json['isDefaultGroup'] as bool? ?? false,
     conditionSummary: json['conditionSummary'] as String? ?? '',
+    locationLabel: json['locationLabel'] as String? ?? '',
   );
 }
 

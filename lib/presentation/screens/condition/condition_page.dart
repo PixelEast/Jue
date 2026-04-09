@@ -44,11 +44,17 @@ class _ConditionPageState extends State<ConditionPage>
   int _selectedDefaultGroupIndex = 0;
   final Map<int, LocationData> _locations = {};
   final Map<int, MapController> _mapControllers = {};
+  final Map<int, bool> _mapReady = {};
   final Map<int, LatLng> _mapCenters = {};
   final Map<int, String> _placeLabels = {};
   final Map<int, bool> _locationLoading = {};
   final Map<int, AnimationController> _zoomControllers = {};
   final Map<int, double> _animatedZooms = {};
+  bool _hasAnySavedLocation = false;
+  String? _locationInitErrorMessage;
+  bool _pendingInitialMapSync = false;
+  bool _locationServiceEnabled = true;
+  bool _locationPermissionGranted = true;
   final GlobalKey _defaultGroupFieldKey = GlobalKey();
   final ValueNotifier<bool> _defaultGroupDropdownOpen = ValueNotifier(false);
   OverlayEntry? _defaultGroupDropdownEntry;
@@ -61,6 +67,9 @@ class _ConditionPageState extends State<ConditionPage>
   static const Color _surface = Color(0xFFF9F9F9);
   static const Color _secondary = Color(0xFF5E5E5E);
   static const Color _outlineVariant = Color(0xFFC6C6C6);
+
+  bool get _isLocationUnavailable =>
+      !_locationServiceEnabled || !_locationPermissionGranted;
 
   @override
   void initState() {
@@ -126,7 +135,8 @@ class _ConditionPageState extends State<ConditionPage>
 
   void _initializeLocations() {
     const defaultRadius = 200.0;
-    var hasAnySavedLocation = false;
+    _hasAnySavedLocation = false;
+    _locationInitErrorMessage = null;
 
     for (int i = 0; i < widget.optionGroupNames.length; i++) {
       _locations[i] = LocationData(
@@ -136,6 +146,7 @@ class _ConditionPageState extends State<ConditionPage>
       );
       _mapCenters[i] = const LatLng(0, 0);
       _mapControllers[i] = MapController();
+      _mapReady[i] = false;
       _zoomControllers[i] = AnimationController(
         vsync: this,
         duration: const Duration(milliseconds: 180),
@@ -154,9 +165,10 @@ class _ConditionPageState extends State<ConditionPage>
         final longitude = (groupData['longitude'] as num?)?.toDouble();
         final radius = (groupData['radiusMeters'] as num?)?.toDouble();
         final isDefault = groupData['isDefaultGroup'] as bool? ?? false;
+        final locationLabel = groupData['locationLabel'] as String? ?? '';
 
         if (latitude != null && longitude != null && radius != null) {
-          hasAnySavedLocation = true;
+          _hasAnySavedLocation = true;
           _locations[i] = LocationData(
             latitude: latitude,
             longitude: longitude,
@@ -165,6 +177,9 @@ class _ConditionPageState extends State<ConditionPage>
           _mapCenters[i] = LatLng(latitude, longitude);
           _animatedZooms[i] = _getZoomLevel(radius);
           _locationLoading[i] = false;
+          if (locationLabel.isNotEmpty) {
+            _placeLabels[i] = locationLabel;
+          }
         }
         if (isDefault) {
           _selectedDefaultGroupIndex = i;
@@ -189,21 +204,41 @@ class _ConditionPageState extends State<ConditionPage>
       }
     }
 
-    if (hasAnySavedLocation) {
+    _checkLocationCapabilityAndInitialize();
+  }
+
+  Future<void> _checkLocationCapabilityAndInitialize() async {
+    final serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    _locationServiceEnabled = serviceEnabled;
+
+    var permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+    }
+    _locationPermissionGranted =
+        permission != LocationPermission.denied &&
+        permission != LocationPermission.deniedForever;
+
+    if (_hasAnySavedLocation) {
+      if (mounted) setState(() {});
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _refreshAllPlaceLabelsSequentially();
       });
-    } else {
-      _initializeCurrentLocationDefaults();
+      return;
     }
+
+    await _initializeCurrentLocationDefaults();
   }
 
   Future<void> _initializeCurrentLocationDefaults() async {
-    final serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    final serviceEnabled = _locationServiceEnabled;
     if (!serviceEnabled) {
       for (int i = 0; i < widget.optionGroupNames.length; i++) {
         _placeLabels[i] = '请开启定位';
         _locationLoading[i] = false;
+      }
+      if (!_hasAnySavedLocation) {
+        _locationInitErrorMessage = '请开启定位服务后再试';
       }
       if (mounted) setState(() {});
       return;
@@ -212,6 +247,9 @@ class _ConditionPageState extends State<ConditionPage>
     var permission = await Geolocator.checkPermission();
     if (permission == LocationPermission.denied) {
       permission = await Geolocator.requestPermission();
+      _locationPermissionGranted =
+          permission != LocationPermission.denied &&
+          permission != LocationPermission.deniedForever;
     }
     if (permission == LocationPermission.denied ||
         permission == LocationPermission.deniedForever) {
@@ -219,18 +257,32 @@ class _ConditionPageState extends State<ConditionPage>
         _placeLabels[i] = '定位未授权';
         _locationLoading[i] = false;
       }
+      if (!_hasAnySavedLocation) {
+        _locationInitErrorMessage = '请开启定位权限后再试';
+      }
       if (mounted) setState(() {});
       return;
     }
 
     try {
-      Position? position = await Geolocator.getLastKnownPosition();
-      position ??= await Geolocator.getCurrentPosition(
-        locationSettings: const LocationSettings(
-          accuracy: LocationAccuracy.medium,
-          timeLimit: Duration(seconds: 12),
-        ),
-      );
+      _locationInitErrorMessage = null;
+      Position? position;
+      try {
+        position = await Geolocator.getCurrentPosition(
+          locationSettings: const LocationSettings(
+            accuracy: LocationAccuracy.high,
+            timeLimit: Duration(seconds: 12),
+          ),
+        );
+      } catch (_) {
+        position = await Geolocator.getLastKnownPosition();
+      }
+
+      if (position == null ||
+          position.latitude.abs() < 0.0001 &&
+              position.longitude.abs() < 0.0001) {
+        throw Exception('Invalid current location');
+      }
 
       final lat = position.latitude;
       final lng = position.longitude;
@@ -252,8 +304,10 @@ class _ConditionPageState extends State<ConditionPage>
       }
 
       if (mounted) {
+        _pendingInitialMapSync = true;
         setState(() {});
         WidgetsBinding.instance.addPostFrameCallback((_) {
+          _syncAllReadyMapsToCenters();
           _refreshAllPlaceLabelsSequentially();
         });
       }
@@ -262,17 +316,36 @@ class _ConditionPageState extends State<ConditionPage>
         _placeLabels[i] = '当前位置';
         _locationLoading[i] = false;
       }
+      _locationInitErrorMessage = null;
       if (mounted) setState(() {});
     }
   }
 
   Future<void> _refreshAllPlaceLabelsSequentially() async {
+    if (_isLocationUnavailable) return;
     for (int i = 0; i < widget.optionGroupNames.length; i++) {
       await _refreshPlaceLabel(i);
     }
   }
 
+  void _syncAllReadyMapsToCenters() {
+    for (int i = 0; i < widget.optionGroupNames.length; i++) {
+      final center = _mapCenters[i];
+      if ((_mapReady[i] ?? false) &&
+          center != null &&
+          center.latitude.abs() > 0.0001 &&
+          center.longitude.abs() > 0.0001) {
+        _mapControllers[i]?.move(
+          center,
+          _animatedZooms[i] ?? _getZoomLevel(_locations[i]!.radius),
+        );
+      }
+    }
+    _pendingInitialMapSync = false;
+  }
+
   Future<void> _refreshPlaceLabel(int index) async {
+    if (_isLocationUnavailable) return;
     final location = _locations[index];
     if (location == null) return;
     try {
@@ -840,79 +913,149 @@ class _ConditionPageState extends State<ConditionPage>
                                 ),
                               ],
                             ),
-                            child: Row(
+                            child: Stack(
                               children: [
-                                Expanded(
-                                  child: GestureDetector(
-                                    onTap: () =>
-                                        setState(() => _selectedMode = 0),
+                                AnimatedAlign(
+                                  duration: const Duration(milliseconds: 240),
+                                  curve: Curves.easeInOutCubic,
+                                  alignment: _selectedMode == 0
+                                      ? Alignment.centerLeft
+                                      : Alignment.centerRight,
+                                  child: FractionallySizedBox(
+                                    widthFactor: 0.5,
                                     child: Container(
                                       margin: const EdgeInsets.all(6),
                                       decoration: BoxDecoration(
-                                        color: _selectedMode == 0
-                                            ? _primary
-                                            : Colors.transparent,
+                                        color: _primary,
                                         borderRadius: BorderRadius.circular(
                                           999,
-                                        ),
-                                      ),
-                                      child: Center(
-                                        child: Text(
-                                          '时间范围',
-                                          style: TextStyle(
-                                            fontSize: 13,
-                                            fontWeight: FontWeight.w800,
-                                            color: _selectedMode == 0
-                                                ? Colors.white
-                                                : _secondary,
-                                            letterSpacing: 0.2,
-                                          ),
                                         ),
                                       ),
                                     ),
                                   ),
                                 ),
-                                Expanded(
-                                  child: GestureDetector(
-                                    onTap: () =>
-                                        setState(() => _selectedMode = 1),
-                                    child: Container(
-                                      margin: const EdgeInsets.all(6),
-                                      decoration: BoxDecoration(
-                                        color: _selectedMode == 1
-                                            ? _primary
-                                            : Colors.transparent,
-                                        borderRadius: BorderRadius.circular(
-                                          999,
-                                        ),
-                                      ),
-                                      child: Center(
-                                        child: Text(
-                                          '位置范围',
-                                          style: TextStyle(
-                                            fontSize: 13,
-                                            fontWeight: FontWeight.w800,
-                                            color: _selectedMode == 1
-                                                ? Colors.white
-                                                : _secondary,
-                                            letterSpacing: 0.2,
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: GestureDetector(
+                                        behavior: HitTestBehavior.opaque,
+                                        onTap: () =>
+                                            setState(() => _selectedMode = 0),
+                                        child: Container(
+                                          alignment: Alignment.center,
+                                          child: AnimatedDefaultTextStyle(
+                                            duration: const Duration(
+                                              milliseconds: 200,
+                                            ),
+                                            curve: Curves.easeInOutCubic,
+                                            style: TextStyle(
+                                              fontSize: 13,
+                                              fontWeight: FontWeight.w800,
+                                              color: _selectedMode == 0
+                                                  ? Colors.white
+                                                  : _secondary,
+                                              letterSpacing: 0.2,
+                                            ),
+                                            child: const Text('时间范围'),
                                           ),
                                         ),
                                       ),
                                     ),
-                                  ),
+                                    Expanded(
+                                      child: GestureDetector(
+                                        behavior: HitTestBehavior.opaque,
+                                        onTap: () =>
+                                            setState(() => _selectedMode = 1),
+                                        child: Container(
+                                          alignment: Alignment.center,
+                                          child: AnimatedDefaultTextStyle(
+                                            duration: const Duration(
+                                              milliseconds: 200,
+                                            ),
+                                            curve: Curves.easeInOutCubic,
+                                            style: TextStyle(
+                                              fontSize: 13,
+                                              fontWeight: FontWeight.w800,
+                                              color: _selectedMode == 1
+                                                  ? Colors.white
+                                                  : _secondary,
+                                              letterSpacing: 0.2,
+                                            ),
+                                            child: const Text('位置范围'),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ],
                             ),
                           ),
                           const SizedBox(height: 32),
-                          if (_selectedMode == 0) ...[
-                            _buildTimeline(),
-                          ] else ...[
-                            _buildLocationContent(),
-                          ],
-                          const SizedBox(height: 48),
-                          _buildFooterButton(),
+                          AnimatedSize(
+                            duration: const Duration(milliseconds: 220),
+                            curve: Curves.easeOutCubic,
+                            alignment: Alignment.topCenter,
+                            child: AnimatedSwitcher(
+                              duration: const Duration(milliseconds: 220),
+                              switchInCurve: Curves.easeOutCubic,
+                              switchOutCurve: Curves.easeInOutCubic,
+                              layoutBuilder: (currentChild, previousChildren) {
+                                return Stack(
+                                  alignment: Alignment.topCenter,
+                                  children: currentChild == null
+                                      ? [...previousChildren]
+                                      : [...previousChildren, currentChild],
+                                );
+                              },
+                              transitionBuilder: (child, animation) {
+                                final isTime =
+                                    child.key == const ValueKey('time-mode');
+                                final offsetTween = Tween<Offset>(
+                                  begin: isTime
+                                      ? const Offset(-0.05, 0)
+                                      : const Offset(0.05, 0),
+                                  end: Offset.zero,
+                                );
+                                return ClipRect(
+                                  child: FadeTransition(
+                                    opacity: animation,
+                                    child: SlideTransition(
+                                      position: offsetTween.animate(animation),
+                                      child: child,
+                                    ),
+                                  ),
+                                );
+                              },
+                              child: _selectedMode == 0
+                                  ? KeyedSubtree(
+                                      key: const ValueKey('time-mode'),
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          _buildTimeline(),
+                                          const SizedBox(height: 48),
+                                          _buildFooterButton(),
+                                        ],
+                                      ),
+                                    )
+                                  : KeyedSubtree(
+                                      key: const ValueKey('location-mode'),
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          _buildLocationContent(),
+                                          if (!_isLocationUnavailable) ...[
+                                            const SizedBox(height: 48),
+                                            _buildFooterButton(),
+                                          ],
+                                        ],
+                                      ),
+                                    ),
+                            ),
+                          ),
                         ],
                       ),
                     ),
@@ -1086,6 +1229,34 @@ class _ConditionPageState extends State<ConditionPage>
   }
 
   Widget _buildLocationContent() {
+    if (_locationInitErrorMessage != null && !_hasAnySavedLocation) {
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(vertical: 64),
+        alignment: Alignment.center,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(
+              Icons.location_off_outlined,
+              size: 28,
+              color: Color(0xFF9E9E9E),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              _locationInitErrorMessage!,
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w500,
+                color: Color(0xFF9E9E9E),
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      );
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -1218,6 +1389,11 @@ class _ConditionPageState extends State<ConditionPage>
         : ((_placeLabels[index]?.trim().isNotEmpty ?? false)
               ? _placeLabels[index]!
               : '当前位置');
+    final isLoadingLocation = _locationLoading[index] ?? false;
+    final isLocationInteractionLocked =
+        !isLoadingLocation &&
+        (_hasAnySavedLocation &&
+            (!_locationServiceEnabled || !_locationPermissionGranted));
 
     return Container(
       margin: EdgeInsets.only(bottom: isLast ? 0 : 24),
@@ -1258,9 +1434,30 @@ class _ConditionPageState extends State<ConditionPage>
                     maxZoom: 19,
                     enableScrollWheel: false,
                     enableMultiFingerGestureRace: false,
-                    interactiveFlags: (_locationLoading[index] ?? false)
+                    interactiveFlags:
+                        isLoadingLocation || isLocationInteractionLocked
                         ? InteractiveFlag.none
                         : InteractiveFlag.drag,
+                    onMapReady: () {
+                      _mapReady[index] = true;
+                      final center = _mapCenters[index];
+                      if (center != null &&
+                          center.latitude != 0 &&
+                          center.longitude != 0) {
+                        _mapControllers[index]?.move(
+                          center,
+                          _animatedZooms[index] ??
+                              _getZoomLevel(location.radius),
+                        );
+                      }
+                      if (_pendingInitialMapSync) {
+                        WidgetsBinding.instance.addPostFrameCallback((_) {
+                          if (mounted) {
+                            _syncAllReadyMapsToCenters();
+                          }
+                        });
+                      }
+                    },
                     onPositionChanged: (position, hasGesture) {
                       if (hasGesture && position.center != null) {
                         setState(() {
@@ -1274,7 +1471,8 @@ class _ConditionPageState extends State<ConditionPage>
                       }
                     },
                     onMapEvent: (event) {
-                      if (event.source == MapEventSource.dragEnd) {
+                      if (!_isLocationUnavailable &&
+                          event.source == MapEventSource.dragEnd) {
                         _refreshPlaceLabel(index);
                       }
                     },
@@ -1293,10 +1491,10 @@ class _ConditionPageState extends State<ConditionPage>
                   ),
                 ),
                 AnimatedOpacity(
-                  opacity: (_locationLoading[index] ?? false) ? 1 : 0,
+                  opacity: isLoadingLocation ? 1 : 0,
                   duration: const Duration(milliseconds: 220),
                   child: IgnorePointer(
-                    ignoring: !(_locationLoading[index] ?? false),
+                    ignoring: !isLoadingLocation,
                     child: Container(
                       color: Colors.white.withValues(alpha: 0.72),
                       alignment: Alignment.center,
@@ -1306,7 +1504,10 @@ class _ConditionPageState extends State<ConditionPage>
                           SizedBox(
                             width: 24,
                             height: 24,
-                            child: CircularProgressIndicator(strokeWidth: 2),
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: _secondary,
+                            ),
                           ),
                           SizedBox(height: 12),
                           Text(
@@ -1322,43 +1523,77 @@ class _ConditionPageState extends State<ConditionPage>
                     ),
                   ),
                 ),
+                AnimatedOpacity(
+                  opacity: isLocationInteractionLocked ? 1 : 0,
+                  duration: const Duration(milliseconds: 220),
+                  child: IgnorePointer(
+                    ignoring: !isLocationInteractionLocked,
+                    child: Container(
+                      color: Colors.white.withValues(alpha: 0.72),
+                      alignment: Alignment.center,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(
+                            Icons.location_off_outlined,
+                            color: _primary,
+                            size: 24,
+                          ),
+                          const SizedBox(height: 10),
+                          Text(
+                            !_locationServiceEnabled ? '定位服务未开启' : '定位权限未开启',
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: _primary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
                 Positioned(
                   top: 0,
                   left: 0,
                   right: 0,
                   bottom: 0,
                   child: IgnorePointer(
-                    child: Center(
-                      child: SizedBox(
-                        width: 128,
-                        height: 128,
-                        child: Stack(
-                          children: [
-                            Positioned.fill(
-                              child: CustomPaint(
-                                painter: _DashedCirclePainter(
-                                  fillColor: Colors.black.withValues(
-                                    alpha: 0.05,
-                                  ),
-                                  strokeColor: Colors.black.withValues(
-                                    alpha: 0.2,
-                                  ),
-                                ),
-                              ),
-                            ),
-                            const Center(
-                              child: SizedBox(
-                                width: 6,
-                                height: 6,
-                                child: DecoratedBox(
-                                  decoration: BoxDecoration(
-                                    color: Colors.black,
-                                    shape: BoxShape.circle,
+                    child: AnimatedOpacity(
+                      opacity: (_locationLoading[index] ?? false) ? 0 : 1,
+                      duration: const Duration(milliseconds: 220),
+                      child: Center(
+                        child: SizedBox(
+                          width: 128,
+                          height: 128,
+                          child: Stack(
+                            children: [
+                              Positioned.fill(
+                                child: CustomPaint(
+                                  painter: _DashedCirclePainter(
+                                    fillColor: Colors.black.withValues(
+                                      alpha: 0.05,
+                                    ),
+                                    strokeColor: Colors.black.withValues(
+                                      alpha: 0.2,
+                                    ),
                                   ),
                                 ),
                               ),
-                            ),
-                          ],
+                              const Center(
+                                child: SizedBox(
+                                  width: 6,
+                                  height: 6,
+                                  child: DecoratedBox(
+                                    decoration: BoxDecoration(
+                                      color: Colors.black,
+                                      shape: BoxShape.circle,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ),
@@ -1394,7 +1629,9 @@ class _ConditionPageState extends State<ConditionPage>
                   bottom: 12,
                   right: 12,
                   child: GestureDetector(
-                    onTap: () => _setToCurrentLocation(index),
+                    onTap: isLocationInteractionLocked
+                        ? null
+                        : () => _setToCurrentLocation(index),
                     child: Container(
                       width: 36,
                       height: 36,
@@ -1970,6 +2207,7 @@ class _ConditionPageState extends State<ConditionPage>
           'radiusMeters': null,
           'isDefaultGroup': false,
           'conditionSummary': summary,
+          'locationLabel': '',
         };
       }
     } else {
@@ -1986,13 +2224,24 @@ class _ConditionPageState extends State<ConditionPage>
           'radiusMeters': loc?.radius,
           'isDefaultGroup': i == _selectedDefaultGroupIndex,
           'conditionSummary': summary,
+          'locationLabel': _placeLabels[i] ?? '',
         };
       }
     }
+
+    // If location mode is selected but there is no valid location data,
+    // fall back to time mode because location-based conditions are not usable.
+    final hasAnyValidLocation = _locations.values.any(
+      (loc) => loc.latitude != 0 && loc.longitude != 0,
+    );
+    final resolvedMode = _selectedMode == 1 && !hasAnyValidLocation
+        ? 'time'
+        : (_selectedMode == 0 ? 'time' : 'location');
+
     Navigator.pop(context, {
       'summaries': summaries,
       'groupData': groupData,
-      'selectedMode': _selectedMode == 0 ? 'time' : 'location',
+      'selectedMode': resolvedMode,
     });
   }
 }

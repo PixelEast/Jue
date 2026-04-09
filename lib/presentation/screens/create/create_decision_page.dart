@@ -75,6 +75,7 @@ class _CreateDecisionPageState extends State<CreateDecisionPage> {
               longitude: group.longitude,
               radiusMeters: group.radiusMeters,
               isDefaultGroup: group.isDefaultGroup,
+              locationLabel: group.locationLabel,
             ),
           );
           _groupDeleting.add(false);
@@ -127,6 +128,7 @@ class _CreateDecisionPageState extends State<CreateDecisionPage> {
               longitude: g.longitude,
               radiusMeters: g.radiusMeters,
               isDefaultGroup: g.isDefaultGroup,
+              locationLabel: g.locationLabel,
             ),
           )
           .toList(),
@@ -306,6 +308,7 @@ class _CreateDecisionPageState extends State<CreateDecisionPage> {
               longitude: g.longitude,
               radiusMeters: g.radiusMeters,
               isDefaultGroup: g.isDefaultGroup,
+              locationLabel: g.locationLabel,
             ),
           )
           .toList(),
@@ -330,6 +333,7 @@ class _CreateDecisionPageState extends State<CreateDecisionPage> {
         'longitude': group.longitude,
         'radiusMeters': group.radiusMeters,
         'isDefaultGroup': group.isDefaultGroup,
+        'locationLabel': group.locationLabel,
       };
     }
     final result = await Navigator.push<Map<String, dynamic>>(
@@ -371,7 +375,18 @@ class _CreateDecisionPageState extends State<CreateDecisionPage> {
                   (data['radiusMeters'] as num?)?.toDouble();
               _optionGroups[groupIndex].isDefaultGroup =
                   data['isDefaultGroup'] as bool? ?? false;
+              _optionGroups[groupIndex].locationLabel =
+                  data['locationLabel'] as String? ?? '';
             }
+          }
+        }
+
+        if (_logicConditionType == 'time') {
+          for (final group in _optionGroups) {
+            group.latitude = null;
+            group.longitude = null;
+            group.radiusMeters = null;
+            group.isDefaultGroup = false;
           }
         }
       });
@@ -1244,6 +1259,7 @@ class OptionGroupData {
   double? longitude;
   double? radiusMeters;
   bool isDefaultGroup;
+  String locationLabel;
   OptionGroupData({
     required this.name,
     required this.options,
@@ -1256,6 +1272,7 @@ class OptionGroupData {
     this.longitude,
     this.radiusMeters,
     this.isDefaultGroup = false,
+    this.locationLabel = '',
   });
 }
 
