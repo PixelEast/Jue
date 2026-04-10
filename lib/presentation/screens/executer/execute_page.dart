@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:geolocator/geolocator.dart';
 import '../../../data/models/app_models.dart';
 import '../../../data/repositories/decision_repository.dart';
 import '../../../data/repositories/history_repository.dart';
 import '../../../core/utils/algorithms.dart';
+import '../../../core/utils/app_events.dart';
+import '../create/edit_decision_page.dart';
 
 class ExecutePage extends StatefulWidget {
   final Decision decision;
@@ -23,6 +26,9 @@ class _ExecutePageState extends State<ExecutePage>
   bool _showResult = false;
   String _result = '';
   int _pressDuration = 0;
+  bool _locationAvailable = true;
+  double? _currentLatitude;
+  double? _currentLongitude;
 
   final WeightCalculator _weightCalc = WeightCalculator();
   final LogicConditionEngine _logicEngine = LogicConditionEngine();
@@ -36,6 +42,49 @@ class _ExecutePageState extends State<ExecutePage>
       duration: const Duration(milliseconds: 300),
       vsync: this,
     );
+    _checkLocationAvailability();
+  }
+
+  Future<void> _checkLocationAvailability() async {
+    if (widget.decision.logicConditionType != 'location') return;
+    final serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    var permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+    }
+    final available =
+        serviceEnabled &&
+        permission != LocationPermission.denied &&
+        permission != LocationPermission.deniedForever;
+    if (!available) {
+      if (mounted) {
+        setState(() {
+          _locationAvailable = false;
+        });
+      }
+      return;
+    }
+    try {
+      final position = await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.high,
+          timeLimit: Duration(seconds: 8),
+        ),
+      );
+      if (mounted) {
+        setState(() {
+          _locationAvailable = true;
+          _currentLatitude = position.latitude;
+          _currentLongitude = position.longitude;
+        });
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _locationAvailable = false;
+        });
+      }
+    }
   }
 
   @override
@@ -45,6 +94,10 @@ class _ExecutePageState extends State<ExecutePage>
   }
 
   void _startExecution(bool isLongPress) {
+    if (widget.decision.logicConditionType == 'location' &&
+        !_locationAvailable) {
+      return;
+    }
     setState(() {
       _isExecuting = true;
       _isLongPress = isLongPress;
@@ -86,7 +139,11 @@ class _ExecutePageState extends State<ExecutePage>
   }
 
   Future<void> _showResultPage() async {
-    final activeGroup = _logicEngine.getActiveGroup(widget.decision);
+    final activeGroup = _logicEngine.getActiveGroup(
+      widget.decision,
+      currentLatitude: _currentLatitude,
+      currentLongitude: _currentLongitude,
+    );
     if (activeGroup == null || activeGroup.options.isEmpty) {
       if (!mounted) return;
       setState(() => _result = '没有可用选项');
@@ -110,6 +167,7 @@ class _ExecutePageState extends State<ExecutePage>
         optionGroupName: activeGroup.name,
       ),
     );
+    AppEvents.notifyHistoryChanged();
 
     if (!mounted) return;
     setState(() {
@@ -149,7 +207,19 @@ class _ExecutePageState extends State<ExecutePage>
                       ),
                       IconButton(
                         icon: const Icon(Icons.edit, color: Colors.black),
-                        onPressed: () {},
+                        onPressed: () async {
+                          final navigator = Navigator.of(context);
+                          final updated = await Navigator.push<bool>(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) =>
+                                  EditDecisionPage(decision: widget.decision),
+                            ),
+                          );
+                          if (updated == true && mounted) {
+                            navigator.pop(true);
+                          }
+                        },
                       ),
                     ],
                   ),
@@ -172,10 +242,25 @@ class _ExecutePageState extends State<ExecutePage>
                         ),
                         const SizedBox(height: 60),
                         GestureDetector(
-                          onTapDown: (_) => _startExecution(false),
+                          onTapDown:
+                              (widget.decision.logicConditionType ==
+                                      'location' &&
+                                  !_locationAvailable)
+                              ? null
+                              : (_) => _startExecution(false),
                           onTapUp: (_) {},
-                          onLongPressStart: (_) => _startExecution(true),
-                          onLongPressEnd: (_) => _endLongPress(),
+                          onLongPressStart:
+                              (widget.decision.logicConditionType ==
+                                      'location' &&
+                                  !_locationAvailable)
+                              ? null
+                              : (_) => _startExecution(true),
+                          onLongPressEnd:
+                              (widget.decision.logicConditionType ==
+                                      'location' &&
+                                  !_locationAvailable)
+                              ? null
+                              : (_) => _endLongPress(),
                           child: AnimatedBuilder(
                             animation: _animationController,
                             builder: (context, child) {
@@ -183,13 +268,22 @@ class _ExecutePageState extends State<ExecutePage>
                                 width: 200,
                                 height: 80,
                                 decoration: BoxDecoration(
-                                  color: const Color(0xFF002FA7),
+                                  color:
+                                      (widget.decision.logicConditionType ==
+                                              'location' &&
+                                          !_locationAvailable)
+                                      ? const Color(0xFFC6C6C6)
+                                      : const Color(0xFF002FA7),
                                   borderRadius: BorderRadius.circular(20),
                                   boxShadow: [
                                     BoxShadow(
-                                      color: const Color(
-                                        0xFF002FA7,
-                                      ).withValues(alpha: 0.3),
+                                      color:
+                                          ((widget.decision.logicConditionType ==
+                                                          'location' &&
+                                                      !_locationAvailable)
+                                                  ? const Color(0xFFC6C6C6)
+                                                  : const Color(0xFF002FA7))
+                                              .withValues(alpha: 0.3),
                                       blurRadius: 20,
                                       spreadRadius: 5,
                                     ),

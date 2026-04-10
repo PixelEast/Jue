@@ -3,6 +3,7 @@ import '../../data/models/app_models.dart';
 
 class WeightCalculator {
   static final Random _random = Random();
+  static const int _maxRecoverySteps = 5;
 
   Map<String, double> calculateProbabilities(OptionGroup group) {
     final totalWeight = group.options.fold<double>(
@@ -44,15 +45,30 @@ class WeightCalculator {
   void applyDynamicWeight(Option selectedOption, OptionGroup group) {
     if (!group.dynamicWeightEnabled) return;
 
+    // First advance recovery for all other options based on one execution cycle.
+    for (final option in group.options) {
+      if (option.id == selectedOption.id) continue;
+      _advanceRecovery(option);
+    }
+
     switch (group.dynamicWeightMode) {
       case 'lowerWeight':
         selectedOption.currentWeight = selectedOption.baseWeight * 0.4;
+        selectedOption.pendingRecovery = false;
+        selectedOption.recoveryStepsRemaining = _maxRecoverySteps;
         selectedOption.timesSelected++;
         selectedOption.lastSelectedAt = DateTime.now();
         break;
       case 'nextRemove':
-        selectedOption.currentWeight = 0;
-        selectedOption.pendingRecovery = true;
+        if (group.options.length == 1) {
+          selectedOption.currentWeight = selectedOption.baseWeight * 0.4;
+          selectedOption.pendingRecovery = false;
+          selectedOption.recoveryStepsRemaining = _maxRecoverySteps;
+        } else {
+          selectedOption.currentWeight = 0;
+          selectedOption.pendingRecovery = true;
+          selectedOption.recoveryStepsRemaining = _maxRecoverySteps;
+        }
         selectedOption.timesSelected++;
         selectedOption.lastSelectedAt = DateTime.now();
         break;
@@ -63,18 +79,32 @@ class WeightCalculator {
   }
 
   void recoverWeights(OptionGroup group) {
-    for (var option in group.options) {
-      if (option.pendingRecovery) {
-        option.currentWeight = option.baseWeight * 0.4;
-        option.pendingRecovery = false;
-      }
+    // Recovery now advances on each subsequent execution in applyDynamicWeight.
+  }
 
-      final recoveryFactor = min(1.0, option.timesSelected * 0.1);
+  void _advanceRecovery(Option option) {
+    if (option.pendingRecovery) {
+      option.currentWeight = option.baseWeight * 0.4;
+      option.pendingRecovery = false;
+      if (option.recoveryStepsRemaining > 0) {
+        option.recoveryStepsRemaining -= 1;
+      }
+      return;
+    }
+
+    if (option.recoveryStepsRemaining > 0) {
+      final completed = _maxRecoverySteps - option.recoveryStepsRemaining + 1;
+      final t = (completed / _maxRecoverySteps).clamp(0.0, 1.0);
       option.currentWeight = _lerpDouble(
-        option.currentWeight,
+        option.baseWeight * 0.4,
         option.baseWeight,
-        recoveryFactor,
+        t,
       ).clamp(0.1, 3.0);
+      option.recoveryStepsRemaining -= 1;
+      if (option.recoveryStepsRemaining <= 0) {
+        option.currentWeight = option.baseWeight;
+        option.recoveryStepsRemaining = 0;
+      }
     }
   }
 
@@ -135,7 +165,11 @@ class DecisionSorter {
 }
 
 class LogicConditionEngine {
-  OptionGroup? getActiveGroup(Decision decision) {
+  OptionGroup? getActiveGroup(
+    Decision decision, {
+    double? currentLatitude,
+    double? currentLongitude,
+  }) {
     if (!decision.isLogicConditionEnabled || decision.optionGroups.isEmpty) {
       return decision.optionGroups.isNotEmpty
           ? decision.optionGroups.first
@@ -146,7 +180,11 @@ class LogicConditionEngine {
       case 'time':
         return _getGroupByTime(decision);
       case 'location':
-        return _getGroupByLocation(decision);
+        return _getGroupByLocation(
+          decision,
+          currentLatitude: currentLatitude,
+          currentLongitude: currentLongitude,
+        );
       default:
         return decision.optionGroups.first;
     }
@@ -169,7 +207,11 @@ class LogicConditionEngine {
     );
   }
 
-  OptionGroup? _getGroupByLocation(Decision decision) {
+  OptionGroup? _getGroupByLocation(
+    Decision decision, {
+    double? currentLatitude,
+    double? currentLongitude,
+  }) {
     if (decision.optionGroups.isEmpty) return null;
 
     final defaultGroup = decision.optionGroups.firstWhere(
@@ -177,6 +219,57 @@ class LogicConditionEngine {
       orElse: () => decision.optionGroups.first,
     );
 
-    return defaultGroup;
+    if (currentLatitude == null || currentLongitude == null) {
+      return defaultGroup;
+    }
+
+    final matchingGroups = <MapEntry<OptionGroup, double>>[];
+    for (final group in decision.optionGroups) {
+      if (group.latitude == null ||
+          group.longitude == null ||
+          group.radiusMeters == null) {
+        continue;
+      }
+      final distance = _distanceMeters(
+        currentLatitude,
+        currentLongitude,
+        group.latitude!,
+        group.longitude!,
+      );
+      if (distance <= group.radiusMeters!) {
+        matchingGroups.add(MapEntry(group, distance));
+      }
+    }
+
+    if (matchingGroups.isEmpty) return defaultGroup;
+
+    matchingGroups.sort((a, b) => a.value.compareTo(b.value));
+    final closestDistance = matchingGroups.first.value;
+    final closestGroups = matchingGroups
+        .where((entry) => (entry.value - closestDistance).abs() < 0.001)
+        .map((entry) => entry.key)
+        .toList();
+
+    if (closestGroups.length == 1) {
+      return closestGroups.first;
+    }
+
+    return closestGroups[Random().nextInt(closestGroups.length)];
   }
+
+  double _distanceMeters(double lat1, double lon1, double lat2, double lon2) {
+    const earthRadius = 6371000.0;
+    final dLat = _degreesToRadians(lat2 - lat1);
+    final dLon = _degreesToRadians(lon2 - lon1);
+    final a =
+        sin(dLat / 2) * sin(dLat / 2) +
+        cos(_degreesToRadians(lat1)) *
+            cos(_degreesToRadians(lat2)) *
+            sin(dLon / 2) *
+            sin(dLon / 2);
+    final c = 2 * atan2(sqrt(a), sqrt(1 - a));
+    return earthRadius * c;
+  }
+
+  double _degreesToRadians(double degrees) => degrees * pi / 180;
 }

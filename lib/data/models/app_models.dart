@@ -6,6 +6,7 @@ class Option {
   int timesSelected;
   DateTime? lastSelectedAt;
   bool pendingRecovery;
+  int recoveryStepsRemaining;
 
   Option({
     required this.id,
@@ -15,6 +16,7 @@ class Option {
     this.timesSelected = 0,
     this.lastSelectedAt,
     this.pendingRecovery = false,
+    this.recoveryStepsRemaining = 0,
   });
 
   Map<String, dynamic> toJson() => {
@@ -25,6 +27,7 @@ class Option {
     'timesSelected': timesSelected,
     'lastSelectedAt': lastSelectedAt?.toIso8601String(),
     'pendingRecovery': pendingRecovery,
+    'recoveryStepsRemaining': recoveryStepsRemaining,
   };
 
   factory Option.fromJson(Map<String, dynamic> json) => Option(
@@ -39,6 +42,7 @@ class Option {
         ? DateTime.tryParse(json['lastSelectedAt'] as String)
         : null,
     pendingRecovery: json['pendingRecovery'] as bool? ?? false,
+    recoveryStepsRemaining: json['recoveryStepsRemaining'] as int? ?? 0,
   );
 }
 

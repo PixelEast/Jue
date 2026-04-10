@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../data/models/app_models.dart';
 import '../../../data/repositories/history_repository.dart';
+import '../../../core/utils/app_events.dart';
 
 class HistoryPage extends StatefulWidget {
   const HistoryPage({super.key});
@@ -20,6 +21,13 @@ class _HistoryPageState extends State<HistoryPage> {
   void initState() {
     super.initState();
     _loadData();
+    AppEvents.historyChanged.addListener(_loadData);
+  }
+
+  @override
+  void dispose() {
+    AppEvents.historyChanged.removeListener(_loadData);
+    super.dispose();
   }
 
   Future<void> _loadData() async {

@@ -2194,7 +2194,13 @@ class _ConditionPageState extends State<ConditionPage>
   void _applyConditions() {
     final summaries = <String, String>{};
     final groupData = <String, Map<String, dynamic>>{};
-    if (_selectedMode == 0) {
+    final hasAnyValidLocation = _locations.values.any(
+      (loc) => loc.latitude != 0 && loc.longitude != 0,
+    );
+    final useTimeMode =
+        _selectedMode == 0 || (_selectedMode == 1 && !hasAnyValidLocation);
+
+    if (useTimeMode) {
       for (var range in _timeRanges) {
         final summary =
             '时间范围 ${range.startHour.toString().padLeft(2, '0')}:00 - ${range.endHour.toString().padLeft(2, '0')}:00';
@@ -2229,14 +2235,7 @@ class _ConditionPageState extends State<ConditionPage>
       }
     }
 
-    // If location mode is selected but there is no valid location data,
-    // fall back to time mode because location-based conditions are not usable.
-    final hasAnyValidLocation = _locations.values.any(
-      (loc) => loc.latitude != 0 && loc.longitude != 0,
-    );
-    final resolvedMode = _selectedMode == 1 && !hasAnyValidLocation
-        ? 'time'
-        : (_selectedMode == 0 ? 'time' : 'location');
+    final resolvedMode = useTimeMode ? 'time' : 'location';
 
     Navigator.pop(context, {
       'summaries': summaries,
