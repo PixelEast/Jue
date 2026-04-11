@@ -3,6 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../../data/models/app_models.dart';
 import '../../../data/repositories/decision_repository.dart';
 import '../../../core/utils/algorithms.dart';
+import '../../../core/utils/app_events.dart';
 import '../executer/execute_page.dart';
 import '../create/create_decision_page.dart';
 
@@ -28,6 +29,13 @@ class _HomePageState extends State<HomePage> {
     super.initState();
     _loadViewMode();
     _loadDecisions();
+    AppEvents.decisionsChanged.addListener(_loadDecisions);
+  }
+
+  @override
+  void dispose() {
+    AppEvents.decisionsChanged.removeListener(_loadDecisions);
+    super.dispose();
   }
 
   Future<void> _loadViewMode() async {

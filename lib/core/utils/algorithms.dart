@@ -115,12 +115,10 @@ class WeightCalculator {
   void applyFeedback(Option option, String feedback, OptionGroup group) {
     switch (feedback) {
       case 'like':
-        option.baseWeight = (option.baseWeight * 1.1).clamp(0.1, 3.0);
-        option.currentWeight = option.baseWeight;
+        option.currentWeight = (option.currentWeight * 1.1).clamp(0.1, 3.0);
         break;
       case 'dislike':
-        option.baseWeight = (option.baseWeight * 0.67).clamp(0.1, 3.0);
-        option.currentWeight = option.baseWeight;
+        option.currentWeight = (option.currentWeight * 0.67).clamp(0.1, 3.0);
         break;
       case 'removed':
         group.options.removeWhere((o) => o.id == option.id);

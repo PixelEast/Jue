@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import '../../../data/models/app_models.dart';
+import '../../../data/repositories/decision_repository.dart';
 import '../../../data/repositories/history_repository.dart';
 import '../../../core/utils/app_events.dart';
+import '../../../core/utils/algorithms.dart';
+import '../create/edit_decision_page.dart';
 
 class HistoryPage extends StatefulWidget {
   const HistoryPage({super.key});
@@ -12,7 +15,10 @@ class HistoryPage extends StatefulWidget {
 
 class _HistoryPageState extends State<HistoryPage> {
   final HistoryRepository _historyRepo = HistoryRepository();
+  final DecisionRepository _decisionRepo = DecisionRepository();
+  final WeightCalculator _weightCalculator = WeightCalculator();
   List<HistoryRecord> _records = [];
+  Map<String, bool> _canRemoveByRecordId = {};
   int _totalCount = 0;
   Map<String, int> _dailyCounts = {};
   bool _isLoading = true;
@@ -33,10 +39,46 @@ class _HistoryPageState extends State<HistoryPage> {
   Future<void> _loadData() async {
     setState(() => _isLoading = true);
     final records = await _historyRepo.getAllRecords();
+    final decisions = await _decisionRepo.getAllDecisions();
     final totalCount = await _historyRepo.getTotalCount();
     final dailyCounts = await _historyRepo.getDailyCounts();
+    final canRemoveByRecordId = <String, bool>{};
+
+    for (final record in records) {
+      final decision = decisions.cast<Decision?>().firstWhere(
+        (d) => d?.id == record.decisionId,
+        orElse: () => null,
+      );
+
+      if (decision == null) {
+        canRemoveByRecordId[record.id] = false;
+        continue;
+      }
+
+      final group = decision.optionGroups.cast<OptionGroup?>().firstWhere(
+        (g) => g?.name == record.optionGroupName,
+        orElse: () => null,
+      );
+
+      if (group == null) {
+        canRemoveByRecordId[record.id] = false;
+        continue;
+      }
+
+      final matchingOptionCount = group.options
+          .where((o) => o.name == record.result)
+          .length;
+      if (matchingOptionCount == 0) {
+        canRemoveByRecordId[record.id] = false;
+        continue;
+      }
+
+      canRemoveByRecordId[record.id] = group.options.length > 1;
+    }
+
     setState(() {
       _records = records;
+      _canRemoveByRecordId = canRemoveByRecordId;
       _totalCount = totalCount;
       _dailyCounts = dailyCounts;
       _isLoading = false;
@@ -44,7 +86,65 @@ class _HistoryPageState extends State<HistoryPage> {
   }
 
   Future<void> _updateFeedback(String id, String feedback) async {
+    final record = _records.firstWhere((r) => r.id == id);
+    if (record.feedback != 'none') return;
+
+    final decision = await _decisionRepo.getDecisionById(record.decisionId);
+    if (decision == null) return;
+
+    final groupIndex = decision.optionGroups.indexWhere(
+      (g) => g.name == record.optionGroupName,
+    );
+    if (groupIndex == -1) return;
+
+    final group = decision.optionGroups[groupIndex];
+    final optionIndex = group.options.indexWhere(
+      (o) => o.name == record.result,
+    );
+    if (optionIndex == -1) return;
+
+    if (feedback == 'removed' && group.options.length == 1) {
+      if (!mounted) return;
+      await showDialog<void>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('无法移除'),
+          content: const Text('这是此决定中唯一一个剩余的选项了，你不能再移除它了。'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('关闭'),
+            ),
+            TextButton(
+              onPressed: () async {
+                Navigator.pop(context);
+                await Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => EditDecisionPage(decision: decision),
+                  ),
+                );
+                if (mounted) {
+                  _loadData();
+                }
+              },
+              child: const Text('去编辑'),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+
+    _weightCalculator.applyFeedback(
+      group.options[optionIndex],
+      feedback,
+      group,
+    );
+    await _decisionRepo.saveDecision(decision);
+    AppEvents.notifyDecisionsChanged();
     await _historyRepo.updateFeedback(id, feedback);
+    AppEvents.notifyHistoryChanged();
     _loadData();
   }
 
@@ -279,6 +379,8 @@ class _HistoryPageState extends State<HistoryPage> {
     final isToday =
         record.dateOnly.day == DateTime.now().day &&
         record.dateOnly.month == DateTime.now().month;
+    final canAct = record.feedback == 'none';
+    final canRemove = _canRemoveByRecordId[record.id] ?? false;
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -366,10 +468,9 @@ class _HistoryPageState extends State<HistoryPage> {
                 Row(
                   children: [
                     GestureDetector(
-                      onTap: () => _updateFeedback(
-                        record.id,
-                        record.feedback == 'like' ? 'none' : 'like',
-                      ),
+                      onTap: canAct
+                          ? () => _updateFeedback(record.id, 'like')
+                          : null,
                       child: Column(
                         children: [
                           Icon(
@@ -377,7 +478,9 @@ class _HistoryPageState extends State<HistoryPage> {
                             size: 20,
                             color: record.feedback == 'like'
                                 ? const Color(0xFF004EE8)
-                                : const Color(0xFF231815),
+                                : (canAct
+                                      ? const Color(0xFF231815)
+                                      : const Color(0xFFC6C6C6)),
                           ),
                           const SizedBox(height: 4),
                           Text(
@@ -386,7 +489,9 @@ class _HistoryPageState extends State<HistoryPage> {
                               fontSize: 11,
                               color: record.feedback == 'like'
                                   ? const Color(0xFF004EE8)
-                                  : const Color(0xFF231815),
+                                  : (canAct
+                                        ? const Color(0xFF231815)
+                                        : const Color(0xFFC6C6C6)),
                             ),
                           ),
                         ],
@@ -394,10 +499,9 @@ class _HistoryPageState extends State<HistoryPage> {
                     ),
                     const SizedBox(width: 24),
                     GestureDetector(
-                      onTap: () => _updateFeedback(
-                        record.id,
-                        record.feedback == 'dislike' ? 'none' : 'dislike',
-                      ),
+                      onTap: canAct
+                          ? () => _updateFeedback(record.id, 'dislike')
+                          : null,
                       child: Column(
                         children: [
                           Icon(
@@ -405,7 +509,9 @@ class _HistoryPageState extends State<HistoryPage> {
                             size: 20,
                             color: record.feedback == 'dislike'
                                 ? const Color(0xFFE49B87)
-                                : const Color(0xFF231815),
+                                : (canAct
+                                      ? const Color(0xFF231815)
+                                      : const Color(0xFFC6C6C6)),
                           ),
                           const SizedBox(height: 4),
                           Text(
@@ -414,7 +520,9 @@ class _HistoryPageState extends State<HistoryPage> {
                               fontSize: 11,
                               color: record.feedback == 'dislike'
                                   ? const Color(0xFFE49B87)
-                                  : const Color(0xFF231815),
+                                  : (canAct
+                                        ? const Color(0xFF231815)
+                                        : const Color(0xFFC6C6C6)),
                             ),
                           ),
                         ],
@@ -422,23 +530,30 @@ class _HistoryPageState extends State<HistoryPage> {
                     ),
                     const SizedBox(width: 24),
                     GestureDetector(
-                      onTap: () => _updateFeedback(
-                        record.id,
-                        record.feedback == 'removed' ? 'none' : 'removed',
-                      ),
+                      onTap: canAct && canRemove
+                          ? () => _updateFeedback(record.id, 'removed')
+                          : null,
                       child: Column(
                         children: [
-                          const Icon(
+                          Icon(
                             Icons.close,
                             size: 20,
-                            color: Color(0xFF231815),
+                            color: record.feedback == 'removed'
+                                ? const Color(0xFFBA1A1A)
+                                : (canAct && canRemove
+                                      ? const Color(0xFF231815)
+                                      : const Color(0xFFC6C6C6)),
                           ),
                           const SizedBox(height: 4),
-                          const Text(
+                          Text(
                             '移除',
                             style: TextStyle(
                               fontSize: 11,
-                              color: Color(0xFF231815),
+                              color: record.feedback == 'removed'
+                                  ? const Color(0xFFBA1A1A)
+                                  : (canAct && canRemove
+                                        ? const Color(0xFF231815)
+                                        : const Color(0xFFC6C6C6)),
                             ),
                           ),
                         ],
