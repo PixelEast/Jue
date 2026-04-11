@@ -18,7 +18,10 @@ class _HomePageState extends State<HomePage> {
   final DecisionSorter _sorter = DecisionSorter();
   List<Decision> _decisions = [];
   bool _isGridView = false;
+  bool _displayGridView = false;
   bool _isLoading = true;
+  bool _isSwitchAnimating = false;
+  bool _contentVisible = true;
 
   @override
   void initState() {
@@ -30,7 +33,11 @@ class _HomePageState extends State<HomePage> {
   Future<void> _loadViewMode() async {
     final prefs = await SharedPreferences.getInstance();
     if (!mounted) return;
-    setState(() => _isGridView = prefs.getBool('isGridView') ?? false);
+    final isGrid = prefs.getBool('isGridView') ?? false;
+    setState(() {
+      _isGridView = isGrid;
+      _displayGridView = isGrid;
+    });
   }
 
   Future<void> _saveViewMode(bool isGrid) async {
@@ -64,6 +71,39 @@ class _HomePageState extends State<HomePage> {
       context,
       MaterialPageRoute(builder: (context) => ExecutePage(decision: decision)),
     ).then((_) => _loadDecisions());
+  }
+
+  Future<void> _animateToggleViewMode() async {
+    if (_isSwitchAnimating) return;
+
+    final nextMode = !_isGridView;
+    setState(() {
+      _isSwitchAnimating = true;
+      _isGridView = nextMode;
+      _contentVisible = false;
+    });
+    await _saveViewMode(nextMode);
+
+    await Future.delayed(const Duration(milliseconds: 120));
+    if (!mounted) return;
+
+    setState(() {
+      _displayGridView = nextMode;
+    });
+
+    await Future.delayed(const Duration(milliseconds: 20));
+    if (!mounted) return;
+
+    setState(() {
+      _contentVisible = true;
+    });
+
+    await Future.delayed(const Duration(milliseconds: 160));
+    if (!mounted) return;
+
+    setState(() {
+      _isSwitchAnimating = false;
+    });
   }
 
   @override
@@ -188,15 +228,44 @@ class _HomePageState extends State<HomePage> {
                                   child: CircularProgressIndicator(),
                                 ),
                               )
-                            else if (_isGridView)
-                              _buildGridView()
-                            else ...[
-                              _buildListView(),
-                              Padding(
-                                padding: const EdgeInsets.only(bottom: 16),
-                                child: _buildListCreateCard(),
+                            else
+                              AnimatedSwitcher(
+                                duration: const Duration(milliseconds: 160),
+                                switchInCurve: Curves.easeOutCubic,
+                                switchOutCurve: Curves.easeInCubic,
+                                transitionBuilder: (child, animation) {
+                                  return FadeTransition(
+                                    opacity: animation,
+                                    child: child,
+                                  );
+                                },
+                                child: _contentVisible
+                                    ? KeyedSubtree(
+                                        key: ValueKey(
+                                          _displayGridView
+                                              ? 'grid-view'
+                                              : 'list-view',
+                                        ),
+                                        child: _displayGridView
+                                            ? _buildGridView()
+                                            : Column(
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.start,
+                                                children: [
+                                                  _buildListView(),
+                                                  Padding(
+                                                    padding:
+                                                        const EdgeInsets.only(
+                                                          bottom: 16,
+                                                        ),
+                                                    child:
+                                                        _buildListCreateCard(),
+                                                  ),
+                                                ],
+                                              ),
+                                      )
+                                    : const SizedBox.shrink(),
                               ),
-                            ],
                           ],
                         ),
                       ),
@@ -226,10 +295,7 @@ class _HomePageState extends State<HomePage> {
 
   Widget _buildToggleSwitch() {
     return GestureDetector(
-      onTap: () {
-        setState(() => _isGridView = !_isGridView);
-        _saveViewMode(_isGridView);
-      },
+      onTap: _animateToggleViewMode,
       child: Container(
         width: 74,
         height: 42,
@@ -442,16 +508,17 @@ class _HomePageState extends State<HomePage> {
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             Container(
-              width: 48,
-              height: 48,
+              width: 56,
+              height: 56,
               decoration: const BoxDecoration(
                 color: Colors.black,
                 borderRadius: BorderRadius.all(Radius.circular(12)),
               ),
-              child: const Icon(Icons.bolt, color: Colors.white, size: 22),
+              child: const Icon(Icons.bolt, color: Colors.white, size: 24),
             ),
             const SizedBox(height: 20),
             Text(
@@ -461,6 +528,7 @@ class _HomePageState extends State<HomePage> {
                 fontWeight: FontWeight.w600,
                 color: Colors.black,
               ),
+              textAlign: TextAlign.center,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
@@ -468,6 +536,7 @@ class _HomePageState extends State<HomePage> {
             Text(
               '${decision.optionGroups.length} 个选项组',
               style: const TextStyle(fontSize: 11, color: Color(0xFF8E8E93)),
+              textAlign: TextAlign.center,
             ),
           ],
         ),
@@ -487,22 +556,10 @@ class _HomePageState extends State<HomePage> {
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Container(
-                width: 48,
-                height: 48,
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.2),
-                  ),
-                ),
-                child: const Center(
-                  child: Icon(Icons.add, color: Colors.white, size: 22),
-                ),
-              ),
+              const _CreateIconBox(),
               const SizedBox(height: 20),
               const Text(
                 '创建新决定',
@@ -511,6 +568,7 @@ class _HomePageState extends State<HomePage> {
                   fontWeight: FontWeight.w600,
                   color: Colors.white,
                 ),
+                textAlign: TextAlign.center,
               ),
             ],
           ),
