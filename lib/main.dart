@@ -99,6 +99,7 @@ class _MainScreenState extends State<MainScreen> {
   final List<Widget> _pages = const [HomePage(), HistoryPage(), SettingsPage()];
 
   void _onTabTapped(int index) {
+    if (index == _currentIndex) return;
     setState(() {
       _currentIndex = index;
     });
@@ -109,8 +110,32 @@ class _MainScreenState extends State<MainScreen> {
     return Scaffold(
       body: Stack(
         children: [
-          // Pages fill the entire screen, nav bar floats on top
-          IndexedStack(index: _currentIndex, children: _pages),
+          ...List.generate(_pages.length, (index) {
+            final isActive = index == _currentIndex;
+            final inactiveOffset = isActive
+                ? Offset.zero
+                : (index < _currentIndex
+                      ? const Offset(-0.04, 0)
+                      : const Offset(0.04, 0));
+
+            return IgnorePointer(
+              ignoring: !isActive,
+              child: AnimatedOpacity(
+                duration: const Duration(milliseconds: 240),
+                curve: Curves.easeOutCubic,
+                opacity: isActive ? 1 : 0,
+                child: AnimatedSlide(
+                  duration: const Duration(milliseconds: 240),
+                  curve: Curves.easeOutCubic,
+                  offset: isActive ? Offset.zero : inactiveOffset,
+                  child: KeyedSubtree(
+                    key: ValueKey('main_page_$index'),
+                    child: _pages[index],
+                  ),
+                ),
+              ),
+            );
+          }),
           // Floating nav bar - uses IgnorePointer around it to prevent blocking page content
           Positioned(
             left: 24,
