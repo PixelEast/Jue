@@ -5,6 +5,7 @@ import '../../../data/repositories/decision_repository.dart';
 import '../../../data/repositories/history_repository.dart';
 import '../../../core/utils/app_events.dart';
 import '../../../core/utils/algorithms.dart';
+import '../../widgets/app_slogan_footer.dart';
 import '../create/create_decision_page.dart';
 
 class HistoryPage extends StatefulWidget {
@@ -347,7 +348,13 @@ class _HistoryPageState extends State<HistoryPage> {
                         ),
                       )
                     else
-                      _buildTimeline(),
+                      Column(
+                        children: [
+                          _buildTimeline(),
+                          const SizedBox(height: 32),
+                          const AppSloganFooter(),
+                        ],
+                      ),
                   ],
                 ),
             ],

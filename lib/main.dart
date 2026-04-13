@@ -174,7 +174,7 @@ class _MainScreenState extends State<MainScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
                 _buildNavItem(
-                  icon: _currentIndex == 0 ? Icons.home : Icons.home_outlined,
+                  icon: Icons.home,
                   label: '主页',
                   isActive: _currentIndex == 0,
                   onTap: () => _onTabTapped(0),
@@ -188,9 +188,7 @@ class _MainScreenState extends State<MainScreen> {
                   onTap: () => _onTabTapped(1),
                 ),
                 _buildNavItem(
-                  icon: _currentIndex == 2
-                      ? Icons.settings
-                      : Icons.settings_outlined,
+                  icon: Icons.settings,
                   label: '设置',
                   isActive: _currentIndex == 2,
                   onTap: () => _onTabTapped(2),
@@ -226,8 +224,8 @@ class _MainScreenState extends State<MainScreen> {
             Text(
               label,
               style: TextStyle(
-                fontSize: 12,
-                fontWeight: isActive ? FontWeight.w500 : FontWeight.normal,
+                fontSize: 8,
+                fontWeight: FontWeight.w600,
                 color: isActive ? Colors.black : const Color(0xFF8E8E93),
               ),
             ),

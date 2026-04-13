@@ -4,6 +4,7 @@ import '../../../data/models/app_models.dart';
 import '../../../data/repositories/decision_repository.dart';
 import '../../../core/utils/algorithms.dart';
 import '../../../core/utils/app_events.dart';
+import '../../widgets/app_slogan_footer.dart';
 import '../executer/execute_page.dart';
 import '../create/create_decision_page.dart';
 
@@ -187,7 +188,7 @@ class _HomePageState extends State<HomePage> {
                             const Text(
                               '即刻判决',
                               style: TextStyle(
-                                fontSize: 72,
+                                fontSize: 61,
                                 fontWeight: FontWeight.bold,
                                 color: Colors.black,
                                 letterSpacing: 1,
@@ -198,7 +199,7 @@ class _HomePageState extends State<HomePage> {
                             const Text(
                               '享受当下',
                               style: TextStyle(
-                                fontSize: 72,
+                                fontSize: 61,
                                 fontWeight: FontWeight.bold,
                                 color: Color(0xFF2D5BFF),
                                 height: 1.2,
@@ -206,11 +207,12 @@ class _HomePageState extends State<HomePage> {
                             ),
                             const SizedBox(height: 12),
                             const Text(
-                              '由逻辑 终结纠结.',
+                              '当他人还在为吃什么等问题烦恼时，你已经继续前行，专注于你的生活吧！把琐碎的决定交给我们！',
                               style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w500,
-                                color: Color(0xFF002FA7),
+                                fontSize: 14,
+                                fontWeight: FontWeight.w400,
+                                color: Color(0xFF5E5E5E),
+                                height: 1.5,
                               ),
                             ),
                             const SizedBox(height: 36),
@@ -255,7 +257,15 @@ class _HomePageState extends State<HomePage> {
                                               : 'list-view',
                                         ),
                                         child: _displayGridView
-                                            ? _buildGridView()
+                                            ? Column(
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.start,
+                                                children: [
+                                                  _buildGridView(),
+                                                  const SizedBox(height: 32),
+                                                  const AppSloganFooter(),
+                                                ],
+                                              )
                                             : Column(
                                                 crossAxisAlignment:
                                                     CrossAxisAlignment.start,
@@ -269,6 +279,8 @@ class _HomePageState extends State<HomePage> {
                                                     child:
                                                         _buildListCreateCard(),
                                                   ),
+                                                  const SizedBox(height: 32),
+                                                  const AppSloganFooter(),
                                                 ],
                                               ),
                                       )
