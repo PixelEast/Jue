@@ -5,7 +5,7 @@ import '../../../data/repositories/decision_repository.dart';
 import '../../../data/repositories/history_repository.dart';
 import '../../../core/utils/app_events.dart';
 import '../../../core/utils/algorithms.dart';
-import '../create/edit_decision_page.dart';
+import '../create/create_decision_page.dart';
 
 class HistoryPage extends StatefulWidget {
   const HistoryPage({super.key});
@@ -129,7 +129,10 @@ class _HistoryPageState extends State<HistoryPage> {
                 await Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => EditDecisionPage(decision: decision),
+                    builder: (context) => CreateDecisionPage(
+                      initialDecision: decision,
+                      isEditing: true,
+                    ),
                   ),
                 );
                 if (mounted) {

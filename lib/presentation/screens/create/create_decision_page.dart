@@ -29,12 +29,25 @@ class _CreateDecisionPageState extends State<CreateDecisionPage> {
   final ScrollController _scrollController = ScrollController();
   final Map<OptionGroupData, GlobalKey> _groupKeys = {};
   final Map<OptionData, bool> _optionVisible = {};
+  final Map<OptionGroupData, TextEditingController> _groupNameControllers = {};
+  final Map<OptionGroupData, FocusNode> _groupNameFocusNodes = {};
+  final Map<OptionGroupData, ValueNotifier<bool>> _groupNameFocused = {};
+  final Map<OptionData, TextEditingController> _optionNameControllers = {};
+  final Map<OptionData, FocusNode> _optionNameFocusNodes = {};
+  final Map<OptionData, ValueNotifier<bool>> _optionNameFocused = {};
+  bool _renderHeavySections = false;
 
   @override
   void initState() {
     super.initState();
     if (widget.initialDecision != null) {
       _loadFromDecision(widget.initialDecision!);
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        setState(() {
+          _renderHeavySections = true;
+        });
+      });
     } else {
       _optionGroups.add(
         OptionGroupData(
@@ -45,8 +58,88 @@ class _CreateDecisionPageState extends State<CreateDecisionPage> {
       _groupDeleting.add(false);
       _groupKeys[_optionGroups.first] = GlobalKey();
       _optionVisible[_optionGroups.first.options.first] = true;
+      _renderHeavySections = true;
       _checkDraft();
     }
+  }
+
+  TextEditingController _getGroupNameController(OptionGroupData group) {
+    return _groupNameControllers.putIfAbsent(
+      group,
+      () => TextEditingController(text: group.name),
+    );
+  }
+
+  FocusNode _getGroupNameFocusNode(OptionGroupData group) {
+    return _groupNameFocusNodes.putIfAbsent(group, () {
+      final node = FocusNode();
+      node.addListener(() {
+        _getGroupFocusedNotifier(group).value = node.hasFocus;
+        if (node.hasFocus) {
+          final controller = _getGroupNameController(group);
+          controller.text = group.name;
+          controller.selection = TextSelection(
+            baseOffset: 0,
+            extentOffset: controller.text.length,
+          );
+        }
+      });
+      return node;
+    });
+  }
+
+  ValueNotifier<bool> _getGroupFocusedNotifier(OptionGroupData group) {
+    return _groupNameFocused.putIfAbsent(
+      group,
+      () => ValueNotifier<bool>(false),
+    );
+  }
+
+  TextEditingController _getOptionNameController(OptionData option) {
+    return _optionNameControllers.putIfAbsent(
+      option,
+      () => TextEditingController(text: option.name),
+    );
+  }
+
+  FocusNode _getOptionNameFocusNode(OptionData option) {
+    return _optionNameFocusNodes.putIfAbsent(option, () {
+      final node = FocusNode();
+      node.addListener(() {
+        _getOptionFocusedNotifier(option).value = node.hasFocus;
+        if (node.hasFocus) {
+          final controller = _getOptionNameController(option);
+          controller.text = option.name;
+          controller.selection = TextSelection(
+            baseOffset: 0,
+            extentOffset: controller.text.length,
+          );
+        }
+      });
+      return node;
+    });
+  }
+
+  ValueNotifier<bool> _getOptionFocusedNotifier(OptionData option) {
+    return _optionNameFocused.putIfAbsent(
+      option,
+      () => ValueNotifier<bool>(false),
+    );
+  }
+
+  void _disposeGroupResources(OptionGroupData group) {
+    _groupNameControllers.remove(group)?.dispose();
+    _groupNameFocusNodes.remove(group)?.dispose();
+    _groupNameFocused.remove(group)?.dispose();
+    for (final option in group.options) {
+      _disposeOptionResources(option);
+    }
+  }
+
+  void _disposeOptionResources(OptionData option) {
+    _optionNameControllers.remove(option)?.dispose();
+    _optionNameFocusNodes.remove(option)?.dispose();
+    _optionNameFocused.remove(option)?.dispose();
   }
 
   void _loadFromDecision(Decision decision) {
@@ -84,8 +177,14 @@ class _CreateDecisionPageState extends State<CreateDecisionPage> {
       _optionGroups.add(restoredGroup);
       _groupDeleting.add(false);
       _groupKeys[restoredGroup] = GlobalKey();
+      _getGroupNameController(restoredGroup);
+      _getGroupNameFocusNode(restoredGroup);
+      _getGroupFocusedNotifier(restoredGroup);
       for (final option in restoredGroup.options) {
         _optionVisible[option] = true;
+        _getOptionNameController(option);
+        _getOptionNameFocusNode(option);
+        _getOptionFocusedNotifier(option);
       }
     }
 
@@ -151,8 +250,14 @@ class _CreateDecisionPageState extends State<CreateDecisionPage> {
           _optionGroups.add(restoredGroup);
           _groupDeleting.add(false);
           _groupKeys[restoredGroup] = GlobalKey();
+          _getGroupNameController(restoredGroup);
+          _getGroupNameFocusNode(restoredGroup);
+          _getGroupFocusedNotifier(restoredGroup);
           for (final option in restoredGroup.options) {
             _optionVisible[option] = true;
+            _getOptionNameController(option);
+            _getOptionNameFocusNode(option);
+            _getOptionFocusedNotifier(option);
           }
         }
         _logicConditionType = draft.logicConditionType == 'none'
@@ -214,6 +319,24 @@ class _CreateDecisionPageState extends State<CreateDecisionPage> {
 
   @override
   void dispose() {
+    for (final controller in _groupNameControllers.values) {
+      controller.dispose();
+    }
+    for (final node in _groupNameFocusNodes.values) {
+      node.dispose();
+    }
+    for (final notifier in _groupNameFocused.values) {
+      notifier.dispose();
+    }
+    for (final controller in _optionNameControllers.values) {
+      controller.dispose();
+    }
+    for (final node in _optionNameFocusNodes.values) {
+      node.dispose();
+    }
+    for (final notifier in _optionNameFocused.values) {
+      notifier.dispose();
+    }
     _themeController.dispose();
     _scrollController.dispose();
     super.dispose();
@@ -259,6 +382,14 @@ class _CreateDecisionPageState extends State<CreateDecisionPage> {
         _optionGroups.add(newGroup);
         _groupDeleting.add(false);
         _groupKeys[newGroup] = GlobalKey();
+        _getGroupNameController(newGroup);
+        _getGroupNameFocusNode(newGroup);
+        _getGroupFocusedNotifier(newGroup);
+        for (final option in newGroup.options) {
+          _getOptionNameController(option);
+          _getOptionNameFocusNode(option);
+          _getOptionFocusedNotifier(option);
+        }
       });
       if (_showLogicCondition && _logicConditionType == 'time') {
         _redistributeTimeConditions();
@@ -300,8 +431,10 @@ class _CreateDecisionPageState extends State<CreateDecisionPage> {
       Future.delayed(const Duration(milliseconds: 300), () {
         if (!mounted) return;
         setState(() {
-          _optionGroups.removeAt(index);
+          final removedGroup = _optionGroups.removeAt(index);
           _groupDeleting.removeAt(index);
+          _groupKeys.remove(removedGroup);
+          _disposeGroupResources(removedGroup);
           if (_optionGroups.length < 2) {
             _showLogicCondition = false;
           } else if (_logicConditionType == 'time') {
@@ -348,6 +481,9 @@ class _CreateDecisionPageState extends State<CreateDecisionPage> {
       newOption = OptionData(name: _nextUniqueOptionName(groupIndex));
       _optionGroups[groupIndex].options.add(newOption);
       _optionVisible[newOption] = false;
+      _getOptionNameController(newOption);
+      _getOptionNameFocusNode(newOption);
+      _getOptionFocusedNotifier(newOption);
     });
     _saveDraft();
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -369,6 +505,7 @@ class _CreateDecisionPageState extends State<CreateDecisionPage> {
         setState(() {
           _optionGroups[groupIndex].options.remove(option);
           _optionVisible.remove(option);
+          _disposeOptionResources(option);
         });
         _saveDraft();
       });
@@ -704,12 +841,15 @@ class _CreateDecisionPageState extends State<CreateDecisionPage> {
                   ],
                 ),
                 const SizedBox(height: 12),
-                ..._optionGroups.asMap().entries.map(
-                  (entry) => KeyedSubtree(
-                    key: _groupKeys[entry.value] ?? GlobalKey(),
-                    child: _buildOptionGroupCard(entry.key, entry.value),
-                  ),
-                ),
+                if (_renderHeavySections)
+                  ..._optionGroups.asMap().entries.map(
+                    (entry) => KeyedSubtree(
+                      key: _groupKeys[entry.value] ?? GlobalKey(),
+                      child: _buildOptionGroupCard(entry.key, entry.value),
+                    ),
+                  )
+                else
+                  const SizedBox(height: 1),
                 const SizedBox(height: 24),
                 ElevatedButton(
                   onPressed: _saveDecision,
@@ -751,20 +891,9 @@ class _CreateDecisionPageState extends State<CreateDecisionPage> {
   }
 
   Widget _buildOptionGroupCard(int groupIndex, OptionGroupData group) {
-    final nameFocusNode = FocusNode();
-    final isFocused = ValueNotifier<bool>(false);
-    final nameController = TextEditingController(text: group.name);
-
-    nameFocusNode.addListener(() {
-      isFocused.value = nameFocusNode.hasFocus;
-      if (nameFocusNode.hasFocus) {
-        nameController.text = group.name;
-        nameController.selection = TextSelection(
-          baseOffset: 0,
-          extentOffset: nameController.text.length,
-        );
-      }
-    });
+    final nameFocusNode = _getGroupNameFocusNode(group);
+    final isFocused = _getGroupFocusedNotifier(group);
+    final nameController = _getGroupNameController(group);
 
     final isDeleting = _groupDeleting[groupIndex];
     return AnimatedSize(
@@ -1261,20 +1390,9 @@ class _CreateDecisionPageState extends State<CreateDecisionPage> {
     OptionData option, {
     required Key key,
   }) {
-    final optionFocusNode = FocusNode();
-    final optionNameController = TextEditingController(text: option.name);
-    final isOptionFocused = ValueNotifier<bool>(false);
-
-    optionFocusNode.addListener(() {
-      isOptionFocused.value = optionFocusNode.hasFocus;
-      if (optionFocusNode.hasFocus) {
-        optionNameController.text = option.name;
-        optionNameController.selection = TextSelection(
-          baseOffset: 0,
-          extentOffset: optionNameController.text.length,
-        );
-      }
-    });
+    final optionFocusNode = _getOptionNameFocusNode(option);
+    final optionNameController = _getOptionNameController(option);
+    final isOptionFocused = _getOptionFocusedNotifier(option);
 
     final isVisible = _optionVisible[option] ?? true;
 

@@ -6,7 +6,7 @@ import '../../../data/repositories/decision_repository.dart';
 import '../../../data/repositories/history_repository.dart';
 import '../../../core/utils/algorithms.dart';
 import '../../../core/utils/app_events.dart';
-import '../create/edit_decision_page.dart';
+import '../create/create_decision_page.dart';
 
 class ExecutePage extends StatefulWidget {
   final Decision decision;
@@ -212,8 +212,10 @@ class _ExecutePageState extends State<ExecutePage>
                           final updated = await Navigator.push<bool>(
                             context,
                             MaterialPageRoute(
-                              builder: (context) =>
-                                  EditDecisionPage(decision: widget.decision),
+                              builder: (context) => CreateDecisionPage(
+                                initialDecision: widget.decision,
+                                isEditing: true,
+                              ),
                             ),
                           );
                           if (updated == true && mounted) {
