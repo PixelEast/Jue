@@ -9,47 +9,55 @@ class SettingsPage extends StatelessWidget {
       backgroundColor: const Color(0xFFFFFFFF),
       body: SingleChildScrollView(
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(32, 79, 32, 100),
+          padding: const EdgeInsets.fromLTRB(32, 100, 32, 100),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const Text(
                 '设置',
                 style: TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.w600,
-                  letterSpacing: 1,
+                  fontSize: 48,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF000000),
                 ),
               ),
               const SizedBox(height: 4),
               const Text(
-                '管理你的应用偏好',
-                style: TextStyle(fontSize: 14, color: Color(0xFF8E8E93)),
+                '定制你的决定体验',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w400,
+                  color: Color(0xFF5E5E5E),
+                ),
               ),
               const SizedBox(height: 24),
 
               // Each setting as independent card
               _buildSettingCard(
                 icon: Icons.notifications_none_rounded,
-                title: '通知设置',
+                title: '通知',
+                subtitle: '建议决定提醒，通知',
                 onTap: () {},
               ),
               const SizedBox(height: 12),
               _buildSettingCard(
                 icon: Icons.palette_outlined,
                 title: '界面与显示',
+                subtitle: '深色模式，字体大小',
                 onTap: () {},
               ),
               const SizedBox(height: 12),
               _buildSettingCard(
                 icon: Icons.key_outlined,
                 title: '系统权限',
+                subtitle: '位置，后台刷新',
                 onTap: () {},
               ),
               const SizedBox(height: 12),
               _buildSettingCard(
                 icon: Icons.storage_outlined,
                 title: '数据与存储',
+                subtitle: '查看存储，清理缓存，历史记录',
                 onTap: () {},
               ),
               const SizedBox(height: 12),
@@ -60,22 +68,41 @@ class SettingsPage extends StatelessWidget {
                 onTap: () {},
               ),
               const SizedBox(height: 24),
+              const Padding(
+                padding: EdgeInsets.only(left: 10),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    '其他信息',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF5E5E5E),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
 
               // About card (black background)
               Container(
-                padding: const EdgeInsets.all(20),
+                padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
                   color: Colors.black,
-                  borderRadius: BorderRadius.circular(20),
+                  borderRadius: BorderRadius.circular(32),
                 ),
                 child: Row(
                   children: [
                     Container(
-                      width: 40,
-                      height: 40,
+                      width: 48,
+                      height: 48,
                       decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(10),
+                        color: const Color(0xFF191919),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: const Color(0xFF474747),
+                          width: 1,
+                        ),
                       ),
                       child: const Icon(
                         Icons.info_outline,
@@ -152,8 +179,9 @@ class SettingsPage extends StatelessWidget {
                   Text(
                     title,
                     style: const TextStyle(
-                      fontSize: 16,
+                      fontSize: 18,
                       fontWeight: FontWeight.w600,
+                      color: Color(0xFF000000),
                     ),
                   ),
                   if (subtitle != null) ...[
@@ -162,7 +190,7 @@ class SettingsPage extends StatelessWidget {
                       subtitle,
                       style: const TextStyle(
                         fontSize: 12,
-                        color: Color(0xFF8E8E93),
+                        color: Color(0xFF5E5E5E),
                       ),
                     ),
                   ],
