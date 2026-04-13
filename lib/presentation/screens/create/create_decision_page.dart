@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'dart:math';
 import '../../../data/models/app_models.dart';
 import '../../../data/repositories/decision_repository.dart';
+import '../../../core/utils/app_events.dart';
 import '../condition/condition_page.dart';
 
 class CreateDecisionPage extends StatefulWidget {
@@ -441,6 +442,7 @@ class _CreateDecisionPageState extends State<CreateDecisionPage> {
           .toList(),
     );
     await _decisionRepo.saveDecision(decision);
+    AppEvents.notifyDecisionsChanged();
     await _decisionRepo.clearDraft();
     if (mounted) Navigator.pop(context, true);
   }

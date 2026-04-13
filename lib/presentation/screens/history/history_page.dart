@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import '../../../data/models/app_models.dart';
 import '../../../data/repositories/decision_repository.dart';
 import '../../../data/repositories/history_repository.dart';
@@ -19,6 +20,7 @@ class _HistoryPageState extends State<HistoryPage> {
   final WeightCalculator _weightCalculator = WeightCalculator();
   List<HistoryRecord> _records = [];
   Map<String, bool> _canRemoveByRecordId = {};
+  Map<String, bool> _recordOptionExistsById = {};
   int _totalCount = 0;
   Map<String, int> _dailyCounts = {};
   bool _isLoading = true;
@@ -43,6 +45,7 @@ class _HistoryPageState extends State<HistoryPage> {
     final totalCount = await _historyRepo.getTotalCount();
     final dailyCounts = await _historyRepo.getDailyCounts();
     final canRemoveByRecordId = <String, bool>{};
+    final recordOptionExistsById = <String, bool>{};
 
     for (final record in records) {
       final decision = decisions.cast<Decision?>().firstWhere(
@@ -52,6 +55,7 @@ class _HistoryPageState extends State<HistoryPage> {
 
       if (decision == null) {
         canRemoveByRecordId[record.id] = false;
+        recordOptionExistsById[record.id] = false;
         continue;
       }
 
@@ -62,6 +66,7 @@ class _HistoryPageState extends State<HistoryPage> {
 
       if (group == null) {
         canRemoveByRecordId[record.id] = false;
+        recordOptionExistsById[record.id] = false;
         continue;
       }
 
@@ -70,15 +75,18 @@ class _HistoryPageState extends State<HistoryPage> {
           .length;
       if (matchingOptionCount == 0) {
         canRemoveByRecordId[record.id] = false;
+        recordOptionExistsById[record.id] = false;
         continue;
       }
 
+      recordOptionExistsById[record.id] = true;
       canRemoveByRecordId[record.id] = group.options.length > 1;
     }
 
     setState(() {
       _records = records;
       _canRemoveByRecordId = canRemoveByRecordId;
+      _recordOptionExistsById = recordOptionExistsById;
       _totalCount = totalCount;
       _dailyCounts = dailyCounts;
       _isLoading = false;
@@ -156,25 +164,46 @@ class _HistoryPageState extends State<HistoryPage> {
     return hours.round().toString();
   }
 
+  String _formatRecordTime(DateTime dateTime) {
+    return '${dateTime.month}月${dateTime.day}日, ${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}';
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFFFFFFF),
       body: SingleChildScrollView(
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(32, 79, 32, 100),
+          padding: const EdgeInsets.fromLTRB(24, 100, 24, 120),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const Text(
-                '历史决定',
+                '定睛回看',
                 style: TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.w600,
-                  letterSpacing: 1,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w400,
+                  color: Color(0xFF5E5E5E),
+                  letterSpacing: 2,
                 ),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 6),
+              RichText(
+                text: const TextSpan(
+                  style: TextStyle(
+                    fontSize: 48,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF000000),
+                    letterSpacing: 0,
+                    height: 1.1,
+                  ),
+                  children: [
+                    TextSpan(text: '历史'),
+                    TextSpan(text: '决定'),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 18),
               if (_isLoading)
                 const Center(
                   child: Padding(
@@ -185,103 +214,112 @@ class _HistoryPageState extends State<HistoryPage> {
               else
                 Column(
                   children: [
-                    // Stats card (x=32, y=189, w=326, h=211, rx=32)
                     Container(
                       width: double.infinity,
-                      padding: const EdgeInsets.all(24),
+                      padding: const EdgeInsets.all(20),
                       decoration: BoxDecoration(
                         color: const Color(0xFFF7F7F7),
                         borderRadius: BorderRadius.circular(32),
                         border: Border.all(
-                          color: Colors.black.withValues(alpha: 0.05),
+                          color: const Color(0xFFEAEAEA),
+                          width: 1,
                         ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.03),
+                            blurRadius: 10,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
                       ),
                       child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Row(
-                            children: [
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      '$_totalCount',
-                                      style: const TextStyle(
-                                        fontSize: 42,
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.black,
-                                      ),
-                                    ),
-                                    const Text(
-                                      '次决定',
-                                      style: TextStyle(
-                                        fontSize: 14,
-                                        color: Color(0xFF5E5E5E),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              Container(
-                                width: 0.61,
-                                height: 24,
-                                color: const Color(
-                                  0xFFC6C6C6,
-                                ).withValues(alpha: 0.3),
-                              ),
-                              const SizedBox(width: 16),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    RichText(
-                                      text: TextSpan(
-                                        children: [
-                                          TextSpan(
-                                            text: _formatSavedTime(_totalCount),
-                                            style: const TextStyle(
-                                              fontSize: 42,
-                                              fontWeight: FontWeight.bold,
-                                              color: Color(0xFF004EE8),
-                                            ),
-                                          ),
-                                          const TextSpan(
-                                            text: '小时',
-                                            style: TextStyle(
-                                              fontSize: 20,
-                                              fontWeight: FontWeight.w500,
-                                              color: Color(0xFF004EE8),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                    const Text(
-                                      '已节省',
-                                      style: TextStyle(
-                                        fontSize: 14,
-                                        color: Color(0xFF5E5E5E),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
+                          const Text(
+                            '累积帮你决定了',
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w400,
+                              color: Color(0xFF5E5E5E),
+                              letterSpacing: 1.2,
+                            ),
                           ),
-                          const SizedBox(height: 24),
+                          const SizedBox(height: 12),
+                          IntrinsicHeight(
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Text(
+                                        '$_totalCount',
+                                        style: const TextStyle(
+                                          fontSize: 24,
+                                          fontWeight: FontWeight.w700,
+                                          color: Color(0xFF004EE8),
+                                        ),
+                                      ),
+                                      const Text(
+                                        '次决定',
+                                        style: TextStyle(
+                                          fontSize: 24,
+                                          fontWeight: FontWeight.w700,
+                                          color: Color(0xFF004EE8),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                Center(
+                                  child: Container(
+                                    width: 1,
+                                    margin: const EdgeInsets.symmetric(
+                                      vertical: 6,
+                                    ),
+                                    color: const Color(
+                                      0xFFC6C6C6,
+                                    ).withValues(alpha: 0.3),
+                                  ),
+                                ),
+                                const SizedBox(width: 16),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Text(
+                                        '${_formatSavedTime(_totalCount)}小时',
+                                        style: const TextStyle(
+                                          fontSize: 24,
+                                          fontWeight: FontWeight.w700,
+                                          color: Color(0xFF000000),
+                                        ),
+                                      ),
+                                      const Text(
+                                        '已节省',
+                                        style: TextStyle(
+                                          fontSize: 24,
+                                          fontWeight: FontWeight.w700,
+                                          color: Color(0xFF000000),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 20),
                           SizedBox(height: 60, child: _buildBarChart()),
                         ],
                       ),
                     ),
-                    const SizedBox(height: 24),
-                    const Text(
-                      '决定时间线',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 50),
                     if (_records.isEmpty)
                       Container(
                         padding: const EdgeInsets.all(40),
@@ -329,28 +367,43 @@ class _HistoryPageState extends State<HistoryPage> {
         : counts.reduce((a, b) => a > b ? a : b);
 
     return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
       crossAxisAlignment: CrossAxisAlignment.end,
       children: List.generate(7, (i) {
         final height = maxCount > 0 ? (counts[i] / maxCount) * 40.0 : 0.0;
-        final isToday = i == 6;
+        final date = now.subtract(Duration(days: 6 - i));
+        final isToday =
+            date.year == now.year &&
+            date.month == now.month &&
+            date.day == now.day;
+        final distanceFromToday = 6 - i;
+        Color barColor;
+        if (distanceFromToday == 0) {
+          barColor = const Color(0xFF004EE8);
+        } else if (distanceFromToday == 1) {
+          barColor = const Color(0xFF6392EE);
+        } else if (distanceFromToday == 2) {
+          barColor = const Color(0xFFADC4F3);
+        } else {
+          barColor = const Color(0xFFEEEEEE);
+        }
         return Column(
+          mainAxisAlignment: MainAxisAlignment.end,
           children: [
             Container(
-              width: 35.43,
+              width: 34,
               height: height > 0 ? height : 2,
               decoration: BoxDecoration(
-                color: isToday
-                    ? const Color(0xFF004EE8)
-                    : const Color(0xFFC6C6C6).withValues(alpha: 0.2),
+                color: barColor,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: 6),
             Text(
-              days[i],
+              isToday ? '今天' : days[i],
               style: TextStyle(
-                fontSize: 11,
+                fontSize: 8,
+                fontWeight: isToday ? FontWeight.w600 : FontWeight.w400,
                 color: isToday
                     ? const Color(0xFF004EE8)
                     : const Color(0xFF5E5E5E),
@@ -363,209 +416,240 @@ class _HistoryPageState extends State<HistoryPage> {
   }
 
   Widget _buildTimeline() {
-    return ListView.separated(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      separatorBuilder: (context, index) => const SizedBox(height: 16),
-      itemCount: _records.length,
-      itemBuilder: (context, index) {
-        final isLast = index == _records.length - 1;
-        return _buildTimelineItem(_records[index], isLast);
-      },
+    return Stack(
+      children: [
+        Positioned(
+          left: 5,
+          top: 12,
+          bottom: 100,
+          width: 2,
+          child: Container(
+            color: const Color(0xFFC6C6C6).withValues(alpha: 0.3),
+          ),
+        ),
+        Positioned(
+          left: 5,
+          bottom: 0,
+          width: 2,
+          height: 100,
+          child: Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  const Color(0xFFC6C6C6).withValues(alpha: 0.3),
+                  Colors.transparent,
+                ],
+              ),
+            ),
+          ),
+        ),
+        Column(
+          children: List.generate(_records.length, (index) {
+            final isLast = index == _records.length - 1;
+            return _buildTimelineItem(_records[index], isLast);
+          }),
+        ),
+      ],
     );
   }
 
   Widget _buildTimelineItem(HistoryRecord record, bool isLast) {
-    final isToday =
-        record.dateOnly.day == DateTime.now().day &&
-        record.dateOnly.month == DateTime.now().month;
-    final canAct = record.feedback == 'none';
+    final optionStillExists = _recordOptionExistsById[record.id] ?? true;
+    final canAct = record.feedback == 'none' && optionStillExists;
     final canRemove = _canRemoveByRecordId[record.id] ?? false;
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Column(
-          children: [
-            // Timeline dot (x=42, w=12, h=12, rx=6)
-            Container(
-              width: 12,
-              height: 12,
-              decoration: BoxDecoration(
-                color: isToday ? Colors.black : const Color(0xFFC6C6C6),
-                shape: BoxShape.circle,
+    final isLatest = _records.isNotEmpty && identical(record, _records.first);
+    return Padding(
+      padding: EdgeInsets.only(bottom: isLast ? 0 : 50),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Column(
+            children: [
+              Container(
+                width: 12,
+                height: 12,
+                decoration: BoxDecoration(
+                  color: Colors.black,
+                  shape: BoxShape.circle,
+                  boxShadow: const [
+                    BoxShadow(
+                      color: Colors.white,
+                      blurRadius: 0,
+                      spreadRadius: 4,
+                    ),
+                  ],
+                ),
               ),
-            ),
-            // Timeline line (x=48, w=2)
-            Container(
-              width: 2,
-              height: isLast ? 100 : 200,
-              decoration: isLast
-                  ? BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [
-                          const Color(0xFFC6C6C6).withValues(alpha: 0.3),
-                          Colors.transparent,
-                        ],
-                      ),
-                    )
-                  : null,
-              color: isLast
-                  ? null
-                  : const Color(0xFFC6C6C6).withValues(alpha: 0.3),
-            ),
-          ],
-        ),
-        const SizedBox(width: 16),
-        // Record card (x=64, w=294, h≈165, rx=16)
-        Expanded(
-          child: Container(
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              color: const Color(0xFFF7F7F7),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: Colors.black.withValues(alpha: 0.05)),
-            ),
+            ],
+          ),
+          const SizedBox(width: 20),
+          Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  '${record.createdAt.year}-${record.createdAt.month.toString().padLeft(2, '0')}-${record.createdAt.day.toString().padLeft(2, '0')} ${record.createdAt.hour.toString().padLeft(2, '0')}:${record.createdAt.minute.toString().padLeft(2, '0')}',
+                  _formatRecordTime(record.createdAt),
                   style: const TextStyle(
-                    fontSize: 12,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w400,
                     color: Color(0xFF5E5E5E),
+                    letterSpacing: 1.2,
                   ),
                 ),
-                const SizedBox(height: 8),
-                Text(
-                  record.decisionTheme,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
+                const SizedBox(height: 6),
+                RichText(
+                  text: TextSpan(
+                    children: [
+                      TextSpan(
+                        text: '判决：${record.decisionTheme}',
+                        style: const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFF000000),
+                          height: 1.2,
+                        ),
+                      ),
+                      TextSpan(
+                        text: '（${record.optionGroupName}）',
+                        style: const TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFF000000),
+                          height: 1.2,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
                 const SizedBox(height: 12),
                 Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 8,
-                  ),
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(24),
                   decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(8),
+                    color: const Color(0xFFF7F7F7),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: const Color(0xFFEAEAEA),
+                      width: 1,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.04),
+                        blurRadius: 12,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
                   ),
-                  child: Text(
-                    '判决：${record.result}',
-                    style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                      color: Color(0xFF004EE8),
-                    ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        '判决结果:',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF5E5E5E),
+                          letterSpacing: 1.2,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        record.result,
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.w700,
+                          color: isLatest
+                              ? const Color(0xFF004EE8)
+                              : const Color(0xFF1B1B1B),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Container(
+                        padding: const EdgeInsets.only(top: 16),
+                        decoration: BoxDecoration(
+                          border: Border(
+                            top: BorderSide(
+                              color: const Color(
+                                0xFFC6C6C6,
+                              ).withValues(alpha: 0.08),
+                            ),
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Row(
+                              children: [
+                                GestureDetector(
+                                  onTap: canAct
+                                      ? () => _updateFeedback(record.id, 'like')
+                                      : null,
+                                  child: SvgPicture.asset(
+                                    'figma_exports/icons/Like.svg',
+                                    height: 15,
+                                    colorFilter: ColorFilter.mode(
+                                      record.feedback == 'like'
+                                          ? const Color(0xFF004EE8)
+                                          : (canAct
+                                                ? const Color(0xFF231815)
+                                                : const Color(0xFFC6C6C6)),
+                                      BlendMode.srcIn,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 28),
+                                GestureDetector(
+                                  onTap: canAct
+                                      ? () => _updateFeedback(
+                                          record.id,
+                                          'dislike',
+                                        )
+                                      : null,
+                                  child: SvgPicture.asset(
+                                    'figma_exports/icons/Dislike.svg',
+                                    height: 15,
+                                    colorFilter: ColorFilter.mode(
+                                      record.feedback == 'dislike'
+                                          ? const Color(0xFFE49B87)
+                                          : (canAct
+                                                ? const Color(0xFF231815)
+                                                : const Color(0xFFC6C6C6)),
+                                      BlendMode.srcIn,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            GestureDetector(
+                              onTap: canAct && canRemove
+                                  ? () => _updateFeedback(record.id, 'removed')
+                                  : null,
+                              child: SvgPicture.asset(
+                                'figma_exports/icons/Remove.svg',
+                                height: 15,
+                                colorFilter: ColorFilter.mode(
+                                  record.feedback == 'removed'
+                                      ? const Color(0xFFBA1A1A)
+                                      : (canAct && canRemove
+                                            ? const Color(0xFF231815)
+                                            : const Color(0xFFC6C6C6)),
+                                  BlendMode.srcIn,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    GestureDetector(
-                      onTap: canAct
-                          ? () => _updateFeedback(record.id, 'like')
-                          : null,
-                      child: Column(
-                        children: [
-                          Icon(
-                            Icons.thumb_up_outlined,
-                            size: 20,
-                            color: record.feedback == 'like'
-                                ? const Color(0xFF004EE8)
-                                : (canAct
-                                      ? const Color(0xFF231815)
-                                      : const Color(0xFFC6C6C6)),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            '点赞',
-                            style: TextStyle(
-                              fontSize: 11,
-                              color: record.feedback == 'like'
-                                  ? const Color(0xFF004EE8)
-                                  : (canAct
-                                        ? const Color(0xFF231815)
-                                        : const Color(0xFFC6C6C6)),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 24),
-                    GestureDetector(
-                      onTap: canAct
-                          ? () => _updateFeedback(record.id, 'dislike')
-                          : null,
-                      child: Column(
-                        children: [
-                          Icon(
-                            Icons.thumb_down_outlined,
-                            size: 20,
-                            color: record.feedback == 'dislike'
-                                ? const Color(0xFFE49B87)
-                                : (canAct
-                                      ? const Color(0xFF231815)
-                                      : const Color(0xFFC6C6C6)),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            '点踩',
-                            style: TextStyle(
-                              fontSize: 11,
-                              color: record.feedback == 'dislike'
-                                  ? const Color(0xFFE49B87)
-                                  : (canAct
-                                        ? const Color(0xFF231815)
-                                        : const Color(0xFFC6C6C6)),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 24),
-                    GestureDetector(
-                      onTap: canAct && canRemove
-                          ? () => _updateFeedback(record.id, 'removed')
-                          : null,
-                      child: Column(
-                        children: [
-                          Icon(
-                            Icons.close,
-                            size: 20,
-                            color: record.feedback == 'removed'
-                                ? const Color(0xFFBA1A1A)
-                                : (canAct && canRemove
-                                      ? const Color(0xFF231815)
-                                      : const Color(0xFFC6C6C6)),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            '移除',
-                            style: TextStyle(
-                              fontSize: 11,
-                              color: record.feedback == 'removed'
-                                  ? const Color(0xFFBA1A1A)
-                                  : (canAct && canRemove
-                                        ? const Color(0xFF231815)
-                                        : const Color(0xFFC6C6C6)),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
                 ),
               ],
             ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }
