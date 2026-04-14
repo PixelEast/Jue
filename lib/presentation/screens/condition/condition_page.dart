@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http;
 import 'package:latlong2/latlong.dart';
 import 'dart:convert';
 import 'dart:ui';
+import '../../widgets/frosted_back_button.dart';
 
 class ConditionPage extends StatefulWidget {
   final List<String> optionGroupNames;
@@ -809,6 +810,7 @@ class _ConditionPageState extends State<ConditionPage>
 
   @override
   Widget build(BuildContext context) {
+    final topInset = MediaQuery.paddingOf(context).top;
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, result) {
@@ -820,248 +822,218 @@ class _ConditionPageState extends State<ConditionPage>
         backgroundColor: _surface,
         body: Stack(
           children: [
-            Positioned(
-              top: 16,
-              left: 16,
-              child: GestureDetector(
-                onTap: _applyConditions,
-                child: Container(
-                  width: 48,
-                  height: 48,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: Colors.white,
-                    border: Border.all(
-                      color: _outlineVariant.withValues(alpha: 0.3),
-                      width: 1,
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.05),
-                        blurRadius: 4,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: const Icon(
-                    Icons.arrow_back,
-                    size: 20,
-                    color: _primary,
-                  ),
-                ),
-              ),
-            ),
-            SafeArea(
-              child: Column(
-                children: [
-                  Expanded(
-                    child: SingleChildScrollView(
-                      physics: _draggingBoundaryIndex != null
-                          ? const NeverScrollableScrollPhysics()
-                          : null,
-                      controller: _scrollController,
-                      padding: const EdgeInsets.fromLTRB(24, 96, 24, 160),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const SizedBox(height: 24),
-                          const Text(
-                            '即刻判决！',
-                            style: TextStyle(
-                              fontSize: 10,
-                              fontWeight: FontWeight.w500,
-                              color: _secondary,
-                              letterSpacing: 1.5,
-                            ),
+            Column(
+              children: [
+                Expanded(
+                  child: SingleChildScrollView(
+                    physics: _draggingBoundaryIndex != null
+                        ? const NeverScrollableScrollPhysics()
+                        : null,
+                    controller: _scrollController,
+                    padding: EdgeInsets.fromLTRB(24, topInset + 72, 24, 160),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const SizedBox(height: 24),
+                        const Text(
+                          '即刻判决！',
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w500,
+                            color: _secondary,
+                            letterSpacing: 1.5,
                           ),
-                          const SizedBox(height: 8),
-                          const Text(
-                            '设置逻辑条件',
-                            style: TextStyle(
-                              fontSize: 48,
-                              fontWeight: FontWeight.w800,
-                              color: _primary,
-                              letterSpacing: -0.05,
-                              height: 1.1,
-                            ),
+                        ),
+                        const SizedBox(height: 8),
+                        const Text(
+                          '设置逻辑条件',
+                          style: TextStyle(
+                            fontSize: 48,
+                            fontWeight: FontWeight.w800,
+                            color: _primary,
+                            letterSpacing: -0.05,
+                            height: 1.1,
                           ),
-                          const SizedBox(height: 16),
-                          Text(
-                            '为你的决定设置逻辑条件，以此在多个选项组存在时，决定每个选项组改在什么情况下启用。',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w400,
-                              color: _secondary,
-                              height: 1.5,
-                            ),
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          '为你的决定设置逻辑条件，以此在多个选项组存在时，决定每个选项组改在什么情况下启用。',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w400,
+                            color: _secondary,
+                            height: 1.5,
                           ),
-                          const SizedBox(height: 32),
-                          Container(
-                            height: 55,
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(999),
-                              border: Border.all(
-                                color: _primary.withValues(alpha: 0.1),
-                                width: 1,
+                        ),
+                        const SizedBox(height: 32),
+                        Container(
+                          height: 55,
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(999),
+                            border: Border.all(
+                              color: _primary.withValues(alpha: 0.1),
+                              width: 1,
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.05),
+                                blurRadius: 4,
+                                offset: const Offset(0, 2),
                               ),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withValues(alpha: 0.05),
-                                  blurRadius: 4,
-                                  offset: const Offset(0, 2),
-                                ),
-                              ],
-                            ),
-                            child: Stack(
-                              children: [
-                                AnimatedAlign(
-                                  duration: const Duration(milliseconds: 240),
-                                  curve: Curves.easeInOutCubic,
-                                  alignment: _selectedMode == 0
-                                      ? Alignment.centerLeft
-                                      : Alignment.centerRight,
-                                  child: FractionallySizedBox(
-                                    widthFactor: 0.5,
-                                    child: Container(
-                                      margin: const EdgeInsets.all(6),
-                                      decoration: BoxDecoration(
-                                        color: _primary,
-                                        borderRadius: BorderRadius.circular(
-                                          999,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                                Row(
-                                  children: [
-                                    Expanded(
-                                      child: GestureDetector(
-                                        behavior: HitTestBehavior.opaque,
-                                        onTap: () =>
-                                            setState(() => _selectedMode = 0),
-                                        child: Container(
-                                          alignment: Alignment.center,
-                                          child: AnimatedDefaultTextStyle(
-                                            duration: const Duration(
-                                              milliseconds: 200,
-                                            ),
-                                            curve: Curves.easeInOutCubic,
-                                            style: TextStyle(
-                                              fontSize: 13,
-                                              fontWeight: FontWeight.w800,
-                                              color: _selectedMode == 0
-                                                  ? Colors.white
-                                                  : _secondary,
-                                              letterSpacing: 0.2,
-                                            ),
-                                            child: const Text('时间范围'),
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                    Expanded(
-                                      child: GestureDetector(
-                                        behavior: HitTestBehavior.opaque,
-                                        onTap: () =>
-                                            setState(() => _selectedMode = 1),
-                                        child: Container(
-                                          alignment: Alignment.center,
-                                          child: AnimatedDefaultTextStyle(
-                                            duration: const Duration(
-                                              milliseconds: 200,
-                                            ),
-                                            curve: Curves.easeInOutCubic,
-                                            style: TextStyle(
-                                              fontSize: 13,
-                                              fontWeight: FontWeight.w800,
-                                              color: _selectedMode == 1
-                                                  ? Colors.white
-                                                  : _secondary,
-                                              letterSpacing: 0.2,
-                                            ),
-                                            child: const Text('位置范围'),
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
+                            ],
                           ),
-                          const SizedBox(height: 32),
-                          AnimatedSize(
-                            duration: const Duration(milliseconds: 220),
-                            curve: Curves.easeOutCubic,
-                            alignment: Alignment.topCenter,
-                            child: AnimatedSwitcher(
-                              duration: const Duration(milliseconds: 220),
-                              switchInCurve: Curves.easeOutCubic,
-                              switchOutCurve: Curves.easeInOutCubic,
-                              layoutBuilder: (currentChild, previousChildren) {
-                                return Stack(
-                                  alignment: Alignment.topCenter,
-                                  children: currentChild == null
-                                      ? [...previousChildren]
-                                      : [...previousChildren, currentChild],
-                                );
-                              },
-                              transitionBuilder: (child, animation) {
-                                final isTime =
-                                    child.key == const ValueKey('time-mode');
-                                final offsetTween = Tween<Offset>(
-                                  begin: isTime
-                                      ? const Offset(-0.05, 0)
-                                      : const Offset(0.05, 0),
-                                  end: Offset.zero,
-                                );
-                                return ClipRect(
-                                  child: FadeTransition(
-                                    opacity: animation,
-                                    child: SlideTransition(
-                                      position: offsetTween.animate(animation),
-                                      child: child,
+                          child: Stack(
+                            children: [
+                              AnimatedAlign(
+                                duration: const Duration(milliseconds: 240),
+                                curve: Curves.easeInOutCubic,
+                                alignment: _selectedMode == 0
+                                    ? Alignment.centerLeft
+                                    : Alignment.centerRight,
+                                child: FractionallySizedBox(
+                                  widthFactor: 0.5,
+                                  child: Container(
+                                    margin: const EdgeInsets.all(6),
+                                    decoration: BoxDecoration(
+                                      color: _primary,
+                                      borderRadius: BorderRadius.circular(999),
                                     ),
                                   ),
-                                );
-                              },
-                              child: _selectedMode == 0
-                                  ? KeyedSubtree(
-                                      key: const ValueKey('time-mode'),
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          _buildTimeline(),
+                                ),
+                              ),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: GestureDetector(
+                                      behavior: HitTestBehavior.opaque,
+                                      onTap: () =>
+                                          setState(() => _selectedMode = 0),
+                                      child: Container(
+                                        alignment: Alignment.center,
+                                        child: AnimatedDefaultTextStyle(
+                                          duration: const Duration(
+                                            milliseconds: 200,
+                                          ),
+                                          curve: Curves.easeInOutCubic,
+                                          style: TextStyle(
+                                            fontSize: 13,
+                                            fontWeight: FontWeight.w800,
+                                            color: _selectedMode == 0
+                                                ? Colors.white
+                                                : _secondary,
+                                            letterSpacing: 0.2,
+                                          ),
+                                          child: const Text('时间范围'),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  Expanded(
+                                    child: GestureDetector(
+                                      behavior: HitTestBehavior.opaque,
+                                      onTap: () =>
+                                          setState(() => _selectedMode = 1),
+                                      child: Container(
+                                        alignment: Alignment.center,
+                                        child: AnimatedDefaultTextStyle(
+                                          duration: const Duration(
+                                            milliseconds: 200,
+                                          ),
+                                          curve: Curves.easeInOutCubic,
+                                          style: TextStyle(
+                                            fontSize: 13,
+                                            fontWeight: FontWeight.w800,
+                                            color: _selectedMode == 1
+                                                ? Colors.white
+                                                : _secondary,
+                                            letterSpacing: 0.2,
+                                          ),
+                                          child: const Text('位置范围'),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 32),
+                        AnimatedSize(
+                          duration: const Duration(milliseconds: 220),
+                          curve: Curves.easeOutCubic,
+                          alignment: Alignment.topCenter,
+                          child: AnimatedSwitcher(
+                            duration: const Duration(milliseconds: 220),
+                            switchInCurve: Curves.easeOutCubic,
+                            switchOutCurve: Curves.easeInOutCubic,
+                            layoutBuilder: (currentChild, previousChildren) {
+                              return Stack(
+                                alignment: Alignment.topCenter,
+                                children: currentChild == null
+                                    ? [...previousChildren]
+                                    : [...previousChildren, currentChild],
+                              );
+                            },
+                            transitionBuilder: (child, animation) {
+                              final isTime =
+                                  child.key == const ValueKey('time-mode');
+                              final offsetTween = Tween<Offset>(
+                                begin: isTime
+                                    ? const Offset(-0.05, 0)
+                                    : const Offset(0.05, 0),
+                                end: Offset.zero,
+                              );
+                              return ClipRect(
+                                child: FadeTransition(
+                                  opacity: animation,
+                                  child: SlideTransition(
+                                    position: offsetTween.animate(animation),
+                                    child: child,
+                                  ),
+                                ),
+                              );
+                            },
+                            child: _selectedMode == 0
+                                ? KeyedSubtree(
+                                    key: const ValueKey('time-mode'),
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        _buildTimeline(),
+                                        const SizedBox(height: 48),
+                                        _buildFooterButton(),
+                                      ],
+                                    ),
+                                  )
+                                : KeyedSubtree(
+                                    key: const ValueKey('location-mode'),
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        _buildLocationContent(),
+                                        if (!_isLocationUnavailable) ...[
                                           const SizedBox(height: 48),
                                           _buildFooterButton(),
                                         ],
-                                      ),
-                                    )
-                                  : KeyedSubtree(
-                                      key: const ValueKey('location-mode'),
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          _buildLocationContent(),
-                                          if (!_isLocationUnavailable) ...[
-                                            const SizedBox(height: 48),
-                                            _buildFooterButton(),
-                                          ],
-                                        ],
-                                      ),
+                                      ],
                                     ),
-                            ),
+                                  ),
                           ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
                   ),
-                ],
-              ),
+                ),
+              ],
+            ),
+            Positioned(
+              top: topInset + 16,
+              left: 16,
+              child: FrostedBackButton(onTap: _applyConditions),
             ),
             if (_defaultGroupDropdownEntry != null)
               Positioned.fill(

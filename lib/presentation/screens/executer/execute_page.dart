@@ -6,6 +6,7 @@ import '../../../data/repositories/decision_repository.dart';
 import '../../../data/repositories/history_repository.dart';
 import '../../../core/utils/algorithms.dart';
 import '../../../core/utils/app_events.dart';
+import '../../widgets/frosted_back_button.dart';
 import '../create/create_decision_page.dart';
 
 class ExecutePage extends StatefulWidget {
@@ -201,13 +202,10 @@ class _ExecutePageState extends State<ExecutePage>
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      IconButton(
-                        icon: const Icon(Icons.arrow_back, color: Colors.black),
-                        onPressed: () => Navigator.pop(context),
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.edit, color: Colors.black),
-                        onPressed: () async {
+                      FrostedBackButton(onTap: () => Navigator.pop(context)),
+                      FrostedBackButton(
+                        icon: Icons.edit,
+                        onTap: () async {
                           final navigator = Navigator.of(context);
                           final updated = await Navigator.push<bool>(
                             context,
