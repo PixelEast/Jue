@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'dart:math';
+import 'dart:ui';
 import '../../../data/models/app_models.dart';
 import '../../../data/repositories/decision_repository.dart';
 import '../../../core/utils/app_events.dart';
+import '../../widgets/frosted_back_button.dart';
 import '../condition/condition_page.dart';
 
 class CreateDecisionPage extends StatefulWidget {
@@ -36,6 +38,7 @@ class _CreateDecisionPageState extends State<CreateDecisionPage> {
   final Map<OptionData, FocusNode> _optionNameFocusNodes = {};
   final Map<OptionData, ValueNotifier<bool>> _optionNameFocused = {};
   bool _renderHeavySections = false;
+  bool _deleteDecisionPressed = false;
 
   @override
   void initState() {
@@ -201,19 +204,150 @@ class _CreateDecisionPageState extends State<CreateDecisionPage> {
     if (draft != null && mounted) {
       final result = await showDialog<bool>(
         context: context,
-        builder: (context) => AlertDialog(
-          title: const Text('恢复未保存内容'),
-          content: const Text('检测到上次未保存的决定内容，是否恢复？'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: const Text('不恢复'),
-            ),
-            TextButton(
-              onPressed: () => Navigator.pop(context, true),
-              child: const Text('恢复'),
-            ),
-          ],
+        barrierColor: Colors.transparent,
+        builder: (context) => Dialog(
+          backgroundColor: Colors.transparent,
+          insetPadding: const EdgeInsets.symmetric(horizontal: 24),
+          child: Stack(
+            children: [
+              Positioned.fill(
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                  child: const SizedBox.expand(),
+                ),
+              ),
+              Center(
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(24),
+                  child: BackdropFilter(
+                    filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+                    child: Container(
+                      width: 310,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 30,
+                        vertical: 55,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.85),
+                        borderRadius: BorderRadius.circular(24),
+                        border: Border.all(
+                          color: const Color(0xFFE5E5E5),
+                          width: 1,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.08),
+                            blurRadius: 16,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            '恢复未保存内容',
+                            textAlign: TextAlign.left,
+                            style: TextStyle(
+                              color: Color(0xFF000000),
+                              fontSize: 28,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          const SizedBox(height: 30),
+                          const Text(
+                            '你上次关闭创建决定页时有未保存的内容，是否需要帮你恢复？',
+                            textAlign: TextAlign.left,
+                            style: TextStyle(
+                              color: Color(0xFF5E5E5E),
+                              fontSize: 16,
+                              fontWeight: FontWeight.w400,
+                              height: 1.5,
+                            ),
+                          ),
+                          const SizedBox(height: 30),
+                          SizedBox(
+                            width: double.infinity,
+                            height: 45,
+                            child: Material(
+                              color: Colors.transparent,
+                              borderRadius: BorderRadius.circular(12),
+                              child: Ink(
+                                decoration: BoxDecoration(
+                                  color: Colors.black,
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: InkWell(
+                                  onTap: () => Navigator.pop(context, true),
+                                  borderRadius: BorderRadius.circular(12),
+                                  splashColor: Colors.white.withValues(
+                                    alpha: 0.08,
+                                  ),
+                                  highlightColor: Colors.white.withValues(
+                                    alpha: 0.04,
+                                  ),
+                                  child: const Center(
+                                    child: Text(
+                                      '恢复上次内容',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          SizedBox(
+                            width: double.infinity,
+                            height: 45,
+                            child: Material(
+                              color: Colors.transparent,
+                              borderRadius: BorderRadius.circular(12),
+                              child: Ink(
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFF7F7F7),
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(
+                                    color: const Color(0xFFEAEAEA),
+                                    width: 1,
+                                  ),
+                                ),
+                                child: InkWell(
+                                  onTap: () => Navigator.pop(context, false),
+                                  borderRadius: BorderRadius.circular(12),
+                                  splashColor: Colors.black.withValues(
+                                    alpha: 0.04,
+                                  ),
+                                  highlightColor: Colors.black.withValues(
+                                    alpha: 0.02,
+                                  ),
+                                  child: const Center(
+                                    child: Text(
+                                      '不恢复',
+                                      style: TextStyle(
+                                        color: Color(0xFF000000),
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       );
       if (result == true) {
@@ -315,6 +449,166 @@ class _CreateDecisionPageState extends State<CreateDecisionPage> {
           .toList(),
     );
     await _decisionRepo.saveDecision(decision);
+  }
+
+  Future<void> _deleteDecision() async {
+    final decision = widget.initialDecision;
+    if (decision == null) return;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      barrierColor: Colors.transparent,
+      builder: (context) => Dialog(
+        backgroundColor: Colors.transparent,
+        insetPadding: const EdgeInsets.symmetric(horizontal: 24),
+        child: Stack(
+          children: [
+            Positioned.fill(
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                child: const SizedBox.expand(),
+              ),
+            ),
+            Center(
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(24),
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+                  child: Container(
+                    width: 310,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 30,
+                      vertical: 55,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.85),
+                      borderRadius: BorderRadius.circular(24),
+                      border: Border.all(
+                        color: const Color(0xFFE5E5E5),
+                        width: 1,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.08),
+                          blurRadius: 16,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          '删除此决定',
+                          style: TextStyle(
+                            color: Color(0xFF000000),
+                            fontSize: 28,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        const SizedBox(height: 30),
+                        const Text(
+                          '确认删除当前决定吗？此操作无法撤销，但历史记录会被保留。',
+                          style: TextStyle(
+                            color: Color(0xFF5E5E5E),
+                            fontSize: 16,
+                            fontWeight: FontWeight.w400,
+                            height: 1.5,
+                          ),
+                        ),
+                        const SizedBox(height: 30),
+                        SizedBox(
+                          width: double.infinity,
+                          height: 45,
+                          child: Material(
+                            color: Colors.transparent,
+                            borderRadius: BorderRadius.circular(12),
+                            child: Ink(
+                              decoration: BoxDecoration(
+                                color: Colors.black,
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: InkWell(
+                                onTap: () => Navigator.pop(context, true),
+                                borderRadius: BorderRadius.circular(12),
+                                splashColor: Colors.white.withValues(
+                                  alpha: 0.08,
+                                ),
+                                highlightColor: Colors.white.withValues(
+                                  alpha: 0.04,
+                                ),
+                                child: const Center(
+                                  child: Text(
+                                    '确认删除',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        SizedBox(
+                          width: double.infinity,
+                          height: 45,
+                          child: Material(
+                            color: Colors.transparent,
+                            borderRadius: BorderRadius.circular(12),
+                            child: Ink(
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFF7F7F7),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: const Color(0xFFEAEAEA),
+                                  width: 1,
+                                ),
+                              ),
+                              child: InkWell(
+                                onTap: () => Navigator.pop(context, false),
+                                borderRadius: BorderRadius.circular(12),
+                                splashColor: Colors.black.withValues(
+                                  alpha: 0.04,
+                                ),
+                                highlightColor: Colors.black.withValues(
+                                  alpha: 0.02,
+                                ),
+                                child: const Center(
+                                  child: Text(
+                                    '取消',
+                                    style: TextStyle(
+                                      color: Color(0xFF000000),
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (confirmed == true) {
+      await _decisionRepo.deleteDecision(decision.id);
+      AppEvents.notifyDecisionsChanged();
+      if (mounted) {
+        Navigator.pop(context, true);
+      }
+    }
   }
 
   @override
@@ -420,6 +714,12 @@ class _CreateDecisionPageState extends State<CreateDecisionPage> {
       currentHour += hoursPerGroup;
       if (i < remainder) currentHour += 1;
       final endHour = i == count - 1 ? 24 : currentHour;
+      _optionGroups[i].startHour = startHour;
+      _optionGroups[i].endHour = endHour;
+      _optionGroups[i].latitude = null;
+      _optionGroups[i].longitude = null;
+      _optionGroups[i].radiusMeters = null;
+      _optionGroups[i].isDefaultGroup = false;
       _optionGroups[i].conditionSummary =
           '时间范围 ${startHour.toString().padLeft(2, '0')}:00 - ${endHour.toString().padLeft(2, '0')}:00';
     }
@@ -761,36 +1061,49 @@ class _CreateDecisionPageState extends State<CreateDecisionPage> {
                 ),
                 const SizedBox(height: 40),
                 if (_showLogicCondition) ...[
-                  GestureDetector(
-                    onTap: _navigateToCondition,
-                    child: Container(
+                  Material(
+                    color: Colors.transparent,
+                    borderRadius: BorderRadius.circular(16),
+                    child: Ink(
                       width: double.infinity,
                       height: 56,
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
                       decoration: BoxDecoration(
                         color: Colors.black,
                         borderRadius: BorderRadius.circular(16),
                       ),
-                      child: Row(
-                        children: [
-                          const Icon(Icons.tune, color: Colors.white, size: 24),
-                          const SizedBox(width: 12),
-                          const Expanded(
-                            child: Text(
-                              '逻辑条件',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w500,
+                      child: InkWell(
+                        onTap: _navigateToCondition,
+                        borderRadius: BorderRadius.circular(16),
+                        splashColor: Colors.white.withValues(alpha: 0.08),
+                        highlightColor: Colors.white.withValues(alpha: 0.04),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          child: Row(
+                            children: [
+                              const Icon(
+                                Icons.tune,
                                 color: Colors.white,
+                                size: 24,
                               ),
-                            ),
+                              const SizedBox(width: 12),
+                              const Expanded(
+                                child: Text(
+                                  '逻辑条件',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w500,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ),
+                              const Icon(
+                                Icons.chevron_right,
+                                color: Color(0xFFC6C6C6),
+                                size: 20,
+                              ),
+                            ],
                           ),
-                          const Icon(
-                            Icons.chevron_right,
-                            color: Color(0xFFC6C6C6),
-                            size: 20,
-                          ),
-                        ],
+                        ),
                       ),
                     ),
                   ),
@@ -808,33 +1121,42 @@ class _CreateDecisionPageState extends State<CreateDecisionPage> {
                       ),
                     ),
                     if (_optionGroups.length < 6)
-                      GestureDetector(
-                        onTap: _addGroupAndScroll,
-                        child: Container(
+                      Material(
+                        color: Colors.transparent,
+                        borderRadius: BorderRadius.circular(12),
+                        child: Ink(
                           width: 140,
                           height: 40,
                           decoration: BoxDecoration(
                             color: Colors.black,
                             borderRadius: BorderRadius.circular(12),
                           ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              const Icon(
-                                Icons.add,
-                                color: Colors.white,
-                                size: 16,
-                              ),
-                              const SizedBox(width: 8),
-                              const Text(
-                                '新建选项组',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w600,
+                          child: InkWell(
+                            onTap: _addGroupAndScroll,
+                            borderRadius: BorderRadius.circular(12),
+                            splashColor: Colors.white.withValues(alpha: 0.08),
+                            highlightColor: Colors.white.withValues(
+                              alpha: 0.04,
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                const Icon(
+                                  Icons.add,
                                   color: Colors.white,
+                                  size: 16,
                                 ),
-                              ),
-                            ],
+                                const SizedBox(width: 8),
+                                const Text(
+                                  '新建选项组',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                       ),
@@ -868,21 +1190,64 @@ class _CreateDecisionPageState extends State<CreateDecisionPage> {
                     style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                   ),
                 ),
+                if (widget.isEditing) ...[
+                  const SizedBox(height: 12),
+                  GestureDetector(
+                    onTap: _deleteDecision,
+                    onTapDown: (_) =>
+                        setState(() => _deleteDecisionPressed = true),
+                    onTapUp: (_) =>
+                        setState(() => _deleteDecisionPressed = false),
+                    onTapCancel: () =>
+                        setState(() => _deleteDecisionPressed = false),
+                    child: AnimatedScale(
+                      duration: const Duration(milliseconds: 120),
+                      scale: _deleteDecisionPressed ? 0.98 : 1,
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 120),
+                        width: double.infinity,
+                        height: 56,
+                        decoration: BoxDecoration(
+                          color: _deleteDecisionPressed
+                              ? Colors.white.withValues(alpha: 0.9)
+                              : Colors.white,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: const Color(0xFFF2F2F2),
+                            width: 1,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(
+                                alpha: _deleteDecisionPressed ? 0.08 : 0.12,
+                              ),
+                              blurRadius: _deleteDecisionPressed ? 2 : 4,
+                              offset: const Offset(0, 1),
+                            ),
+                          ],
+                        ),
+                        child: const Center(
+                          child: Text(
+                            '删除此决定',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFF000000),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ],
             ),
           ),
           Positioned(
             top: 16,
-            left: 8,
+            left: 16,
             child: SafeArea(
-              child: IconButton(
-                icon: const Icon(
-                  Icons.arrow_back,
-                  color: Color(0xFF1B1B1B),
-                  size: 24,
-                ),
-                onPressed: () => Navigator.pop(context),
-              ),
+              child: FrostedBackButton(onTap: () => Navigator.pop(context)),
             ),
           ),
         ],
@@ -1121,84 +1486,107 @@ class _CreateDecisionPageState extends State<CreateDecisionPage> {
                                         width: 1,
                                       ),
                                     ),
-                                    child: Row(
+                                    child: Stack(
                                       children: [
-                                        Expanded(
-                                          child: GestureDetector(
-                                            onTap: () {
-                                              setState(
-                                                () => group.weightMode =
-                                                    WeightMode.lowerWeight,
-                                              );
-                                              _saveDraft();
-                                            },
+                                        AnimatedAlign(
+                                          duration: const Duration(
+                                            milliseconds: 220,
+                                          ),
+                                          curve: Curves.easeInOutCubic,
+                                          alignment:
+                                              group.weightMode ==
+                                                  WeightMode.lowerWeight
+                                              ? Alignment.centerLeft
+                                              : Alignment.centerRight,
+                                          child: FractionallySizedBox(
+                                            widthFactor: 0.5,
                                             child: Container(
-                                              height: double.infinity,
-                                              alignment: Alignment.center,
+                                              margin: const EdgeInsets.all(4),
                                               decoration: BoxDecoration(
-                                                color:
-                                                    group.weightMode ==
-                                                        WeightMode.lowerWeight
-                                                    ? Colors.black
-                                                    : Colors.transparent,
+                                                color: Colors.black,
                                                 borderRadius:
                                                     BorderRadius.circular(6),
-                                              ),
-                                              child: Text(
-                                                '降低权重',
-                                                textAlign: TextAlign.center,
-                                                style: TextStyle(
-                                                  fontSize: 12,
-                                                  fontWeight: FontWeight.w500,
-                                                  height: 1,
-                                                  color:
-                                                      group.weightMode ==
-                                                          WeightMode.lowerWeight
-                                                      ? Colors.white
-                                                      : const Color(0xFF5E5E5E),
-                                                ),
                                               ),
                                             ),
                                           ),
                                         ),
-                                        const SizedBox(width: 4),
-                                        Expanded(
-                                          child: GestureDetector(
-                                            onTap: () {
-                                              setState(
-                                                () => group.weightMode =
-                                                    WeightMode.nextRemove,
-                                              );
-                                              _saveDraft();
-                                            },
-                                            child: Container(
-                                              height: double.infinity,
-                                              alignment: Alignment.center,
-                                              decoration: BoxDecoration(
-                                                color:
-                                                    group.weightMode ==
-                                                        WeightMode.nextRemove
-                                                    ? Colors.black
-                                                    : Colors.transparent,
-                                                borderRadius:
-                                                    BorderRadius.circular(6),
-                                              ),
-                                              child: Text(
-                                                '下次剔除',
-                                                textAlign: TextAlign.center,
-                                                style: TextStyle(
-                                                  fontSize: 12,
-                                                  fontWeight: FontWeight.w500,
-                                                  height: 1,
-                                                  color:
-                                                      group.weightMode ==
-                                                          WeightMode.nextRemove
-                                                      ? Colors.white
-                                                      : const Color(0xFF5E5E5E),
+                                        Row(
+                                          children: [
+                                            Expanded(
+                                              child: GestureDetector(
+                                                behavior:
+                                                    HitTestBehavior.opaque,
+                                                onTap: () {
+                                                  setState(() {
+                                                    group.weightMode =
+                                                        WeightMode.lowerWeight;
+                                                  });
+                                                  _saveDraft();
+                                                },
+                                                child: Center(
+                                                  child: AnimatedDefaultTextStyle(
+                                                    duration: const Duration(
+                                                      milliseconds: 180,
+                                                    ),
+                                                    curve:
+                                                        Curves.easeInOutCubic,
+                                                    style: TextStyle(
+                                                      fontSize: 12,
+                                                      fontWeight:
+                                                          FontWeight.w500,
+                                                      height: 1,
+                                                      color:
+                                                          group.weightMode ==
+                                                              WeightMode
+                                                                  .lowerWeight
+                                                          ? Colors.white
+                                                          : const Color(
+                                                              0xFF5E5E5E,
+                                                            ),
+                                                    ),
+                                                    child: const Text('降低权重'),
+                                                  ),
                                                 ),
                                               ),
                                             ),
-                                          ),
+                                            Expanded(
+                                              child: GestureDetector(
+                                                behavior:
+                                                    HitTestBehavior.opaque,
+                                                onTap: () {
+                                                  setState(() {
+                                                    group.weightMode =
+                                                        WeightMode.nextRemove;
+                                                  });
+                                                  _saveDraft();
+                                                },
+                                                child: Center(
+                                                  child: AnimatedDefaultTextStyle(
+                                                    duration: const Duration(
+                                                      milliseconds: 180,
+                                                    ),
+                                                    curve:
+                                                        Curves.easeInOutCubic,
+                                                    style: TextStyle(
+                                                      fontSize: 12,
+                                                      fontWeight:
+                                                          FontWeight.w500,
+                                                      height: 1,
+                                                      color:
+                                                          group.weightMode ==
+                                                              WeightMode
+                                                                  .nextRemove
+                                                          ? Colors.white
+                                                          : const Color(
+                                                              0xFF5E5E5E,
+                                                            ),
+                                                    ),
+                                                    child: const Text('下次剔除'),
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                          ],
                                         ),
                                       ],
                                     ),
@@ -1215,13 +1603,34 @@ class _CreateDecisionPageState extends State<CreateDecisionPage> {
                                         ),
                                       ),
                                     ),
-                                    child: Text(
-                                      group.weightMode == WeightMode.lowerWeight
-                                          ? '一旦此选项组有结果产生，它在下次出现的可能性就会自动降低。这能帮你有效降低连续出现同一个结果的情况，保证你的每一次决定都能带来不同的体验。'
-                                          : '一旦此选项组有结果产生，会在下次选项组产生结果前，将此选项的权重设置为0，以确保每两次决定执行不会出现同一个结果。',
-                                      style: TextStyle(
-                                        fontSize: 12,
-                                        color: Color(0xFF5E5E5E),
+                                    child: AnimatedSwitcher(
+                                      duration: const Duration(
+                                        milliseconds: 220,
+                                      ),
+                                      switchInCurve: Curves.easeOutCubic,
+                                      switchOutCurve: Curves.easeInOutCubic,
+                                      transitionBuilder: (child, animation) {
+                                        return FadeTransition(
+                                          opacity: animation,
+                                          child: SlideTransition(
+                                            position: Tween<Offset>(
+                                              begin: const Offset(0, 0.08),
+                                              end: Offset.zero,
+                                            ).animate(animation),
+                                            child: child,
+                                          ),
+                                        );
+                                      },
+                                      child: Text(
+                                        group.weightMode ==
+                                                WeightMode.lowerWeight
+                                            ? '一旦此选项组有结果产生，它在下次出现的可能性就会自动降低。这能帮你有效降低连续出现同一个结果的情况，保证你的每一次决定都能带来不同的体验。'
+                                            : '一旦此选项组有结果产生，会在下次选项组产生结果前，将此选项的权重设置为0，以确保每两次决定执行不会出现同一个结果。',
+                                        key: ValueKey(group.weightMode),
+                                        style: const TextStyle(
+                                          fontSize: 12,
+                                          color: Color(0xFF5E5E5E),
+                                        ),
                                       ),
                                     ),
                                   ),
@@ -1316,31 +1725,51 @@ class _CreateDecisionPageState extends State<CreateDecisionPage> {
                                   child: SizedBox(
                                     width: 173,
                                     height: 42,
-                                    child: TextButton.icon(
-                                      onPressed: () => _addOption(groupIndex),
-                                      icon: const Icon(
-                                        Icons.add_circle_outline,
-                                        size: 14,
-                                        color: Colors.white,
-                                      ),
-                                      label: const Text(
-                                        '添加新选项',
-                                        style: TextStyle(
-                                          color: Colors.white,
-                                          fontWeight: FontWeight.w600,
-                                          fontSize: 12,
-                                        ),
-                                      ),
-                                      iconAlignment: IconAlignment.start,
-                                      style: TextButton.styleFrom(
-                                        backgroundColor: Colors.black,
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 18,
-                                          vertical: 10,
-                                        ),
-                                        shape: RoundedRectangleBorder(
+                                    child: Material(
+                                      color: Colors.transparent,
+                                      borderRadius: BorderRadius.circular(8),
+                                      child: Ink(
+                                        decoration: BoxDecoration(
+                                          color: Colors.black,
                                           borderRadius: BorderRadius.circular(
                                             8,
+                                          ),
+                                        ),
+                                        child: InkWell(
+                                          onTap: () => _addOption(groupIndex),
+                                          borderRadius: BorderRadius.circular(
+                                            8,
+                                          ),
+                                          splashColor: Colors.white.withValues(
+                                            alpha: 0.08,
+                                          ),
+                                          highlightColor: Colors.white
+                                              .withValues(alpha: 0.04),
+                                          child: Padding(
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 18,
+                                              vertical: 10,
+                                            ),
+                                            child: Row(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment.center,
+                                              children: [
+                                                const Icon(
+                                                  Icons.add_circle_outline,
+                                                  size: 14,
+                                                  color: Colors.white,
+                                                ),
+                                                const SizedBox(width: 10),
+                                                const Text(
+                                                  '添加新选项',
+                                                  style: TextStyle(
+                                                    color: Colors.white,
+                                                    fontWeight: FontWeight.w600,
+                                                    fontSize: 12,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
                                           ),
                                         ),
                                       ),
@@ -1375,9 +1804,7 @@ class _CreateDecisionPageState extends State<CreateDecisionPage> {
   ) {
     final trimmed = controller.text.trim();
     if (trimmed.isEmpty || _hasDuplicateName(trimmed, groupIndex)) {
-      final defaultName = _nextUniqueGroupName();
-      controller.text = defaultName;
-      group.name = defaultName;
+      controller.text = group.name;
     } else {
       group.name = trimmed;
     }
@@ -1474,12 +1901,15 @@ class _CreateDecisionPageState extends State<CreateDecisionPage> {
                                                                 optionNameController
                                                                     .text
                                                                     .trim();
-                                                            option.name =
-                                                                trimmed.isEmpty
-                                                                ? _nextUniqueOptionName(
-                                                                    groupIndex,
-                                                                  )
-                                                                : trimmed;
+                                                            if (trimmed
+                                                                .isEmpty) {
+                                                              optionNameController
+                                                                      .text =
+                                                                  option.name;
+                                                            } else {
+                                                              option.name =
+                                                                  trimmed;
+                                                            }
                                                             optionFocusNode
                                                                 .unfocus();
                                                             _saveDraft();
@@ -1489,12 +1919,15 @@ class _CreateDecisionPageState extends State<CreateDecisionPage> {
                                                                 optionNameController
                                                                     .text
                                                                     .trim();
-                                                            option.name =
-                                                                trimmed.isEmpty
-                                                                ? _nextUniqueOptionName(
-                                                                    groupIndex,
-                                                                  )
-                                                                : trimmed;
+                                                            if (trimmed
+                                                                .isEmpty) {
+                                                              optionNameController
+                                                                      .text =
+                                                                  option.name;
+                                                            } else {
+                                                              option.name =
+                                                                  trimmed;
+                                                            }
                                                             optionFocusNode
                                                                 .unfocus();
                                                             _saveDraft();
