@@ -85,58 +85,72 @@ class SettingsPage extends StatelessWidget {
               ),
               const SizedBox(height: 12),
 
-              // About card (black background)
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.black,
-                  borderRadius: BorderRadius.circular(32),
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 48,
-                      height: 48,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF191919),
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(
-                          color: const Color(0xFF474747),
-                          width: 1,
-                        ),
-                      ),
-                      child: const Icon(
-                        Icons.info_outline,
-                        color: Colors.white,
-                        size: 20,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    const Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+              Material(
+                color: Colors.transparent,
+                borderRadius: BorderRadius.circular(32),
+                child: Ink(
+                  decoration: BoxDecoration(
+                    color: Colors.black,
+                    borderRadius: BorderRadius.circular(32),
+                  ),
+                  child: InkWell(
+                    onTap: () {},
+                    borderRadius: BorderRadius.circular(32),
+                    splashColor: Colors.white.withValues(alpha: 0.08),
+                    highlightColor: Colors.white.withValues(alpha: 0.04),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Row(
                         children: [
-                          Text(
-                            '关于决 App',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
+                          Container(
+                            width: 48,
+                            height: 48,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF191919),
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(
+                                color: const Color(0xFF474747),
+                                width: 1,
+                              ),
+                            ),
+                            child: const Icon(
+                              Icons.info_outline,
                               color: Colors.white,
+                              size: 20,
                             ),
                           ),
-                          SizedBox(height: 2),
-                          Text(
-                            'V0.2 Beta',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Color(0xFF8E8E93),
+                          const SizedBox(width: 12),
+                          const Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  '关于决 App',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                                SizedBox(height: 2),
+                                Text(
+                                  'V0.2 Beta',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Color(0xFF8E8E93),
+                                  ),
+                                ),
+                              ],
                             ),
+                          ),
+                          const Icon(
+                            Icons.chevron_right,
+                            color: Color(0xFF8E8E93),
                           ),
                         ],
                       ),
                     ),
-                    const Icon(Icons.chevron_right, color: Color(0xFF8E8E93)),
-                  ],
+                  ),
                 ),
               ),
               const SizedBox(height: 32),
@@ -154,54 +168,67 @@ class SettingsPage extends StatelessWidget {
     String? subtitle,
     required VoidCallback onTap,
   }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(16),
+    return Material(
+      color: Colors.transparent,
+      borderRadius: BorderRadius.circular(32),
+      child: Ink(
         decoration: BoxDecoration(
           color: const Color(0xFFF7F7F7),
           borderRadius: BorderRadius.circular(32),
           border: Border.all(color: Colors.black.withValues(alpha: 0.05)),
         ),
-        child: Row(
-          children: [
-            Container(
-              width: 48,
-              height: 48,
-              decoration: const BoxDecoration(
-                color: Colors.black,
-                borderRadius: BorderRadius.all(Radius.circular(16)),
-              ),
-              child: Icon(icon, size: 20, color: Colors.white),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF000000),
-                    ),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(32),
+          splashColor: Colors.black.withValues(alpha: 0.05),
+          highlightColor: Colors.black.withValues(alpha: 0.02),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                Container(
+                  width: 48,
+                  height: 48,
+                  decoration: const BoxDecoration(
+                    color: Colors.black,
+                    borderRadius: BorderRadius.all(Radius.circular(16)),
                   ),
-                  if (subtitle != null) ...[
-                    const SizedBox(height: 2),
-                    Text(
-                      subtitle,
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: Color(0xFF5E5E5E),
+                  child: Icon(icon, size: 20, color: Colors.white),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF000000),
+                        ),
                       ),
-                    ),
-                  ],
-                ],
-              ),
+                      if (subtitle != null) ...[
+                        const SizedBox(height: 2),
+                        Text(
+                          subtitle,
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: Color(0xFF5E5E5E),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+                const Icon(
+                  Icons.chevron_right,
+                  color: Color(0xFFC6C6C6),
+                  size: 20,
+                ),
+              ],
             ),
-            const Icon(Icons.chevron_right, color: Color(0xFFC6C6C6), size: 20),
-          ],
+          ),
         ),
       ),
     );

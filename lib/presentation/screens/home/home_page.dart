@@ -384,9 +384,16 @@ class _HomePageState extends State<HomePage> {
           .map(
             (entry) => Padding(
               padding: const EdgeInsets.only(bottom: 16),
-              child: GestureDetector(
-                onTap: () => _navigateToExecute(entry.value),
-                child: _buildListCard(entry.value),
+              child: Material(
+                color: Colors.transparent,
+                borderRadius: BorderRadius.circular(32),
+                child: InkWell(
+                  onTap: () => _navigateToExecute(entry.value),
+                  borderRadius: BorderRadius.circular(32),
+                  splashColor: Colors.black.withValues(alpha: 0.05),
+                  highlightColor: Colors.black.withValues(alpha: 0.02),
+                  child: _buildListCard(entry.value),
+                ),
               ),
             ),
           )
@@ -395,7 +402,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _buildListCard(Decision decision) {
-    return Container(
+    return Ink(
       width: double.infinity,
       height: 106,
       decoration: BoxDecoration(
@@ -463,34 +470,45 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _buildListCreateCard() {
-    return GestureDetector(
-      onTap: _navigateToCreate,
-      child: Container(
-        width: double.infinity,
-        height: 106,
-        decoration: BoxDecoration(
-          color: Colors.black,
-          borderRadius: BorderRadius.circular(32),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.5)),
-        ),
-        child: const Padding(
-          padding: EdgeInsets.all(25),
-          child: Row(
-            children: [
-              _CreateIconBox(),
-              SizedBox(width: 20),
-              Expanded(
-                child: Text(
-                  '创建新决定',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.white,
+    return Material(
+      color: Colors.transparent,
+      borderRadius: BorderRadius.circular(32),
+      child: InkWell(
+        onTap: _navigateToCreate,
+        borderRadius: BorderRadius.circular(32),
+        splashColor: Colors.white.withValues(alpha: 0.08),
+        highlightColor: Colors.white.withValues(alpha: 0.04),
+        child: Ink(
+          width: double.infinity,
+          height: 106,
+          decoration: BoxDecoration(
+            color: Colors.black,
+            borderRadius: BorderRadius.circular(32),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.5)),
+          ),
+          child: const Padding(
+            padding: EdgeInsets.all(25),
+            child: Row(
+              children: [
+                _CreateIconBox(),
+                SizedBox(width: 20),
+                Expanded(
+                  child: Text(
+                    '创建新决定',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                    ),
                   ),
                 ),
-              ),
-              Icon(Icons.arrow_forward_ios, size: 16, color: Color(0xFFC6C6C6)),
-            ],
+                Icon(
+                  Icons.arrow_forward_ios,
+                  size: 16,
+                  color: Color(0xFFC6C6C6),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -508,9 +526,16 @@ class _HomePageState extends State<HomePage> {
       childAspectRatio: 0.95,
       children: [
         ..._decisions.map(
-          (d) => GestureDetector(
-            onTap: () => _navigateToExecute(d),
-            child: _buildGridCard(d),
+          (d) => Material(
+            color: Colors.transparent,
+            borderRadius: BorderRadius.circular(32),
+            child: InkWell(
+              onTap: () => _navigateToExecute(d),
+              borderRadius: BorderRadius.circular(32),
+              splashColor: Colors.black.withValues(alpha: 0.05),
+              highlightColor: Colors.black.withValues(alpha: 0.02),
+              child: _buildGridCard(d),
+            ),
           ),
         ),
         _buildGridCreateCard(),
@@ -519,7 +544,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _buildGridCard(Decision decision) {
-    return Container(
+    return Ink(
       decoration: BoxDecoration(
         color: const Color(0xFFF7F7F7),
         borderRadius: BorderRadius.circular(32),
@@ -565,32 +590,39 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _buildGridCreateCard() {
-    return GestureDetector(
-      onTap: _navigateToCreate,
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.black,
-          borderRadius: BorderRadius.circular(32),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.5)),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              const _CreateIconBox(),
-              const SizedBox(height: 20),
-              const Text(
-                '创建新决定',
-                style: TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.white,
+    return Material(
+      color: Colors.transparent,
+      borderRadius: BorderRadius.circular(32),
+      child: InkWell(
+        onTap: _navigateToCreate,
+        borderRadius: BorderRadius.circular(32),
+        splashColor: Colors.white.withValues(alpha: 0.08),
+        highlightColor: Colors.white.withValues(alpha: 0.04),
+        child: Ink(
+          decoration: BoxDecoration(
+            color: Colors.black,
+            borderRadius: BorderRadius.circular(32),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.5)),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                const _CreateIconBox(),
+                const SizedBox(height: 20),
+                const Text(
+                  '创建新决定',
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white,
+                  ),
+                  textAlign: TextAlign.center,
                 ),
-                textAlign: TextAlign.center,
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
