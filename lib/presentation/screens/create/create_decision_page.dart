@@ -204,16 +204,23 @@ class _CreateDecisionPageState extends State<CreateDecisionPage> {
     if (draft != null && mounted) {
       final result = await showDialog<bool>(
         context: context,
+        barrierDismissible: true,
         barrierColor: Colors.transparent,
-        builder: (context) => Dialog(
-          backgroundColor: Colors.transparent,
-          insetPadding: const EdgeInsets.symmetric(horizontal: 24),
+        useSafeArea: false,
+        builder: (context) => Material(
+          color: Colors.transparent,
           child: Stack(
             children: [
               Positioned.fill(
-                child: BackdropFilter(
-                  filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                  child: const SizedBox.expand(),
+                child: GestureDetector(
+                  behavior: HitTestBehavior.translucent,
+                  onTap: () => Navigator.pop(context, false),
+                  child: BackdropFilter(
+                    filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                    child: Container(
+                      color: Colors.black.withValues(alpha: 0.08),
+                    ),
+                  ),
                 ),
               ),
               Center(
@@ -457,16 +464,21 @@ class _CreateDecisionPageState extends State<CreateDecisionPage> {
 
     final confirmed = await showDialog<bool>(
       context: context,
+      barrierDismissible: true,
       barrierColor: Colors.transparent,
-      builder: (context) => Dialog(
-        backgroundColor: Colors.transparent,
-        insetPadding: const EdgeInsets.symmetric(horizontal: 24),
+      useSafeArea: false,
+      builder: (context) => Material(
+        color: Colors.transparent,
         child: Stack(
           children: [
             Positioned.fill(
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                child: const SizedBox.expand(),
+              child: GestureDetector(
+                behavior: HitTestBehavior.translucent,
+                onTap: () => Navigator.pop(context, false),
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                  child: Container(color: Colors.black.withValues(alpha: 0.08)),
+                ),
               ),
             ),
             Center(
@@ -542,7 +554,7 @@ class _CreateDecisionPageState extends State<CreateDecisionPage> {
                                   child: Text(
                                     '确认删除',
                                     style: TextStyle(
-                                      color: Colors.white,
+                                      color: Color(0xFFF70000),
                                       fontSize: 14,
                                       fontWeight: FontWeight.w600,
                                     ),
