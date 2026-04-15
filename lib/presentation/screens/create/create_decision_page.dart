@@ -38,7 +38,6 @@ class _CreateDecisionPageState extends State<CreateDecisionPage> {
   final Map<OptionData, FocusNode> _optionNameFocusNodes = {};
   final Map<OptionData, ValueNotifier<bool>> _optionNameFocused = {};
   bool _renderHeavySections = false;
-  bool _deleteDecisionPressed = false;
 
   @override
   void initState() {
@@ -554,7 +553,7 @@ class _CreateDecisionPageState extends State<CreateDecisionPage> {
                                   child: Text(
                                     '确认删除',
                                     style: TextStyle(
-                                      color: Color(0xFFF70000),
+                                      color: Color(0xFFFFFFFF),
                                       fontSize: 14,
                                       fontWeight: FontWeight.w600,
                                     ),
@@ -1204,47 +1203,43 @@ class _CreateDecisionPageState extends State<CreateDecisionPage> {
                 ),
                 if (widget.isEditing) ...[
                   const SizedBox(height: 12),
-                  GestureDetector(
-                    onTap: _deleteDecision,
-                    onTapDown: (_) =>
-                        setState(() => _deleteDecisionPressed = true),
-                    onTapUp: (_) =>
-                        setState(() => _deleteDecisionPressed = false),
-                    onTapCancel: () =>
-                        setState(() => _deleteDecisionPressed = false),
-                    child: AnimatedScale(
-                      duration: const Duration(milliseconds: 120),
-                      scale: _deleteDecisionPressed ? 0.98 : 1,
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 120),
-                        width: double.infinity,
-                        height: 56,
-                        decoration: BoxDecoration(
-                          color: _deleteDecisionPressed
-                              ? Colors.white.withValues(alpha: 0.9)
-                              : Colors.white,
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(
-                            color: const Color(0xFFF2F2F2),
-                            width: 1,
-                          ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(
-                                alpha: _deleteDecisionPressed ? 0.08 : 0.12,
-                              ),
-                              blurRadius: _deleteDecisionPressed ? 2 : 4,
-                              offset: const Offset(0, 1),
-                            ),
-                          ],
+                  Material(
+                    color: Colors.transparent,
+                    borderRadius: BorderRadius.circular(16),
+                    child: Ink(
+                      width: double.infinity,
+                      height: 56,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: const Color(0xFFF2F2F2),
+                          width: 1,
                         ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.12),
+                            blurRadius: 4,
+                            offset: const Offset(0, 1),
+                          ),
+                        ],
+                      ),
+                      child: InkWell(
+                        onTap: _deleteDecision,
+                        borderRadius: BorderRadius.circular(16),
+                        splashColor: const Color(
+                          0xFFD70000,
+                        ).withValues(alpha: 0.08),
+                        highlightColor: const Color(
+                          0xFFD70000,
+                        ).withValues(alpha: 0.04),
                         child: const Center(
                           child: Text(
                             '删除此决定',
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w600,
-                              color: Color(0xFF000000),
+                              color: Color(0xFFD70000),
                             ),
                           ),
                         ),

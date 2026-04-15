@@ -8,10 +8,17 @@ import 'presentation/screens/settings/settings_page.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  // Set system UI mode first
+  await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+
+  // Then set the overlay style
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,
       statusBarIconBrightness: Brightness.dark,
+      systemNavigationBarColor: Colors.transparent, // 设置为透明
+      systemNavigationBarIconBrightness: Brightness.dark,
+      systemNavigationBarContrastEnforced: false,
     ),
   );
 
@@ -81,6 +88,18 @@ class JueApp extends StatelessWidget {
           systemOverlayStyle: SystemUiOverlayStyle.dark,
         ),
       ),
+      builder: (context, child) {
+        return AnnotatedRegion<SystemUiOverlayStyle>(
+          value: const SystemUiOverlayStyle(
+            statusBarColor: Colors.transparent,
+            statusBarIconBrightness: Brightness.dark,
+            systemNavigationBarColor: Colors.transparent,
+            systemNavigationBarIconBrightness: Brightness.dark,
+            systemNavigationBarContrastEnforced: false,
+          ),
+          child: child!,
+        );
+      },
       home: const MainScreen(),
     );
   }
@@ -107,9 +126,20 @@ class _MainScreenState extends State<MainScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final bottomInset = MediaQuery.viewPaddingOf(context).bottom;
     return Scaffold(
+      extendBody: true, // 确保body延伸到导航栏区域
+      extendBodyBehindAppBar: true,
+      backgroundColor: Colors.white,
       body: Stack(
         children: [
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            height: bottomInset + 120,
+            child: Container(color: Colors.white),
+          ),
           ...List.generate(_pages.length, (index) {
             final isActive = index == _currentIndex;
             final inactiveOffset = isActive
