@@ -8,15 +8,13 @@ import 'presentation/screens/settings/settings_page.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Set system UI mode first
   await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
 
-  // Then set the overlay style
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,
       statusBarIconBrightness: Brightness.dark,
-      systemNavigationBarColor: Colors.transparent, // 设置为透明
+      systemNavigationBarColor: Colors.transparent,
       systemNavigationBarIconBrightness: Brightness.dark,
       systemNavigationBarContrastEnforced: false,
     ),
@@ -128,7 +126,7 @@ class _MainScreenState extends State<MainScreen> {
   Widget build(BuildContext context) {
     final bottomInset = MediaQuery.viewPaddingOf(context).bottom;
     return Scaffold(
-      extendBody: true, // 确保body延伸到导航栏区域
+      extendBody: true,
       extendBodyBehindAppBar: true,
       backgroundColor: Colors.white,
       body: Stack(

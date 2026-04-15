@@ -14,13 +14,12 @@ class MainActivity : FlutterActivity() {
         window.setBackgroundDrawableResource(android.R.color.white)
         window.decorView.setBackgroundColor(Color.WHITE)
         window.statusBarColor = Color.TRANSPARENT
-        window.navigationBarColor = Color.TRANSPARENT // 设置为透明
+        window.navigationBarColor = Color.TRANSPARENT
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             window.isNavigationBarContrastEnforced = false
             window.isStatusBarContrastEnforced = false
         }
         
-        // Additional settings for better compatibility with gesture navigation
         window.decorView.systemUiVisibility = (window.decorView.systemUiVisibility
             or android.view.View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR
             or android.view.View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR)
