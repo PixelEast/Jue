@@ -1,11 +1,15 @@
+import 'dart:ui' show lerpDouble;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:geolocator/geolocator.dart';
 import '../../../data/models/app_models.dart';
 import '../../../data/repositories/decision_repository.dart';
 import '../../../data/repositories/history_repository.dart';
 import '../../../core/utils/algorithms.dart';
 import '../../../core/utils/app_events.dart';
+import '../../widgets/app_slogan_footer.dart';
 import '../../widgets/frosted_back_button.dart';
 import '../create/create_decision_page.dart';
 
@@ -22,6 +26,10 @@ class _ExecutePageState extends State<ExecutePage>
     with SingleTickerProviderStateMixin {
   late AnimationController _animationController;
 
+  static const double _buttonWidth = 255;
+  static const double _buttonHeight = 200;
+  static const double _buttonRadius = 36;
+
   bool _isExecuting = false;
   bool _isLongPress = false;
   bool _showResult = false;
@@ -36,11 +44,21 @@ class _ExecutePageState extends State<ExecutePage>
   final DecisionRepository _decisionRepo = DecisionRepository();
   final HistoryRepository _historyRepo = HistoryRepository();
 
+  static const double _titleTop = 116;
+  static const double _titleFontSize = 50;
+  static const double _subtitleFontSize = 14;
+  static const double _subtitleSpacing = 12;
+  static const double _footerBottom = 73;
+  static const double _footerApproxHeight = 40;
+
+  final GlobalKey _buttonKey = GlobalKey();
+  Offset? _buttonCenter;
+
   @override
   void initState() {
     super.initState();
     _animationController = AnimationController(
-      duration: const Duration(milliseconds: 300),
+      duration: const Duration(milliseconds: 900),
       vsync: this,
     );
     _checkLocationAvailability();
@@ -104,7 +122,7 @@ class _ExecutePageState extends State<ExecutePage>
       _isLongPress = isLongPress;
       _pressDuration = 0;
     });
-    _animationController.forward();
+    _animationController.forward(from: 0);
     HapticFeedback.heavyImpact();
 
     if (!isLongPress) {
@@ -116,6 +134,16 @@ class _ExecutePageState extends State<ExecutePage>
     } else {
       _startLongPressTimer();
     }
+  }
+
+  void _captureButtonCenter() {
+    final context = _buttonKey.currentContext;
+    if (context == null) return;
+    final renderBox = context.findRenderObject() as RenderBox?;
+    if (renderBox == null) return;
+    setState(() {
+      _buttonCenter = renderBox.localToGlobal(renderBox.size.center(Offset.zero));
+    });
   }
 
   void _startLongPressTimer() {
@@ -179,205 +207,319 @@ class _ExecutePageState extends State<ExecutePage>
 
   @override
   Widget build(BuildContext context) {
+    final size = MediaQuery.sizeOf(context);
+    final titleCenter = Offset(size.width / 2, _titleTop + (_titleFontSize / 2));
+    final subtitleCenter = Offset(
+      size.width / 2,
+      _titleTop + _titleFontSize + _subtitleSpacing + (_subtitleFontSize / 2),
+    );
+    final footerCenter = Offset(
+      size.width / 2,
+      size.height - _footerBottom - (_footerApproxHeight / 2),
+    );
+    final titleTextColor = _colorFromCoverage(
+      baseColor: Colors.black,
+      targetColor: Colors.white,
+      targetCenter: titleCenter,
+    );
+    final secondaryTextColor = _colorFromCoverage(
+      baseColor: const Color(0xFF5E5E5E),
+      targetColor: Colors.white.withValues(alpha: 0.86),
+      targetCenter: subtitleCenter,
+    );
+    final footerTextColor = _colorFromCoverage(
+      baseColor: const Color(0xFF5E5E5E),
+      targetColor: Colors.white.withValues(alpha: 0.86),
+      targetCenter: footerCenter,
+    );
+
     return Scaffold(
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: _isExecuting
-              ? const LinearGradient(
-                  colors: [Color(0xFF001A5E), Color(0xFF002FA7)],
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                )
-              : null,
-          color: _isExecuting ? null : Colors.white,
-        ),
-        child: SafeArea(
-          child: Stack(
-            children: [
-              if (!_isExecuting)
-                Positioned(
-                  top: 16,
-                  left: 16,
-                  right: 16,
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      extendBody: true,
+      backgroundColor: Colors.transparent,
+      body: AnimatedBuilder(
+        animation: _animationController,
+        builder: (context, _) {
+          return Container(
+            color: const Color(0xFFF9F9F9),
+            child: Stack(
+              children: [
+                if (_buttonCenter != null)
+                  Positioned.fill(
+                    child: IgnorePointer(
+                      child: CustomPaint(
+                        painter: _ExpandingDecisionBackgroundPainter(
+                          progress: Curves.easeInOutCubic.transform(
+                            _animationController.value,
+                          ),
+                          center: _buttonCenter!,
+                          screenSize: size,
+                          cornerRadius: _buttonRadius,
+                        ),
+                      ),
+                    ),
+                  ),
+                SafeArea(
+                  child: Stack(
                     children: [
-                      FrostedBackButton(onTap: () => Navigator.pop(context)),
-                      FrostedBackButton(
-                        icon: Icons.edit,
-                        onTap: () async {
-                          final navigator = Navigator.of(context);
-                          final updated = await Navigator.push<bool>(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => CreateDecisionPage(
-                                initialDecision: widget.decision,
-                                isEditing: true,
-                              ),
+                      Positioned(
+                        top: 16,
+                        left: 16,
+                        right: 16,
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            FrostedBackButton(onTap: () => Navigator.pop(context)),
+                            FrostedBackButton(
+                              icon: Icons.edit,
+                              onTap: () async {
+                                final navigator = Navigator.of(context);
+                                final updated = await Navigator.push<bool>(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => CreateDecisionPage(
+                                      initialDecision: widget.decision,
+                                      isEditing: true,
+                                    ),
+                                  ),
+                                );
+                                if (updated == true && mounted) {
+                                  navigator.pop(true);
+                                }
+                              },
                             ),
-                          );
-                          if (updated == true && mounted) {
-                            navigator.pop(true);
-                          }
-                        },
+                          ],
+                        ),
+                      ),
+                      Positioned(
+                        top: 116,
+                        left: 24,
+                        right: 24,
+                        child: Column(
+                          children: [
+                            Text(
+                              widget.decision.theme,
+                              style: TextStyle(
+                                fontSize: 50,
+                                fontWeight: FontWeight.w800,
+                                color: titleTextColor,
+                                height: 1,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                            const SizedBox(height: 12),
+                            Text(
+                              '即刻判决 享受当下',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w400,
+                                color: secondaryTextColor,
+                                letterSpacing: 10,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ],
+                        ),
+                      ),
+                      Center(
+                        child: Padding(
+                          padding: const EdgeInsets.all(24.0),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              if (!_isExecuting) ...[
+                                const SizedBox(height: 140),
+                                GestureDetector(
+                                  onTapDown:
+                                      (widget.decision.logicConditionType ==
+                                              'location' &&
+                                          !_locationAvailable)
+                                      ? null
+                                      : (_) {
+                                          _captureButtonCenter();
+                                          _startExecution(false);
+                                        },
+                                  onTapUp: (_) {},
+                                  onLongPressStart:
+                                      (widget.decision.logicConditionType ==
+                                              'location' &&
+                                          !_locationAvailable)
+                                      ? null
+                                      : (_) {
+                                          _captureButtonCenter();
+                                          _startExecution(true);
+                                        },
+                                  onLongPressEnd:
+                                      (widget.decision.logicConditionType ==
+                                              'location' &&
+                                          !_locationAvailable)
+                                      ? null
+                                      : (_) => _endLongPress(),
+                                  child: KeyedSubtree(
+                                    key: _buttonKey,
+                                    child: _buildDecisionButton(
+                                      opacity: 1 - Curves.easeOut.transform(
+                                        _animationController.value,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ] else if (!_showResult) ...[
+                                const SizedBox(height: 130),
+                                const Text(
+                                  '即将判决',
+                                  style: TextStyle(
+                                    fontSize: 45,
+                                    fontWeight: FontWeight.w800,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                                const SizedBox(height: 16),
+                                if (_isLongPress)
+                                  Text(
+                                    '${(_pressDuration / 1000).toStringAsFixed(1)}s',
+                                    style: const TextStyle(
+                                      fontSize: 16,
+                                      color: Colors.white70,
+                                    ),
+                                  ),
+                              ] else ...[
+                                const Spacer(),
+                                const SizedBox(height: 50),
+                                Text(
+                                  _result,
+                                  style: const TextStyle(
+                                    fontSize: 45,
+                                    fontWeight: FontWeight.w800,
+                                    letterSpacing: 3.6,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                                const SizedBox(height: 16),
+                                const Text(
+                                  '已记录至历史决定',
+                                  style: TextStyle(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w400,
+                                    letterSpacing: 3.6,
+                                    color: Colors.white70,
+                                  ),
+                                ),
+                                const Spacer(),
+                                ElevatedButton(
+                                  onPressed: () {
+                                    Navigator.of(
+                                      context,
+                                    ).popUntil((route) => route.isFirst);
+                                  },
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.white,
+                                    foregroundColor: Colors.black,
+                                    fixedSize: const Size(342, 68),
+                                    elevation: 18,
+                                    shadowColor: Colors.black.withValues(alpha: 0.18),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(16),
+                                    ),
+                                  ),
+                                  child: const Text(
+                                    '返回主页',
+                                    style: TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.w700,
+                                      letterSpacing: 1.8,
+                                    ),
+                                  ),
+                                  ),
+                                const SizedBox(height: 125),
+                              ],
+                            ],
+                          ),
+                        ),
+                      ),
+                      Positioned(
+                        left: 24,
+                        right: 24,
+                        bottom: 73,
+                        child: AppSloganFooter(
+                          showDivider: false,
+                          textColor: footerTextColor,
+                        ),
                       ),
                     ],
                   ),
                 ),
-              Center(
-                child: Padding(
-                  padding: const EdgeInsets.all(24.0),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      if (!_isExecuting) ...[
-                        Text(
-                          widget.decision.theme,
-                          style: const TextStyle(
-                            fontSize: 28,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.black,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                        const SizedBox(height: 60),
-                        GestureDetector(
-                          onTapDown:
-                              (widget.decision.logicConditionType ==
-                                      'location' &&
-                                  !_locationAvailable)
-                              ? null
-                              : (_) => _startExecution(false),
-                          onTapUp: (_) {},
-                          onLongPressStart:
-                              (widget.decision.logicConditionType ==
-                                      'location' &&
-                                  !_locationAvailable)
-                              ? null
-                              : (_) => _startExecution(true),
-                          onLongPressEnd:
-                              (widget.decision.logicConditionType ==
-                                      'location' &&
-                                  !_locationAvailable)
-                              ? null
-                              : (_) => _endLongPress(),
-                          child: AnimatedBuilder(
-                            animation: _animationController,
-                            builder: (context, child) {
-                              return Container(
-                                width: 200,
-                                height: 80,
-                                decoration: BoxDecoration(
-                                  color:
-                                      (widget.decision.logicConditionType ==
-                                              'location' &&
-                                          !_locationAvailable)
-                                      ? const Color(0xFFC6C6C6)
-                                      : const Color(0xFF002FA7),
-                                  borderRadius: BorderRadius.circular(20),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color:
-                                          ((widget.decision.logicConditionType ==
-                                                          'location' &&
-                                                      !_locationAvailable)
-                                                  ? const Color(0xFFC6C6C6)
-                                                  : const Color(0xFF002FA7))
-                                              .withValues(alpha: 0.3),
-                                      blurRadius: 20,
-                                      spreadRadius: 5,
-                                    ),
-                                  ],
-                                ),
-                                child: const Center(
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Icon(
-                                        Icons.bolt,
-                                        color: Colors.white,
-                                        size: 24,
-                                      ),
-                                      SizedBox(width: 8),
-                                      Text(
-                                        '即刻判决',
-                                        style: TextStyle(
-                                          fontSize: 18,
-                                          fontWeight: FontWeight.w600,
-                                          color: Colors.white,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              );
-                            },
-                          ),
-                        ),
-                      ] else if (!_showResult) ...[
-                        const Text(
-                          '即将判决',
-                          style: TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.w500,
-                            color: Colors.white,
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        if (_isLongPress)
-                          Text(
-                            '${(_pressDuration / 1000).toStringAsFixed(1)}s',
-                            style: const TextStyle(
-                              fontSize: 16,
-                              color: Colors.white70,
-                            ),
-                          ),
-                      ] else ...[
-                        const Spacer(),
-                        const Text(
-                          '判决结果',
-                          style: TextStyle(fontSize: 16, color: Colors.white70),
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          _result,
-                          style: const TextStyle(
-                            fontSize: 36,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        const Text(
-                          '已记录至历史决定',
-                          style: TextStyle(fontSize: 14, color: Colors.white70),
-                        ),
-                        const Spacer(),
-                        ElevatedButton(
-                          onPressed: () {
-                            Navigator.of(
-                              context,
-                            ).popUntil((route) => route.isFirst);
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.white,
-                            foregroundColor: const Color(0xFF002FA7),
-                            minimumSize: const Size(double.infinity, 56),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                          ),
-                          child: const Text(
-                            '返回主页',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 40),
-                      ],
-                    ],
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildDecisionButton({required double opacity}) {
+    final isDisabled =
+        widget.decision.logicConditionType == 'location' && !_locationAvailable;
+
+    return Opacity(
+      opacity: opacity,
+      child: Container(
+        width: _buttonWidth,
+        height: _buttonHeight,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(_buttonRadius),
+          border: Border.all(
+            color: isDisabled
+                ? const Color(0xFFD4D4D4)
+                : const Color(0xFF577CFF),
+            width: 2,
+          ),
+          gradient: isDisabled
+              ? const LinearGradient(
+                  colors: [Color(0xFFD5D5D5), Color(0xFFC6C6C6)],
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                )
+              : const RadialGradient(
+                  center: Alignment.center,
+                  radius: 0.9,
+                  colors: [Color(0xFF5075FF), Color(0xFF2D5BFF)],
+                ),
+          boxShadow: [
+            BoxShadow(
+              color: (isDisabled
+                      ? const Color(0xFFC6C6C6)
+                      : const Color(0xFF2D5BFF))
+                  .withValues(alpha: 0.28),
+              blurRadius: 30,
+              spreadRadius: 2,
+              offset: const Offset(0, 14),
+            ),
+          ],
+        ),
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Opacity(
+                opacity: opacity,
+                child: SvgPicture.asset(
+                  'figma_exports/icons/lightning.svg',
+                  width: 64,
+                  height: 64,
+                ),
+              ),
+              const SizedBox(height: 16),
+              Opacity(
+                opacity: opacity,
+                child: const Text(
+                  '即刻判决',
+                  style: TextStyle(
+                    fontSize: 36,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 3.6,
+                    color: Colors.white,
+                    height: 1,
                   ),
                 ),
               ),
@@ -386,5 +528,107 @@ class _ExecutePageState extends State<ExecutePage>
         ),
       ),
     );
+  }
+
+  Color _colorFromCoverage({
+    required Color baseColor,
+    required Color targetColor,
+    required Offset targetCenter,
+  }) {
+    if (_buttonCenter == null) return baseColor;
+
+    final progress = Curves.easeInOutCubic.transform(_animationController.value);
+    final maxRadius = <double>[
+      (_buttonCenter! - const Offset(0, 0)).distance,
+      (_buttonCenter! - Offset(MediaQuery.sizeOf(context).width, 0)).distance,
+      (_buttonCenter! - Offset(0, MediaQuery.sizeOf(context).height)).distance,
+      (_buttonCenter! - MediaQuery.sizeOf(context).bottomRight(Offset.zero)).distance,
+    ].reduce((a, b) => a > b ? a : b);
+
+    final currentRadius = lerpDouble(_buttonWidth / 2, maxRadius * 1.18, progress)!;
+    final distanceToText = (_buttonCenter! - targetCenter).distance;
+    final blendStart = currentRadius - 120;
+    final blendProgress = ((distanceToText - blendStart) / 120).clamp(0.0, 1.0);
+    final coverage = 1 - blendProgress;
+
+    return Color.lerp(baseColor, targetColor, coverage)!;
+  }
+}
+
+class _ExpandingDecisionBackgroundPainter extends CustomPainter {
+  final double progress;
+  final Offset center;
+  final Size screenSize;
+  final double cornerRadius;
+
+  const _ExpandingDecisionBackgroundPainter({
+    required this.progress,
+    required this.center,
+    required this.screenSize,
+    required this.cornerRadius,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (progress <= 0) return;
+
+    final maxRadius = <double>[
+      (center - const Offset(0, 0)).distance,
+      (center - Offset(screenSize.width, 0)).distance,
+      (center - Offset(0, screenSize.height)).distance,
+      (center - Offset(screenSize.width, screenSize.height)).distance,
+    ].reduce((a, b) => a > b ? a : b);
+
+    final currentWidth = lerpDouble(
+      _ExecutePageState._buttonWidth,
+      maxRadius * 2.35,
+      progress,
+    )!;
+    final currentHeight = lerpDouble(
+      _ExecutePageState._buttonHeight,
+      maxRadius * 2.35,
+      progress,
+    )!;
+    final currentRadius = lerpDouble(
+      cornerRadius,
+      0,
+      progress,
+    )!.clamp(0.0, 9999.0);
+
+    final rect = Rect.fromCenter(
+      center: center,
+      width: currentWidth,
+      height: currentHeight,
+    );
+    final rrect = RRect.fromRectAndRadius(rect, Radius.circular(currentRadius));
+
+    final lightColor = Color.lerp(
+      const Color(0xFF5075FF),
+      const Color(0xFF4D74FF),
+      progress,
+    )!;
+    final darkColor = Color.lerp(
+      const Color(0xFF2D5BFF),
+      const Color(0xFF2E4699),
+      progress,
+    )!;
+
+    final paint = Paint()
+      ..shader = RadialGradient(
+        center: Alignment.center,
+        radius: lerpDouble(0.9, 1.45, progress)!,
+        colors: [lightColor, darkColor],
+        stops: const [0.0, 1.0],
+        transform: GradientRotation(lerpDouble(0, 0.78539816339, progress)!),
+      ).createShader(rect);
+
+    canvas.drawRRect(rrect, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant _ExpandingDecisionBackgroundPainter oldDelegate) {
+    return oldDelegate.progress != progress ||
+        oldDelegate.center != center ||
+        oldDelegate.screenSize != screenSize;
   }
 }
