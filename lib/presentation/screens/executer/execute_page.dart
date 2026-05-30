@@ -12,6 +12,7 @@ import '../../../core/utils/app_events.dart';
 import '../../widgets/app_slogan_footer.dart';
 import '../../widgets/frosted_back_button.dart';
 import '../create/create_decision_page.dart';
+import '../history/history_page.dart';
 
 class ExecutePage extends StatefulWidget {
   final Decision decision;
@@ -217,21 +218,28 @@ class _ExecutePageState extends State<ExecutePage>
       size.width / 2,
       size.height - _footerBottom - (_footerApproxHeight / 2),
     );
-    final titleTextColor = _colorFromCoverage(
-      baseColor: Colors.black,
-      targetColor: Colors.white,
-      targetCenter: titleCenter,
-    );
-    final secondaryTextColor = _colorFromCoverage(
-      baseColor: const Color(0xFF5E5E5E),
-      targetColor: Colors.white.withValues(alpha: 0.86),
-      targetCenter: subtitleCenter,
-    );
-    final footerTextColor = _colorFromCoverage(
-      baseColor: const Color(0xFF5E5E5E),
-      targetColor: Colors.white.withValues(alpha: 0.86),
-      targetCenter: footerCenter,
-    );
+    final isBlueState = _isExecuting || _showResult;
+    final titleTextColor = isBlueState
+        ? Colors.white
+        : _colorFromCoverage(
+            baseColor: Colors.black,
+            targetColor: Colors.white,
+            targetCenter: titleCenter,
+          );
+    final secondaryTextColor = isBlueState
+        ? Colors.white.withValues(alpha: 0.86)
+        : _colorFromCoverage(
+            baseColor: const Color(0xFF5E5E5E),
+            targetColor: Colors.white.withValues(alpha: 0.86),
+            targetCenter: subtitleCenter,
+          );
+    final footerTextColor = isBlueState
+        ? Colors.white.withValues(alpha: 0.86)
+        : _colorFromCoverage(
+            baseColor: const Color(0xFF5E5E5E),
+            targetColor: Colors.white.withValues(alpha: 0.86),
+            targetCenter: footerCenter,
+          );
 
     return Scaffold(
       extendBody: true,
@@ -261,35 +269,49 @@ class _ExecutePageState extends State<ExecutePage>
                 SafeArea(
                   child: Stack(
                     children: [
-                      Positioned(
-                        top: 16,
-                        left: 16,
-                        right: 16,
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            FrostedBackButton(onTap: () => Navigator.pop(context)),
-                            FrostedBackButton(
-                              icon: Icons.edit,
-                              onTap: () async {
-                                final navigator = Navigator.of(context);
-                                final updated = await Navigator.push<bool>(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => CreateDecisionPage(
-                                      initialDecision: widget.decision,
-                                      isEditing: true,
-                                    ),
-                                  ),
-                                );
-                                if (updated == true && mounted) {
-                                  navigator.pop(true);
-                                }
-                              },
-                            ),
-                          ],
+                      if (!_isExecuting || _showResult)
+                        Positioned(
+                          top: 16,
+                          left: 16,
+                          right: 16,
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              FrostedBackButton(onTap: () => Navigator.pop(context)),
+                              if (_showResult)
+                                FrostedBackButton(
+                                  icon: Icons.history,
+                                  onTap: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => const HistoryPage(),
+                                      ),
+                                    );
+                                  },
+                                )
+                              else
+                                FrostedBackButton(
+                                  icon: Icons.edit,
+                                  onTap: () async {
+                                    final navigator = Navigator.of(context);
+                                    final updated = await Navigator.push<bool>(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => CreateDecisionPage(
+                                          initialDecision: widget.decision,
+                                          isEditing: true,
+                                        ),
+                                      ),
+                                    );
+                                    if (updated == true && mounted) {
+                                      navigator.pop(true);
+                                    }
+                                  },
+                                ),
+                            ],
+                          ),
                         ),
-                      ),
                       Positioned(
                         top: 116,
                         left: 24,
@@ -303,6 +325,12 @@ class _ExecutePageState extends State<ExecutePage>
                                 fontWeight: FontWeight.w800,
                                 color: titleTextColor,
                                 height: 1,
+                                fontFamilyFallback: const [
+                                  'Noto Sans SC',
+                                  'PingFang SC',
+                                  'Microsoft YaHei',
+                                  'sans-serif',
+                                ],
                               ),
                               textAlign: TextAlign.center,
                             ),
@@ -397,40 +425,53 @@ class _ExecutePageState extends State<ExecutePage>
                                 ),
                                 const SizedBox(height: 16),
                                 const Text(
-                                  '已记录至历史决定',
-                                  style: TextStyle(
-                                    fontSize: 15,
-                                    fontWeight: FontWeight.w400,
-                                    letterSpacing: 3.6,
-                                    color: Colors.white70,
-                                  ),
-                                ),
+                                   '已记录至历史决定',
+                                   style: TextStyle(
+                                     fontSize: 15,
+                                     fontWeight: FontWeight.w400,
+                                     letterSpacing: 3.6,
+                                     color: Colors.white,
+                                   ),
+                                 ),
                                 const Spacer(),
-                                ElevatedButton(
-                                  onPressed: () {
-                                    Navigator.of(
-                                      context,
-                                    ).popUntil((route) => route.isFirst);
-                                  },
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.white,
-                                    foregroundColor: Colors.black,
-                                    fixedSize: const Size(342, 68),
-                                    elevation: 18,
-                                    shadowColor: Colors.black.withValues(alpha: 0.18),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(16),
-                                    ),
-                                  ),
-                                  child: const Text(
-                                    '返回主页',
-                                    style: TextStyle(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.w700,
-                                      letterSpacing: 1.8,
-                                    ),
-                                  ),
-                                  ),
+                                 Container(
+                                   decoration: BoxDecoration(
+                                     borderRadius: BorderRadius.circular(16),
+                                     boxShadow: [
+                                       BoxShadow(
+                                         color: Colors.black.withValues(alpha: 0.08),
+                                         blurRadius: 12,
+                                         spreadRadius: 0,
+                                         offset: const Offset(0, 4),
+                                       ),
+                                     ],
+                                   ),
+                                   child: ElevatedButton(
+                                     onPressed: () {
+                                       Navigator.of(
+                                         context,
+                                       ).popUntil((route) => route.isFirst);
+                                     },
+                                     style: ElevatedButton.styleFrom(
+                                       backgroundColor: Colors.white,
+                                       foregroundColor: Colors.black,
+                                       fixedSize: const Size(342, 68),
+                                       elevation: 0,
+                                       shadowColor: Colors.transparent,
+                                       shape: RoundedRectangleBorder(
+                                         borderRadius: BorderRadius.circular(16),
+                                       ),
+                                     ),
+                                     child: const Text(
+                                       '返回主页',
+                                       style: TextStyle(
+                                         fontSize: 18,
+                                         fontWeight: FontWeight.w700,
+                                         letterSpacing: 1.8,
+                                       ),
+                                     ),
+                                   ),
+                                 ),
                                 const SizedBox(height: 125),
                               ],
                             ],
@@ -490,10 +531,10 @@ class _ExecutePageState extends State<ExecutePage>
               color: (isDisabled
                       ? const Color(0xFFC6C6C6)
                       : const Color(0xFF2D5BFF))
-                  .withValues(alpha: 0.28),
-              blurRadius: 30,
-              spreadRadius: 2,
-              offset: const Offset(0, 14),
+                  .withValues(alpha: 0.08),
+              blurRadius: 12,
+              spreadRadius: 0,
+              offset: const Offset(0, 4),
             ),
           ],
         ),
@@ -547,9 +588,9 @@ class _ExecutePageState extends State<ExecutePage>
 
     final currentRadius = lerpDouble(_buttonWidth / 2, maxRadius * 1.18, progress)!;
     final distanceToText = (_buttonCenter! - targetCenter).distance;
-    final blendStart = currentRadius - 120;
-    final blendProgress = ((distanceToText - blendStart) / 120).clamp(0.0, 1.0);
-    final coverage = 1 - blendProgress;
+    final blendRange = 300.0;
+    final coverage = ((currentRadius - distanceToText + blendRange * 0.5) / blendRange)
+        .clamp(0.0, 1.0);
 
     return Color.lerp(baseColor, targetColor, coverage)!;
   }
