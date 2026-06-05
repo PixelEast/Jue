@@ -1,3 +1,5 @@
+import 'dart:math';
+import 'dart:async';
 import 'dart:ui' show lerpDouble;
 
 import 'package:flutter/material.dart';
@@ -24,8 +26,12 @@ class ExecutePage extends StatefulWidget {
 }
 
 class _ExecutePageState extends State<ExecutePage>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   late AnimationController _animationController;
+  late AnimationController _shakeController;
+  late Animation<double> _buttonFadeOut;
+  late Animation<double> _textFadeIn;
+  Timer? _hapticTimer;
 
   static const double _buttonWidth = 255;
   static const double _buttonHeight = 200;
@@ -61,6 +67,22 @@ class _ExecutePageState extends State<ExecutePage>
     _animationController = AnimationController(
       duration: const Duration(milliseconds: 900),
       vsync: this,
+    );
+    _shakeController = AnimationController(
+      duration: const Duration(milliseconds: 80),
+      vsync: this,
+    );
+    _buttonFadeOut = Tween<double>(begin: 1.0, end: 0.0).animate(
+      CurvedAnimation(
+        parent: _animationController,
+        curve: const Interval(0.0, 0.4, curve: Curves.easeOut),
+      ),
+    );
+    _textFadeIn = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _animationController,
+        curve: const Interval(0.35, 0.65, curve: Curves.easeIn),
+      ),
     );
     _checkLocationAvailability();
   }
@@ -109,6 +131,8 @@ class _ExecutePageState extends State<ExecutePage>
 
   @override
   void dispose() {
+    _hapticTimer?.cancel();
+    _shakeController.dispose();
     _animationController.dispose();
     super.dispose();
   }
@@ -124,6 +148,10 @@ class _ExecutePageState extends State<ExecutePage>
       _pressDuration = 0;
     });
     _animationController.forward(from: 0);
+    _shakeController.repeat();
+    _hapticTimer = Timer.periodic(const Duration(milliseconds: 50), (_) {
+      HapticFeedback.lightImpact();
+    });
     HapticFeedback.heavyImpact();
 
     if (!isLongPress) {
@@ -169,6 +197,9 @@ class _ExecutePageState extends State<ExecutePage>
   }
 
   Future<void> _showResultPage() async {
+    _hapticTimer?.cancel();
+    _shakeController.stop();
+    HapticFeedback.mediumImpact();
     final activeGroup = _logicEngine.getActiveGroup(
       widget.decision,
       currentLatitude: _currentLatitude,
@@ -209,37 +240,6 @@ class _ExecutePageState extends State<ExecutePage>
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.sizeOf(context);
-    final titleCenter = Offset(size.width / 2, _titleTop + (_titleFontSize / 2));
-    final subtitleCenter = Offset(
-      size.width / 2,
-      _titleTop + _titleFontSize + _subtitleSpacing + (_subtitleFontSize / 2),
-    );
-    final footerCenter = Offset(
-      size.width / 2,
-      size.height - _footerBottom - (_footerApproxHeight / 2),
-    );
-    final isBlueState = _isExecuting || _showResult;
-    final titleTextColor = isBlueState
-        ? Colors.white
-        : _colorFromCoverage(
-            baseColor: Colors.black,
-            targetColor: Colors.white,
-            targetCenter: titleCenter,
-          );
-    final secondaryTextColor = isBlueState
-        ? Colors.white.withValues(alpha: 0.86)
-        : _colorFromCoverage(
-            baseColor: const Color(0xFF5E5E5E),
-            targetColor: Colors.white.withValues(alpha: 0.86),
-            targetCenter: subtitleCenter,
-          );
-    final footerTextColor = isBlueState
-        ? Colors.white.withValues(alpha: 0.86)
-        : _colorFromCoverage(
-            baseColor: const Color(0xFF5E5E5E),
-            targetColor: Colors.white.withValues(alpha: 0.86),
-            targetCenter: footerCenter,
-          );
 
     return Scaffold(
       extendBody: true,
@@ -247,6 +247,43 @@ class _ExecutePageState extends State<ExecutePage>
       body: AnimatedBuilder(
         animation: _animationController,
         builder: (context, _) {
+          final titleCenter = Offset(size.width / 2, _titleTop + (_titleFontSize / 2));
+          final subtitleCenter = Offset(
+            size.width / 2,
+            _titleTop + _titleFontSize + _subtitleSpacing + (_subtitleFontSize / 2),
+          );
+          final footerCenter = Offset(
+            size.width / 2,
+            size.height - _footerBottom - (_footerApproxHeight / 2),
+          );
+          final isResult = _showResult;
+          final titleTextColor = isResult
+              ? Colors.white
+              : _colorFromCoverage(
+                  baseColor: Colors.black,
+                  targetColor: Colors.white,
+                  targetCenter: titleCenter,
+                  animationValue: _animationController.value,
+                  screenSize: size,
+                );
+          final secondaryTextColor = isResult
+              ? Colors.white.withValues(alpha: 0.86)
+              : _colorFromCoverage(
+                  baseColor: const Color(0xFF5E5E5E),
+                  targetColor: Colors.white.withValues(alpha: 0.86),
+                  targetCenter: subtitleCenter,
+                  animationValue: _animationController.value,
+                  screenSize: size,
+                );
+          final footerTextColor = isResult
+              ? Colors.white.withValues(alpha: 0.86)
+              : _colorFromCoverage(
+                  baseColor: const Color(0xFF5E5E5E),
+                  targetColor: Colors.white.withValues(alpha: 0.86),
+                  targetCenter: footerCenter,
+                  animationValue: _animationController.value,
+                  screenSize: size,
+                );
           return Container(
             color: const Color(0xFFF9F9F9),
             child: Stack(
@@ -334,14 +371,14 @@ class _ExecutePageState extends State<ExecutePage>
                               ),
                               textAlign: TextAlign.center,
                             ),
-                            const SizedBox(height: 12),
+                            const SizedBox(height: 16),
                             Text(
                               '即刻判决 享受当下',
                               style: TextStyle(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w400,
                                 color: secondaryTextColor,
-                                letterSpacing: 10,
+                                letterSpacing: 14,
                               ),
                               textAlign: TextAlign.center,
                             ),
@@ -386,24 +423,49 @@ class _ExecutePageState extends State<ExecutePage>
                                   child: KeyedSubtree(
                                     key: _buttonKey,
                                     child: _buildDecisionButton(
-                                      opacity: 1 - Curves.easeOut.transform(
-                                        _animationController.value,
-                                      ),
+                                      opacity: _buttonFadeOut.value,
                                     ),
                                   ),
                                 ),
-                              ] else if (!_showResult) ...[
+                               ] else if (!_showResult) ...[
                                 const SizedBox(height: 130),
-                                const Text(
-                                  '即将判决',
-                                  style: TextStyle(
-                                    fontSize: 45,
-                                    fontWeight: FontWeight.w800,
-                                    color: Colors.white,
+                                if (_isLongPress) ...[
+                                  AnimatedBuilder(
+                                    animation: Listenable.merge([
+                                      _shakeController,
+                                      _animationController,
+                                    ]),
+                                    builder: (context, child) {
+                                      final p = _animationController.value.clamp(0.0, 1.0);
+                                      final amplitude = p * 3.0;
+                                      final freq = 2.0 + p * 6.0;
+                                      final offset = sin(_shakeController.value * pi * 2 * freq) * amplitude;
+                                      return Opacity(
+                                        opacity: _textFadeIn.value,
+                                        child: Transform.translate(
+                                          offset: Offset(offset, 0),
+                                          child: child,
+                                        ),
+                                      );
+                                    },
+                                    child: const Text(
+                                      '松开手指\n获得判决',
+                                      textAlign: TextAlign.center,
+                                      style: TextStyle(
+                                        fontSize: 45,
+                                        fontWeight: FontWeight.w800,
+                                        color: Colors.white,
+                                        height: 1.2,
+                                        fontFamilyFallback: [
+                                          'Noto Sans SC',
+                                          'PingFang SC',
+                                          'Microsoft YaHei',
+                                          'sans-serif',
+                                        ],
+                                      ),
+                                    ),
                                   ),
-                                ),
-                                const SizedBox(height: 16),
-                                if (_isLongPress)
+                                  const SizedBox(height: 24),
                                   Text(
                                     '${(_pressDuration / 1000).toStringAsFixed(1)}s',
                                     style: const TextStyle(
@@ -411,28 +473,69 @@ class _ExecutePageState extends State<ExecutePage>
                                       color: Colors.white70,
                                     ),
                                   ),
+                                ] else ...[
+                                  AnimatedBuilder(
+                                    animation: Listenable.merge([
+                                      _shakeController,
+                                      _animationController,
+                                    ]),
+                                    builder: (context, child) {
+                                      final p = _animationController.value.clamp(0.0, 1.0);
+                                      final amplitude = p * 3.0;
+                                      final freq = 2.0 + p * 6.0;
+                                      final offset = sin(_shakeController.value * pi * 2 * freq) * amplitude;
+                                      return Opacity(
+                                        opacity: _textFadeIn.value,
+                                        child: Transform.translate(
+                                          offset: Offset(offset, 0),
+                                          child: child,
+                                        ),
+                                      );
+                                    },
+                                    child: const Text(
+                                      '即将判决',
+                                      style: TextStyle(
+                                        fontSize: 45,
+                                        fontWeight: FontWeight.w800,
+                                        color: Colors.white,
+                                        fontFamilyFallback: [
+                                          'Noto Sans SC',
+                                          'PingFang SC',
+                                          'Microsoft YaHei',
+                                          'sans-serif',
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ] else ...[
                                 const Spacer(),
                                 const SizedBox(height: 50),
-                                Text(
-                                  _result,
-                                  style: const TextStyle(
-                                    fontSize: 45,
-                                    fontWeight: FontWeight.w800,
-                                    letterSpacing: 3.6,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                                const SizedBox(height: 16),
-                                const Text(
-                                   '已记录至历史决定',
-                                   style: TextStyle(
-                                     fontSize: 15,
-                                     fontWeight: FontWeight.w400,
+                                 Text(
+                                   _result,
+                                   style: const TextStyle(
+                                     fontSize: 45,
+                                     fontWeight: FontWeight.w800,
                                      letterSpacing: 3.6,
                                      color: Colors.white,
+                                     fontFamilyFallback: [
+                                       'Noto Sans SC',
+                                       'PingFang SC',
+                                       'Microsoft YaHei',
+                                       'sans-serif',
+                                     ],
                                    ),
                                  ),
+                                const SizedBox(height: 16),
+                                 const Text(
+                                    '已记录至决定历史',
+                                    style: TextStyle(
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.w400,
+                                      letterSpacing: 3.6,
+                                      color: Colors.white,
+                                    ),
+                                  ),
                                 const Spacer(),
                                  Container(
                                    decoration: BoxDecoration(
@@ -561,6 +664,12 @@ class _ExecutePageState extends State<ExecutePage>
                     letterSpacing: 3.6,
                     color: Colors.white,
                     height: 1,
+                    fontFamilyFallback: [
+                      'Noto Sans SC',
+                      'PingFang SC',
+                      'Microsoft YaHei',
+                      'sans-serif',
+                    ],
                   ),
                 ),
               ),
@@ -575,15 +684,17 @@ class _ExecutePageState extends State<ExecutePage>
     required Color baseColor,
     required Color targetColor,
     required Offset targetCenter,
+    required double animationValue,
+    required Size screenSize,
   }) {
     if (_buttonCenter == null) return baseColor;
 
-    final progress = Curves.easeInOutCubic.transform(_animationController.value);
+    final progress = Curves.easeInOutCubic.transform(animationValue);
     final maxRadius = <double>[
       (_buttonCenter! - const Offset(0, 0)).distance,
-      (_buttonCenter! - Offset(MediaQuery.sizeOf(context).width, 0)).distance,
-      (_buttonCenter! - Offset(0, MediaQuery.sizeOf(context).height)).distance,
-      (_buttonCenter! - MediaQuery.sizeOf(context).bottomRight(Offset.zero)).distance,
+      (_buttonCenter! - Offset(screenSize.width, 0)).distance,
+      (_buttonCenter! - Offset(0, screenSize.height)).distance,
+      (_buttonCenter! - screenSize.bottomRight(Offset.zero)).distance,
     ].reduce((a, b) => a > b ? a : b);
 
     final currentRadius = lerpDouble(_buttonWidth / 2, maxRadius * 1.18, progress)!;
