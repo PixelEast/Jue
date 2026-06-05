@@ -75,7 +75,7 @@ class _ExecutePageState extends State<ExecutePage>
     _buttonFadeOut = Tween<double>(begin: 1.0, end: 0.0).animate(
       CurvedAnimation(
         parent: _animationController,
-        curve: const Interval(0.0, 0.4, curve: Curves.easeOut),
+        curve: const Interval(0.0, 0.7, curve: Curves.easeInOut),
       ),
     );
     _textFadeIn = Tween<double>(begin: 0.0, end: 1.0).animate(
@@ -288,7 +288,7 @@ class _ExecutePageState extends State<ExecutePage>
             color: const Color(0xFFF9F9F9),
             child: Stack(
               children: [
-                if (_buttonCenter != null)
+                  if (_buttonCenter != null)
                   Positioned.fill(
                     child: IgnorePointer(
                       child: CustomPaint(
@@ -296,7 +296,8 @@ class _ExecutePageState extends State<ExecutePage>
                           progress: Curves.easeInOutCubic.transform(
                             _animationController.value,
                           ),
-                          center: _buttonCenter!,
+                          startCenter: _buttonCenter!,
+                          endCenter: Offset(size.width / 2, size.height / 2),
                           screenSize: size,
                           cornerRadius: _buttonRadius,
                         ),
@@ -392,44 +393,10 @@ class _ExecutePageState extends State<ExecutePage>
                             mainAxisAlignment: MainAxisAlignment.center,
                             crossAxisAlignment: CrossAxisAlignment.center,
                             children: [
-                              if (!_isExecuting) ...[
-                                const SizedBox(height: 140),
-                                GestureDetector(
-                                  onTapDown:
-                                      (widget.decision.logicConditionType ==
-                                              'location' &&
-                                          !_locationAvailable)
-                                      ? null
-                                      : (_) {
-                                          _captureButtonCenter();
-                                          _startExecution(false);
-                                        },
-                                  onTapUp: (_) {},
-                                  onLongPressStart:
-                                      (widget.decision.logicConditionType ==
-                                              'location' &&
-                                          !_locationAvailable)
-                                      ? null
-                                      : (_) {
-                                          _captureButtonCenter();
-                                          _startExecution(true);
-                                        },
-                                  onLongPressEnd:
-                                      (widget.decision.logicConditionType ==
-                                              'location' &&
-                                          !_locationAvailable)
-                                      ? null
-                                      : (_) => _endLongPress(),
-                                  child: KeyedSubtree(
-                                    key: _buttonKey,
-                                    child: _buildDecisionButton(
-                                      opacity: _buttonFadeOut.value,
-                                    ),
-                                  ),
-                                ),
-                               ] else if (!_showResult) ...[
-                                const SizedBox(height: 130),
-                                if (_isLongPress) ...[
+                              if (!_showResult) ...[
+                                const Spacer(),
+                                if (_isExecuting && _isLongPress) ...[
+                                  const SizedBox(height: 50),
                                   AnimatedBuilder(
                                     animation: Listenable.merge([
                                       _shakeController,
@@ -473,7 +440,9 @@ class _ExecutePageState extends State<ExecutePage>
                                       color: Colors.white70,
                                     ),
                                   ),
-                                ] else ...[
+                                ],
+                                if (_isExecuting && !_isLongPress) ...[
+                                  const SizedBox(height: 213),
                                   AnimatedBuilder(
                                     animation: Listenable.merge([
                                       _shakeController,
@@ -508,6 +477,49 @@ class _ExecutePageState extends State<ExecutePage>
                                     ),
                                   ),
                                 ],
+                                if (!_isExecuting) const SizedBox(height: 50),
+                                const Spacer(),
+                                SizedBox(
+                                  height: _buttonHeight,
+                                  width: _buttonWidth,
+                                  child: GestureDetector(
+                                    onTapDown:
+                                        (_isExecuting ||
+                                            (widget.decision.logicConditionType ==
+                                                    'location' &&
+                                                !_locationAvailable))
+                                        ? null
+                                        : (_) {
+                                            _captureButtonCenter();
+                                            _startExecution(false);
+                                          },
+                                    onTapUp: (_) {},
+                                    onLongPressStart:
+                                        (_isExecuting ||
+                                            (widget.decision.logicConditionType ==
+                                                    'location' &&
+                                                !_locationAvailable))
+                                        ? null
+                                        : (_) {
+                                            _captureButtonCenter();
+                                            _startExecution(true);
+                                          },
+                                    onLongPressEnd:
+                                        (_isExecuting ||
+                                            (widget.decision.logicConditionType ==
+                                                    'location' &&
+                                                !_locationAvailable))
+                                        ? null
+                                        : (_) => _endLongPress(),
+                                    child: KeyedSubtree(
+                                      key: _buttonKey,
+                                      child: _buildDecisionButton(
+                                        opacity: _isExecuting ? _buttonFadeOut.value : 1,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 190),
                               ] else ...[
                                 const Spacer(),
                                 const SizedBox(height: 50),
@@ -709,13 +721,15 @@ class _ExecutePageState extends State<ExecutePage>
 
 class _ExpandingDecisionBackgroundPainter extends CustomPainter {
   final double progress;
-  final Offset center;
+  final Offset startCenter;
+  final Offset endCenter;
   final Size screenSize;
   final double cornerRadius;
 
   const _ExpandingDecisionBackgroundPainter({
     required this.progress,
-    required this.center,
+    required this.startCenter,
+    required this.endCenter,
     required this.screenSize,
     required this.cornerRadius,
   });
@@ -724,11 +738,12 @@ class _ExpandingDecisionBackgroundPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     if (progress <= 0) return;
 
+    final center = Offset.lerp(startCenter, endCenter, progress)!;
     final maxRadius = <double>[
-      (center - const Offset(0, 0)).distance,
-      (center - Offset(screenSize.width, 0)).distance,
-      (center - Offset(0, screenSize.height)).distance,
-      (center - Offset(screenSize.width, screenSize.height)).distance,
+      (startCenter - const Offset(0, 0)).distance,
+      (startCenter - Offset(screenSize.width, 0)).distance,
+      (startCenter - Offset(0, screenSize.height)).distance,
+      (startCenter - Offset(screenSize.width, screenSize.height)).distance,
     ].reduce((a, b) => a > b ? a : b);
 
     final currentWidth = lerpDouble(
@@ -754,23 +769,19 @@ class _ExpandingDecisionBackgroundPainter extends CustomPainter {
     );
     final rrect = RRect.fromRectAndRadius(rect, Radius.circular(currentRadius));
 
-    final lightColor = Color.lerp(
-      const Color(0xFF5075FF),
-      const Color(0xFF4D74FF),
-      progress,
-    )!;
-    final darkColor = Color.lerp(
+    final lightColor = const Color(0xFF5075FF);
+    final darkEdgeColor = Color.lerp(
       const Color(0xFF2D5BFF),
-      const Color(0xFF2E4699),
+      const Color(0xFF1A3578),
       progress,
     )!;
 
     final paint = Paint()
       ..shader = RadialGradient(
         center: Alignment.center,
-        radius: lerpDouble(0.9, 1.45, progress)!,
-        colors: [lightColor, darkColor],
-        stops: const [0.0, 1.0],
+        radius: 1.0,
+        colors: [lightColor, lightColor, darkEdgeColor],
+        stops: [0.0, 0.08, 0.35],
         transform: GradientRotation(lerpDouble(0, 0.78539816339, progress)!),
       ).createShader(rect);
 
@@ -780,7 +791,8 @@ class _ExpandingDecisionBackgroundPainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant _ExpandingDecisionBackgroundPainter oldDelegate) {
     return oldDelegate.progress != progress ||
-        oldDelegate.center != center ||
+        oldDelegate.startCenter != startCenter ||
+        oldDelegate.endCenter != endCenter ||
         oldDelegate.screenSize != screenSize;
   }
 }
