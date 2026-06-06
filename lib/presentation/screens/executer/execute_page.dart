@@ -434,7 +434,7 @@ class _ExecutePageState extends State<ExecutePage>
                               if (!_showResult) ...[
                                 const Spacer(),
                                 if (_isExecuting && _isLongPress) ...[
-                                  const SizedBox(height: 50),
+                                  const SizedBox(height: 213),
                                   AnimatedBuilder(
                                     animation: Listenable.merge([
                                       _shakeController,
@@ -468,14 +468,6 @@ class _ExecutePageState extends State<ExecutePage>
                                           'sans-serif',
                                         ],
                                       ),
-                                    ),
-                                  ),
-                                  const SizedBox(height: 24),
-                                  Text(
-                                    '${(_pressDuration / 1000).toStringAsFixed(1)}s',
-                                    style: const TextStyle(
-                                      fontSize: 16,
-                                      color: Colors.white70,
                                     ),
                                   ),
                                 ],
@@ -521,34 +513,18 @@ class _ExecutePageState extends State<ExecutePage>
                                   height: _buttonHeight,
                                   width: _buttonWidth,
                                   child: GestureDetector(
-                                    onTapDown:
-                                        (_isExecuting ||
-                                            (widget.decision.logicConditionType ==
-                                                    'location' &&
-                                                !_locationAvailable))
+                                    onTapDown: _isExecuting
                                         ? null
-                                        : (_) {
-                                            _captureButtonCenter();
-                                            _startExecution(false);
-                                          },
-                                    onTapUp: (_) {},
-                                    onLongPressStart:
-                                        (_isExecuting ||
-                                            (widget.decision.logicConditionType ==
-                                                    'location' &&
-                                                !_locationAvailable))
+                                        : (_) => _captureButtonCenter(),
+                                    onTap: _isExecuting
                                         ? null
-                                        : (_) {
-                                            _captureButtonCenter();
-                                            _startExecution(true);
-                                          },
-                                    onLongPressEnd:
-                                        (_isExecuting ||
-                                            (widget.decision.logicConditionType ==
-                                                    'location' &&
-                                                !_locationAvailable))
+                                        : () => _startExecution(false),
+                                    onLongPressStart: _isExecuting
                                         ? null
-                                        : (_) => _endLongPress(),
+                                        : (_) => _startExecution(true),
+                                    onLongPressEnd: _isExecuting
+                                        ? (_) => _endLongPress()
+                                        : null,
                                     child: KeyedSubtree(
                                       key: _buttonKey,
                                       child: _buildDecisionButton(
