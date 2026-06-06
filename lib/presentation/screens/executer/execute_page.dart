@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:geolocator/geolocator.dart';
+import '../../../main.dart';
 import '../../../data/models/app_models.dart';
 import '../../../data/repositories/decision_repository.dart';
 import '../../../data/repositories/history_repository.dart';
@@ -14,7 +15,6 @@ import '../../../core/utils/app_events.dart';
 import '../../widgets/app_slogan_footer.dart';
 import '../../widgets/frosted_back_button.dart';
 import '../create/create_decision_page.dart';
-import '../history/history_page.dart';
 
 class ExecutePage extends StatefulWidget {
   final Decision decision;
@@ -30,8 +30,10 @@ class _ExecutePageState extends State<ExecutePage>
   late AnimationController _animationController;
   late AnimationController _shakeController;
   late AnimationController _darkCornerController;
+  late AnimationController _resultFadeController;
   late Animation<double> _buttonFadeOut;
   late Animation<double> _textFadeIn;
+  late Animation<double> _resultFadeIn;
   Timer? _hapticTimer;
 
   static const double _buttonWidth = 255;
@@ -77,16 +79,26 @@ class _ExecutePageState extends State<ExecutePage>
       duration: const Duration(milliseconds: 1100),
       vsync: this,
     );
+    _resultFadeController = AnimationController(
+      duration: const Duration(milliseconds: 400),
+      vsync: this,
+    );
     _buttonFadeOut = Tween<double>(begin: 1.0, end: 0.0).animate(
       CurvedAnimation(
         parent: _animationController,
-        curve: const Interval(0.0, 0.7, curve: Curves.easeInOut),
+        curve: const Interval(0.0, 0.5, curve: Curves.easeInOut),
       ),
     );
     _textFadeIn = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(
         parent: _animationController,
         curve: const Interval(0.35, 0.65, curve: Curves.easeIn),
+      ),
+    );
+    _resultFadeIn = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _resultFadeController,
+        curve: Curves.easeOut,
       ),
     );
     _animationController.addStatusListener((status) {
@@ -145,6 +157,7 @@ class _ExecutePageState extends State<ExecutePage>
   @override
   void dispose() {
     _hapticTimer?.cancel();
+    _resultFadeController.dispose();
     _darkCornerController.dispose();
     _shakeController.dispose();
     _animationController.dispose();
@@ -163,6 +176,7 @@ class _ExecutePageState extends State<ExecutePage>
     });
     _animationController.forward(from: 0);
     _darkCornerController.reset();
+    _resultFadeController.reset();
     _shakeController.repeat();
     _hapticTimer = Timer.periodic(const Duration(milliseconds: 50), (_) {
       HapticFeedback.lightImpact();
@@ -214,6 +228,7 @@ class _ExecutePageState extends State<ExecutePage>
   Future<void> _showResultPage() async {
     _hapticTimer?.cancel();
     _shakeController.stop();
+    _resultFadeController.forward(from: 0);
     _darkCornerController.animateTo(
       0,
       duration: const Duration(milliseconds: 800),
@@ -265,7 +280,7 @@ class _ExecutePageState extends State<ExecutePage>
       extendBody: true,
       backgroundColor: Colors.transparent,
       body: AnimatedBuilder(
-        animation: Listenable.merge([_animationController, _darkCornerController]),
+        animation: Listenable.merge([_animationController, _darkCornerController, _resultFadeController]),
         builder: (context, _) {
           final titleCenter = Offset(size.width / 2, _titleTop + (_titleFontSize / 2));
           final subtitleCenter = Offset(
@@ -328,11 +343,16 @@ class _ExecutePageState extends State<ExecutePage>
                 SafeArea(
                   child: Stack(
                     children: [
-                      if (!_isExecuting || _showResult)
-                        Positioned(
-                          top: 16,
-                          left: 16,
-                          right: 16,
+                      Positioned(
+                        top: 16,
+                        left: 16,
+                        right: 16,
+                        child: Opacity(
+                          opacity: _showResult
+                              ? _resultFadeIn.value
+                              : _isExecuting
+                                  ? _buttonFadeOut.value
+                                  : 1.0,
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
@@ -341,12 +361,8 @@ class _ExecutePageState extends State<ExecutePage>
                                 FrostedBackButton(
                                   icon: Icons.history,
                                   onTap: () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (context) => const HistoryPage(),
-                                      ),
-                                    );
+                                    MainScreen.switchToTab(1);
+                                    Navigator.of(context).popUntil((route) => route.isFirst);
                                   },
                                 )
                               else
@@ -371,6 +387,7 @@ class _ExecutePageState extends State<ExecutePage>
                             ],
                           ),
                         ),
+                      ),
                       Positioned(
                         top: 116,
                         left: 24,
@@ -544,23 +561,28 @@ class _ExecutePageState extends State<ExecutePage>
                               ] else ...[
                                 const Spacer(),
                                 const SizedBox(height: 50),
-                                 Text(
-                                   _result,
-                                   style: const TextStyle(
-                                     fontSize: 45,
-                                     fontWeight: FontWeight.w800,
-                                     letterSpacing: 3.6,
-                                     color: Colors.white,
-                                     fontFamilyFallback: [
-                                       'Noto Sans SC',
-                                       'PingFang SC',
-                                       'Microsoft YaHei',
-                                       'sans-serif',
-                                     ],
-                                   ),
-                                 ),
+                                Opacity(
+                                  opacity: _resultFadeIn.value,
+                                  child: Text(
+                                    _result,
+                                    style: const TextStyle(
+                                      fontSize: 45,
+                                      fontWeight: FontWeight.w800,
+                                      letterSpacing: 3.6,
+                                      color: Colors.white,
+                                      fontFamilyFallback: [
+                                        'Noto Sans SC',
+                                        'PingFang SC',
+                                        'Microsoft YaHei',
+                                        'sans-serif',
+                                      ],
+                                    ),
+                                  ),
+                                ),
                                 const SizedBox(height: 16),
-                                 const Text(
+                                Opacity(
+                                  opacity: _resultFadeIn.value,
+                                  child: const Text(
                                     '已记录至决定历史',
                                     style: TextStyle(
                                       fontSize: 15,
@@ -569,45 +591,49 @@ class _ExecutePageState extends State<ExecutePage>
                                       color: Colors.white,
                                     ),
                                   ),
+                                ),
                                 const Spacer(),
-                                 Container(
-                                   decoration: BoxDecoration(
-                                     borderRadius: BorderRadius.circular(16),
-                                     boxShadow: [
-                                       BoxShadow(
-                                         color: Colors.black.withValues(alpha: 0.08),
-                                         blurRadius: 12,
-                                         spreadRadius: 0,
-                                         offset: const Offset(0, 4),
-                                       ),
-                                     ],
-                                   ),
-                                   child: ElevatedButton(
-                                     onPressed: () {
-                                       Navigator.of(
-                                         context,
-                                       ).popUntil((route) => route.isFirst);
-                                     },
-                                     style: ElevatedButton.styleFrom(
-                                       backgroundColor: Colors.white,
-                                       foregroundColor: Colors.black,
-                                       fixedSize: const Size(342, 68),
-                                       elevation: 0,
-                                       shadowColor: Colors.transparent,
-                                       shape: RoundedRectangleBorder(
-                                         borderRadius: BorderRadius.circular(16),
-                                       ),
-                                     ),
-                                     child: const Text(
-                                       '返回主页',
-                                       style: TextStyle(
-                                         fontSize: 18,
-                                         fontWeight: FontWeight.w700,
-                                         letterSpacing: 1.8,
-                                       ),
-                                     ),
-                                   ),
-                                 ),
+                                Opacity(
+                                  opacity: _resultFadeIn.value,
+                                  child: Container(
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(16),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.black.withValues(alpha: 0.08),
+                                          blurRadius: 12,
+                                          spreadRadius: 0,
+                                          offset: const Offset(0, 4),
+                                        ),
+                                      ],
+                                    ),
+                                    child: ElevatedButton(
+                                      onPressed: () {
+                                        Navigator.of(
+                                          context,
+                                        ).popUntil((route) => route.isFirst);
+                                      },
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: Colors.white,
+                                        foregroundColor: Colors.black,
+                                        fixedSize: const Size(342, 68),
+                                        elevation: 0,
+                                        shadowColor: Colors.transparent,
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(16),
+                                        ),
+                                      ),
+                                      child: const Text(
+                                        '返回主页',
+                                        style: TextStyle(
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.w700,
+                                          letterSpacing: 1.8,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
                                 const SizedBox(height: 125),
                               ],
                             ],

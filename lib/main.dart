@@ -106,11 +106,16 @@ class JueApp extends StatelessWidget {
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
 
+  static void switchToTab(int index) {
+    _MainScreenState._instance?._onTabTapped(index);
+  }
+
   @override
   State<MainScreen> createState() => _MainScreenState();
 }
 
 class _MainScreenState extends State<MainScreen> {
+  static _MainScreenState? _instance;
   int _currentIndex = 0;
 
   final List<Widget> _pages = const [HomePage(), HistoryPage(), SettingsPage()];
@@ -120,6 +125,12 @@ class _MainScreenState extends State<MainScreen> {
     setState(() {
       _currentIndex = index;
     });
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _instance = this;
   }
 
   @override

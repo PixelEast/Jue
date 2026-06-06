@@ -51,6 +51,11 @@ class _FrostedBackButtonState extends State<FrostedBackButton> {
                     blurRadius: _pressed ? 2 : 4,
                     offset: const Offset(0, 1),
                   ),
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.08),
+                    blurRadius: 8,
+                    offset: const Offset(0, 4),
+                  ),
                 ],
               ),
               child: Center(
