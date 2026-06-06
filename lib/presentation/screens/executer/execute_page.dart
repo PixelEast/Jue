@@ -29,6 +29,7 @@ class _ExecutePageState extends State<ExecutePage>
     with TickerProviderStateMixin {
   late AnimationController _animationController;
   late AnimationController _shakeController;
+  late AnimationController _darkCornerController;
   late Animation<double> _buttonFadeOut;
   late Animation<double> _textFadeIn;
   Timer? _hapticTimer;
@@ -72,6 +73,10 @@ class _ExecutePageState extends State<ExecutePage>
       duration: const Duration(milliseconds: 80),
       vsync: this,
     );
+    _darkCornerController = AnimationController(
+      duration: const Duration(milliseconds: 1100),
+      vsync: this,
+    );
     _buttonFadeOut = Tween<double>(begin: 1.0, end: 0.0).animate(
       CurvedAnimation(
         parent: _animationController,
@@ -84,6 +89,14 @@ class _ExecutePageState extends State<ExecutePage>
         curve: const Interval(0.35, 0.65, curve: Curves.easeIn),
       ),
     );
+    _animationController.addStatusListener((status) {
+      if (status == AnimationStatus.completed &&
+          mounted &&
+          _isExecuting &&
+          !_showResult) {
+        _darkCornerController.forward(from: 0);
+      }
+    });
     _checkLocationAvailability();
   }
 
@@ -132,6 +145,7 @@ class _ExecutePageState extends State<ExecutePage>
   @override
   void dispose() {
     _hapticTimer?.cancel();
+    _darkCornerController.dispose();
     _shakeController.dispose();
     _animationController.dispose();
     super.dispose();
@@ -148,6 +162,7 @@ class _ExecutePageState extends State<ExecutePage>
       _pressDuration = 0;
     });
     _animationController.forward(from: 0);
+    _darkCornerController.reset();
     _shakeController.repeat();
     _hapticTimer = Timer.periodic(const Duration(milliseconds: 50), (_) {
       HapticFeedback.lightImpact();
@@ -199,6 +214,11 @@ class _ExecutePageState extends State<ExecutePage>
   Future<void> _showResultPage() async {
     _hapticTimer?.cancel();
     _shakeController.stop();
+    _darkCornerController.animateTo(
+      0,
+      duration: const Duration(milliseconds: 800),
+      curve: Curves.easeInOutCubic,
+    );
     HapticFeedback.mediumImpact();
     final activeGroup = _logicEngine.getActiveGroup(
       widget.decision,
@@ -245,7 +265,7 @@ class _ExecutePageState extends State<ExecutePage>
       extendBody: true,
       backgroundColor: Colors.transparent,
       body: AnimatedBuilder(
-        animation: _animationController,
+        animation: Listenable.merge([_animationController, _darkCornerController]),
         builder: (context, _) {
           final titleCenter = Offset(size.width / 2, _titleTop + (_titleFontSize / 2));
           final subtitleCenter = Offset(
@@ -296,6 +316,7 @@ class _ExecutePageState extends State<ExecutePage>
                           progress: Curves.easeInOutCubic.transform(
                             _animationController.value,
                           ),
+                          darkCornerProgress: _darkCornerController.value,
                           startCenter: _buttonCenter!,
                           endCenter: Offset(size.width / 2, size.height / 2),
                           screenSize: size,
@@ -721,6 +742,7 @@ class _ExecutePageState extends State<ExecutePage>
 
 class _ExpandingDecisionBackgroundPainter extends CustomPainter {
   final double progress;
+  final double darkCornerProgress;
   final Offset startCenter;
   final Offset endCenter;
   final Size screenSize;
@@ -728,6 +750,7 @@ class _ExpandingDecisionBackgroundPainter extends CustomPainter {
 
   const _ExpandingDecisionBackgroundPainter({
     required this.progress,
+    required this.darkCornerProgress,
     required this.startCenter,
     required this.endCenter,
     required this.screenSize,
@@ -771,17 +794,20 @@ class _ExpandingDecisionBackgroundPainter extends CustomPainter {
 
     final lightColor = const Color(0xFF5075FF);
     final darkEdgeColor = Color.lerp(
-      const Color(0xFF2D5BFF),
+      const Color(0xFF1E3D85),
       const Color(0xFF1A3578),
-      progress,
+      darkCornerProgress,
     )!;
+
+    final curvedDark = Curves.easeIn.transform(darkCornerProgress);
+    final outerStop = lerpDouble(0.35, 0.28, curvedDark)!;
 
     final paint = Paint()
       ..shader = RadialGradient(
         center: Alignment.center,
         radius: 1.0,
         colors: [lightColor, lightColor, darkEdgeColor],
-        stops: [0.0, 0.08, 0.35],
+        stops: [0.0, 0.08, outerStop],
         transform: GradientRotation(lerpDouble(0, 0.78539816339, progress)!),
       ).createShader(rect);
 
@@ -791,6 +817,7 @@ class _ExpandingDecisionBackgroundPainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant _ExpandingDecisionBackgroundPainter oldDelegate) {
     return oldDelegate.progress != progress ||
+        oldDelegate.darkCornerProgress != darkCornerProgress ||
         oldDelegate.startCenter != startCenter ||
         oldDelegate.endCenter != endCenter ||
         oldDelegate.screenSize != screenSize;

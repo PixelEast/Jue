@@ -42,6 +42,7 @@ class AppSloganFooter extends StatelessWidget {
             fontSize: 11,
             fontWeight: FontWeight.w400,
             color: textColor,
+            letterSpacing: 9,
           ),
         ),
       ],
