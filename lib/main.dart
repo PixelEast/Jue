@@ -31,9 +31,11 @@ class JueApp extends StatelessWidget {
     return MaterialApp(
       title: '决',
       debugShowCheckedModeBanner: false,
+      scrollBehavior: const ScrollBehavior().copyWith(overscroll: false),
       theme: ThemeData(
         useMaterial3: true,
         brightness: Brightness.light,
+        fontFamily: 'Noto Sans SC',
         primaryColor: const Color(0xFF002FA7),
         scaffoldBackgroundColor: Colors.white,
         textTheme: const TextTheme(
