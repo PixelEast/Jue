@@ -80,4 +80,22 @@ class AppStorage {
     records.removeWhere((r) => r.id == id);
     await saveHistory(records);
   }
+
+  static Future<List<HistoryRecord>> getHistoryPaginated({
+    required int offset,
+    required int limit,
+  }) async {
+    final prefs = await SharedPreferences.getInstance();
+    final data = prefs.getStringList(_historyKey) ?? [];
+    final allRecords = data
+        .map(
+          (e) => HistoryRecord.fromJson(jsonDecode(e) as Map<String, dynamic>),
+        )
+        .toList()
+      ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+
+    final start = offset.clamp(0, allRecords.length);
+    final end = (offset + limit).clamp(0, allRecords.length);
+    return allRecords.sublist(start, end);
+  }
 }

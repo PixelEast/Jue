@@ -19,35 +19,90 @@ class _HistoryPageState extends State<HistoryPage> {
   final HistoryRepository _historyRepo = HistoryRepository();
   final DecisionRepository _decisionRepo = DecisionRepository();
   final WeightCalculator _weightCalculator = WeightCalculator();
+  final ScrollController _scrollController = ScrollController();
   List<HistoryRecord> _records = [];
   Map<String, bool> _canRemoveByRecordId = {};
   Map<String, bool> _recordOptionExistsById = {};
   int _totalCount = 0;
   Map<String, int> _dailyCounts = {};
   bool _isLoading = true;
+  int _currentPage = 0;
+  bool _isLoadingMore = false;
+  bool _hasMore = true;
 
   @override
   void initState() {
     super.initState();
     _loadData();
     AppEvents.historyChanged.addListener(_loadData);
+    _scrollController.addListener(_onScroll);
   }
 
   @override
   void dispose() {
+    _scrollController.dispose();
     AppEvents.historyChanged.removeListener(_loadData);
     super.dispose();
   }
 
+  void _onScroll() {
+    if (_scrollController.position.pixels >=
+            _scrollController.position.maxScrollExtent - 200 &&
+        !_isLoadingMore &&
+        _hasMore) {
+      _loadMore();
+    }
+  }
+
   Future<void> _loadData() async {
     setState(() => _isLoading = true);
-    final records = await _historyRepo.getAllRecords();
+    final records = await _historyRepo.getRecordsPage(0);
     final decisions = await _decisionRepo.getAllDecisions();
     final totalCount = await _historyRepo.getTotalCount();
     final dailyCounts = await _historyRepo.getDailyCounts();
+
     final canRemoveByRecordId = <String, bool>{};
     final recordOptionExistsById = <String, bool>{};
+    _processRecords(records, decisions, canRemoveByRecordId, recordOptionExistsById);
 
+    setState(() {
+      _records = records;
+      _canRemoveByRecordId = canRemoveByRecordId;
+      _recordOptionExistsById = recordOptionExistsById;
+      _totalCount = totalCount;
+      _dailyCounts = dailyCounts;
+      _currentPage = 1;
+      _hasMore = records.length >= HistoryRepository.pageSize;
+      _isLoading = false;
+    });
+  }
+
+  Future<void> _loadMore() async {
+    if (_isLoadingMore || !_hasMore) return;
+    setState(() => _isLoadingMore = true);
+
+    final newRecords = await _historyRepo.getRecordsPage(_currentPage);
+    final decisions = await _decisionRepo.getAllDecisions();
+    final canRemoveByRecordId = Map<String, bool>.from(_canRemoveByRecordId);
+    final recordOptionExistsById = Map<String, bool>.from(_recordOptionExistsById);
+    _processRecords(newRecords, decisions, canRemoveByRecordId, recordOptionExistsById);
+
+    setState(() {
+      _records.addAll(newRecords);
+      _canRemoveByRecordId = canRemoveByRecordId;
+      _recordOptionExistsById = recordOptionExistsById;
+      _currentPage++;
+      _hasMore = newRecords.length >= HistoryRepository.pageSize;
+      _isLoadingMore = false;
+    });
+  }
+
+  void _processRecords(
+    List<HistoryRecord> records,
+    List<Decision> decisions,
+    Map<String, bool> canRemoveByRecordId,
+    Map<String, bool> recordOptionExistsById,
+  ) {
     for (final record in records) {
       final decision = decisions.cast<Decision?>().firstWhere(
         (d) => d?.id == record.decisionId,
@@ -83,15 +138,6 @@ class _HistoryPageState extends State<HistoryPage> {
       recordOptionExistsById[record.id] = true;
       canRemoveByRecordId[record.id] = group.options.length > 1;
     }
-
-    setState(() {
-      _records = records;
-      _canRemoveByRecordId = canRemoveByRecordId;
-      _recordOptionExistsById = recordOptionExistsById;
-      _totalCount = totalCount;
-      _dailyCounts = dailyCounts;
-      _isLoading = false;
-    });
   }
 
   Future<void> _updateFeedback(String id, String feedback) async {
@@ -177,190 +223,214 @@ class _HistoryPageState extends State<HistoryPage> {
     return Scaffold(
       extendBody: true,
       backgroundColor: const Color(0xFFFFFFFF),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(24, 100, 24, 120),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                '定睛回看',
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w400,
-                  color: Color(0xFF5E5E5E),
-                  letterSpacing: 2,
-                ),
-              ),
-              const SizedBox(height: 6),
-              RichText(
-                text: const TextSpan(
-                  style: TextStyle(
-                    fontSize: 48,
-                    fontWeight: FontWeight.w700,
-                    color: Color(0xFF000000),
-                    letterSpacing: 0,
-                    height: 1.1,
-                  ),
-                  children: [
-                    TextSpan(text: '历史'),
-                    TextSpan(text: '决定'),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 18),
-              if (_isLoading)
-                const Center(
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : CustomScrollView(
+              controller: _scrollController,
+              slivers: [
+                SliverToBoxAdapter(
                   child: Padding(
-                    padding: EdgeInsets.all(40),
-                    child: CircularProgressIndicator(),
-                  ),
-                )
-              else
-                Column(
-                  children: [
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF7F7F7),
-                        borderRadius: BorderRadius.circular(32),
-                        border: Border.all(
-                          color: const Color(0xFFEAEAEA),
-                          width: 1,
+                    padding: const EdgeInsets.fromLTRB(24, 100, 24, 0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          '定睛回看',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w400,
+                            color: Color(0xFF5E5E5E),
+                            letterSpacing: 2,
+                          ),
                         ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.03),
-                            blurRadius: 10,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            '累积帮你决定了',
+                        const SizedBox(height: 6),
+                        RichText(
+                          text: const TextSpan(
                             style: TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w400,
-                              color: Color(0xFF5E5E5E),
-                              letterSpacing: 1.2,
+                              fontSize: 48,
+                              fontWeight: FontWeight.w700,
+                              color: Color(0xFF000000),
+                              letterSpacing: 0,
+                              height: 1.1,
+                            ),
+                            children: [
+                              TextSpan(text: '历史'),
+                              TextSpan(text: '决定'),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 18),
+                      ],
+                    ),
+                  ),
+                ),
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(24, 0, 24, 0),
+                    child: _buildStatsCard(),
+                  ),
+                ),
+                SliverToBoxAdapter(
+                  child: const SizedBox(height: 50),
+                ),
+                if (_records.isEmpty)
+                  SliverToBoxAdapter(
+                    child: Container(
+                      padding: const EdgeInsets.all(40),
+                      alignment: Alignment.center,
+                      child: Column(
+                        children: [
+                          Icon(
+                            Icons.history_outlined,
+                            size: 64,
+                            color: Colors.grey[400],
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            '暂无历史记录',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w500,
+                              color: Colors.grey[600],
                             ),
                           ),
-                          const SizedBox(height: 12),
-                          IntrinsicHeight(
-                            child: Row(
-                              crossAxisAlignment: CrossAxisAlignment.center,
-                              children: [
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Text(
-                                        '$_totalCount',
-                                        style: const TextStyle(
-                                          fontSize: 24,
-                                          fontWeight: FontWeight.w700,
-                                          color: Color(0xFF004EE8),
-                                        ),
-                                      ),
-                                      const Text(
-                                        '次决定',
-                                        style: TextStyle(
-                                          fontSize: 24,
-                                          fontWeight: FontWeight.w700,
-                                          color: Color(0xFF004EE8),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                Center(
-                                  child: Container(
-                                    width: 1,
-                                    margin: const EdgeInsets.symmetric(
-                                      vertical: 6,
-                                    ),
-                                    color: const Color(
-                                      0xFFC6C6C6,
-                                    ).withValues(alpha: 0.3),
-                                  ),
-                                ),
-                                const SizedBox(width: 16),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Text(
-                                        '${_formatSavedTime(_totalCount)}小时',
-                                        style: const TextStyle(
-                                          fontSize: 24,
-                                          fontWeight: FontWeight.w700,
-                                          color: Color(0xFF000000),
-                                        ),
-                                      ),
-                                      const Text(
-                                        '已节省',
-                                        style: TextStyle(
-                                          fontSize: 24,
-                                          fontWeight: FontWeight.w700,
-                                          color: Color(0xFF000000),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(height: 20),
-                          SizedBox(height: 60, child: _buildBarChart()),
                         ],
                       ),
                     ),
-                    const SizedBox(height: 50),
-                    if (_records.isEmpty)
-                      Container(
-                        padding: const EdgeInsets.all(40),
-                        alignment: Alignment.center,
-                        child: Column(
-                          children: [
-                            Icon(
-                              Icons.history_outlined,
-                              size: 64,
-                              color: Colors.grey[400],
-                            ),
-                            const SizedBox(height: 16),
-                            Text(
-                              '暂无历史记录',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w500,
-                                color: Colors.grey[600],
+                  )
+                else ...[
+                  SliverPadding(
+                    padding: const EdgeInsets.fromLTRB(24, 0, 24, 0),
+                    sliver: SliverList.builder(
+                      itemCount: _records.length + (_isLoadingMore ? 1 : 0),
+                      itemBuilder: (context, index) {
+                        if (index == _records.length) {
+                          return const Padding(
+                            padding: EdgeInsets.all(16),
+                            child: Center(
+                              child: SizedBox(
+                                width: 24,
+                                height: 24,
+                                child: CircularProgressIndicator(strokeWidth: 2),
                               ),
                             ),
-                          ],
-                        ),
-                      )
-                    else
-                      Column(
-                        children: [
-                          _buildTimeline(),
-                          const SizedBox(height: 32),
-                          const AppSloganFooter(),
-                        ],
-                      ),
-                  ],
-                ),
-            ],
-          ),
+                          );
+                        }
+                        final isLast = index == _records.length - 1 && !_isLoadingMore;
+                        return _buildTimelineItem(_records[index], isLast, index);
+                      },
+                    ),
+                  ),
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(24, 32, 24, 120),
+                      child: const AppSloganFooter(),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+    );
+  }
+
+  Widget _buildStatsCard() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF7F7F7),
+        borderRadius: BorderRadius.circular(32),
+        border: Border.all(
+          color: const Color(0xFFEAEAEA),
+          width: 1,
         ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            '累积帮你决定了',
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w400,
+              color: Color(0xFF5E5E5E),
+              letterSpacing: 1.2,
+            ),
+          ),
+          const SizedBox(height: 12),
+          IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        '$_totalCount',
+                        style: const TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFF004EE8),
+                        ),
+                      ),
+                      const Text(
+                        '次决定',
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFF004EE8),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Center(
+                  child: Container(
+                    width: 1,
+                    margin: const EdgeInsets.symmetric(vertical: 6),
+                    color: const Color(0xFFC6C6C6).withValues(alpha: 0.3),
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        '${_formatSavedTime(_totalCount)}小时',
+                        style: const TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFF000000),
+                        ),
+                      ),
+                      const Text(
+                        '已节省',
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFF000000),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 20),
+          SizedBox(height: 60, child: _buildBarChart()),
+        ],
       ),
     );
   }
@@ -426,57 +496,27 @@ class _HistoryPageState extends State<HistoryPage> {
     );
   }
 
-  Widget _buildTimeline() {
-    return Stack(
-      children: [
-        Positioned(
-          left: 5,
-          top: 12,
-          bottom: 100,
-          width: 2,
-          child: Container(
-            color: const Color(0xFFC6C6C6).withValues(alpha: 0.3),
-          ),
-        ),
-        Positioned(
-          left: 5,
-          bottom: 0,
-          width: 2,
-          height: 100,
-          child: Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  const Color(0xFFC6C6C6).withValues(alpha: 0.3),
-                  Colors.transparent,
-                ],
-              ),
-            ),
-          ),
-        ),
-        Column(
-          children: List.generate(_records.length, (index) {
-            final isLast = index == _records.length - 1;
-            return _buildTimelineItem(_records[index], isLast);
-          }),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildTimelineItem(HistoryRecord record, bool isLast) {
+  Widget _buildTimelineItem(HistoryRecord record, bool isLast, int index) {
     final optionStillExists = _recordOptionExistsById[record.id] ?? true;
     final canAct = record.feedback == 'none' && optionStillExists;
     final canRemove = _canRemoveByRecordId[record.id] ?? false;
     final isLatest = _records.isNotEmpty && identical(record, _records.first);
-    return Padding(
-      padding: EdgeInsets.only(bottom: isLast ? 0 : 50),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Column(
+    return Stack(
+      children: [
+        if (!isLast)
+          Positioned(
+            left: 5,
+            top: 12,
+            bottom: 0,
+            child: Container(
+              width: 2,
+              color: const Color(0xFFC6C6C6).withValues(alpha: 0.3),
+            ),
+          ),
+        Padding(
+          padding: EdgeInsets.only(bottom: isLast ? 0 : 50),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Container(
                 width: 12,
@@ -493,8 +533,6 @@ class _HistoryPageState extends State<HistoryPage> {
                   ],
                 ),
               ),
-            ],
-          ),
           const SizedBox(width: 20),
           Expanded(
             child: Column(
@@ -661,6 +699,8 @@ class _HistoryPageState extends State<HistoryPage> {
           ),
         ],
       ),
+    ),
+    ],
     );
   }
 }

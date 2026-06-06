@@ -2,8 +2,20 @@ import '../models/app_models.dart';
 import '../local/app_storage.dart';
 
 class HistoryRepository {
+  static const int pageSize = 15;
+  static const int maxPages = 6;
+
   Future<List<HistoryRecord>> getAllRecords() async {
     return await AppStorage.getHistory();
+  }
+
+  Future<List<HistoryRecord>> getRecordsPage(int page) async {
+    final offset = page * pageSize;
+    if (offset >= pageSize * maxPages) return [];
+    return await AppStorage.getHistoryPaginated(
+      offset: offset,
+      limit: pageSize,
+    );
   }
 
   Future<List<HistoryRecord>> getLast7DaysRecords() async {
