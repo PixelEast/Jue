@@ -31,7 +31,7 @@ class JueApp extends StatelessWidget {
     return MaterialApp(
       title: '决',
       debugShowCheckedModeBanner: false,
-      scrollBehavior: const ScrollBehavior().copyWith(overscroll: false),
+      scrollBehavior: const ScrollBehavior().copyWith(physics: const BouncingScrollPhysics()),
       theme: ThemeData(
         useMaterial3: true,
         brightness: Brightness.light,
