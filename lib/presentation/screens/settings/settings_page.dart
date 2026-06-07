@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../widgets/app_slogan_footer.dart';
+import 'notification_settings_page.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -43,8 +44,15 @@ class _SettingsPageState extends State<SettingsPage> {
               _buildSettingCard(
                 icon: Icons.notifications_none_rounded,
                 title: '通知',
-                subtitle: '建议决定提醒，通知',
-                onTap: () {},
+                subtitle: '智能决定提醒，免打扰时段',
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const NotificationSettingsPage(),
+                    ),
+                  );
+                },
               ),
               const SizedBox(height: 12),
               _buildSettingCard(

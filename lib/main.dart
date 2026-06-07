@@ -1,12 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:timezone/data/latest.dart' as tz;
+import 'package:timezone/timezone.dart' as tz;
 import 'dart:ui';
+import 'core/utils/notification_service.dart';
+import 'core/utils/notification_scheduler.dart';
 import 'presentation/screens/home/home_page.dart';
 import 'presentation/screens/history/history_page.dart';
 import 'presentation/screens/settings/settings_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  tz.initializeTimeZones();
+  tz.setLocalLocation(tz.getLocation('Asia/Shanghai'));
 
   await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
 
@@ -19,6 +26,9 @@ void main() async {
       systemNavigationBarContrastEnforced: false,
     ),
   );
+
+  await NotificationService().init();
+  NotificationScheduler().start();
 
   runApp(const JueApp());
 }

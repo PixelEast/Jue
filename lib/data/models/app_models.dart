@@ -226,3 +226,203 @@ class HistoryRecord {
     dateOnly: DateTime.parse(json['dateOnly'] as String),
   );
 }
+
+class NotificationSettings {
+  bool enabled;
+  bool reminderEnabled;
+  bool dndEnabled;
+  int dndStartHour;
+  int dndStartMinute;
+  int dndEndHour;
+  int dndEndMinute;
+
+  NotificationSettings({
+    this.enabled = true,
+    this.reminderEnabled = true,
+    this.dndEnabled = true,
+    this.dndStartHour = 22,
+    this.dndStartMinute = 30,
+    this.dndEndHour = 7,
+    this.dndEndMinute = 30,
+  });
+
+  Map<String, dynamic> toJson() => {
+    'enabled': enabled,
+    'reminderEnabled': reminderEnabled,
+    'dndEnabled': dndEnabled,
+    'dndStartHour': dndStartHour,
+    'dndStartMinute': dndStartMinute,
+    'dndEndHour': dndEndHour,
+    'dndEndMinute': dndEndMinute,
+  };
+
+  factory NotificationSettings.fromJson(Map<String, dynamic> json) =>
+      NotificationSettings(
+        enabled: json['enabled'] as bool? ?? true,
+        reminderEnabled: json['reminderEnabled'] as bool? ?? true,
+        dndEnabled: json['dndEnabled'] as bool? ?? true,
+        dndStartHour: json['dndStartHour'] as int? ?? 22,
+        dndStartMinute: json['dndStartMinute'] as int? ?? 30,
+        dndEndHour: json['dndEndHour'] as int? ?? 7,
+        dndEndMinute: json['dndEndMinute'] as int? ?? 30,
+      );
+}
+
+class TimeSlot {
+  int startHour;
+  int startMinute;
+  int endHour;
+  int endMinute;
+  double frequency;
+
+  TimeSlot({
+    required this.startHour,
+    required this.startMinute,
+    required this.endHour,
+    required this.endMinute,
+    this.frequency = 0,
+  });
+
+  Map<String, dynamic> toJson() => {
+    'startHour': startHour,
+    'startMinute': startMinute,
+    'endHour': endHour,
+    'endMinute': endMinute,
+    'frequency': frequency,
+  };
+
+  factory TimeSlot.fromJson(Map<String, dynamic> json) => TimeSlot(
+    startHour: json['startHour'] as int,
+    startMinute: json['startMinute'] as int,
+    endHour: json['endHour'] as int,
+    endMinute: json['endMinute'] as int,
+    frequency: (json['frequency'] as num?)?.toDouble() ?? 0,
+  );
+
+  bool contains(DateTime time) {
+    final minute = time.hour * 60 + time.minute;
+    final start = startHour * 60 + startMinute;
+    final end = endHour * 60 + endMinute;
+    if (start <= end) {
+      return minute >= start && minute <= end;
+    }
+    return minute >= start || minute <= end;
+  }
+
+  int get midpointMinute {
+    final start = startHour * 60 + startMinute;
+    final end = endHour * 60 + endMinute;
+    if (start <= end) {
+      return (start + end) ~/ 2;
+    }
+    final total = (24 * 60 - start) + end;
+    return (start + total ~/ 2) % (24 * 60);
+  }
+}
+
+class LocationCluster {
+  String optionGroupName;
+  double latitude;
+  double longitude;
+  double radiusMeters;
+  String locationLabel;
+  int frequency;
+
+  LocationCluster({
+    required this.optionGroupName,
+    required this.latitude,
+    required this.longitude,
+    required this.radiusMeters,
+    this.locationLabel = '',
+    this.frequency = 0,
+  });
+
+  Map<String, dynamic> toJson() => {
+    'optionGroupName': optionGroupName,
+    'latitude': latitude,
+    'longitude': longitude,
+    'radiusMeters': radiusMeters,
+    'locationLabel': locationLabel,
+    'frequency': frequency,
+  };
+
+  factory LocationCluster.fromJson(Map<String, dynamic> json) =>
+      LocationCluster(
+        optionGroupName: json['optionGroupName'] as String,
+        latitude: (json['latitude'] as num).toDouble(),
+        longitude: (json['longitude'] as num).toDouble(),
+        radiusMeters: (json['radiusMeters'] as num).toDouble(),
+        locationLabel: json['locationLabel'] as String? ?? '',
+        frequency: json['frequency'] as int? ?? 0,
+      );
+}
+
+class DecisionUsagePattern {
+  String decisionId;
+  int totalExecutions;
+  double executionsPerWeek;
+  List<TimeSlot> frequentSlots;
+  List<LocationCluster> frequentLocations;
+  List<int> frequentWeekdays;
+  double priority;
+  DateTime lastAnalyzedAt;
+  DateTime? lastNotifiedAt;
+  int todayNotifyCount;
+  DateTime? todayNotifyDate;
+
+  DecisionUsagePattern({
+    required this.decisionId,
+    this.totalExecutions = 0,
+    this.executionsPerWeek = 0,
+    this.frequentSlots = const [],
+    this.frequentLocations = const [],
+    this.frequentWeekdays = const [],
+    this.priority = 0,
+    DateTime? lastAnalyzedAt,
+    this.lastNotifiedAt,
+    this.todayNotifyCount = 0,
+    this.todayNotifyDate,
+  }) : lastAnalyzedAt = lastAnalyzedAt ?? DateTime.now();
+
+  Map<String, dynamic> toJson() => {
+    'decisionId': decisionId,
+    'totalExecutions': totalExecutions,
+    'executionsPerWeek': executionsPerWeek,
+    'frequentSlots': frequentSlots.map((s) => s.toJson()).toList(),
+    'frequentLocations': frequentLocations.map((l) => l.toJson()).toList(),
+    'frequentWeekdays': frequentWeekdays,
+    'priority': priority,
+    'lastAnalyzedAt': lastAnalyzedAt.toIso8601String(),
+    'lastNotifiedAt': lastNotifiedAt?.toIso8601String(),
+    'todayNotifyCount': todayNotifyCount,
+    'todayNotifyDate': todayNotifyDate?.toIso8601String(),
+  };
+
+  factory DecisionUsagePattern.fromJson(Map<String, dynamic> json) =>
+      DecisionUsagePattern(
+        decisionId: json['decisionId'] as String,
+        totalExecutions: json['totalExecutions'] as int? ?? 0,
+        executionsPerWeek:
+            (json['executionsPerWeek'] as num?)?.toDouble() ?? 0,
+        frequentSlots: (json['frequentSlots'] as List?)
+            ?.map((s) => TimeSlot.fromJson(s as Map<String, dynamic>))
+            .toList() ?? [],
+        frequentLocations: (json['frequentLocations'] as List?)
+            ?.map((l) => LocationCluster.fromJson(l as Map<String, dynamic>))
+            .toList() ?? [],
+        frequentWeekdays: (json['frequentWeekdays'] as List?)
+            ?.map((w) => w as int)
+            .toList() ?? [],
+        priority: (json['priority'] as num?)?.toDouble() ?? 0,
+        lastAnalyzedAt: json['lastAnalyzedAt'] != null
+            ? DateTime.parse(json['lastAnalyzedAt'] as String)
+            : DateTime.now(),
+        lastNotifiedAt: json['lastNotifiedAt'] != null
+            ? DateTime.tryParse(json['lastNotifiedAt'] as String)
+            : null,
+        todayNotifyCount: json['todayNotifyCount'] as int? ?? 0,
+        todayNotifyDate: json['todayNotifyDate'] != null
+            ? DateTime.tryParse(json['todayNotifyDate'] as String)
+            : null,
+      );
+}

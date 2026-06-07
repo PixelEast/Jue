@@ -5,6 +5,8 @@ import '../models/app_models.dart';
 class AppStorage {
   static const String _decisionsKey = 'decisions';
   static const String _historyKey = 'history';
+  static const String _notificationSettingsKey = 'notification_settings';
+  static const String _usagePatternsKey = 'usage_patterns';
 
   static Future<List<Decision>> getDecisions() async {
     final prefs = await SharedPreferences.getInstance();
@@ -97,5 +99,57 @@ class AppStorage {
     final start = offset.clamp(0, allRecords.length);
     final end = (offset + limit).clamp(0, allRecords.length);
     return allRecords.sublist(start, end);
+  }
+
+  static Future<NotificationSettings> getNotificationSettings() async {
+    final prefs = await SharedPreferences.getInstance();
+    final data = prefs.getString(_notificationSettingsKey);
+    if (data == null) return NotificationSettings();
+    return NotificationSettings.fromJson(
+      jsonDecode(data) as Map<String, dynamic>,
+    );
+  }
+
+  static Future<void> saveNotificationSettings(
+    NotificationSettings settings,
+  ) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(
+      _notificationSettingsKey,
+      jsonEncode(settings.toJson()),
+    );
+  }
+
+  static Future<List<DecisionUsagePattern>> getUsagePatterns() async {
+    final prefs = await SharedPreferences.getInstance();
+    final data = prefs.getStringList(_usagePatternsKey) ?? [];
+    return data
+        .map(
+          (e) => DecisionUsagePattern.fromJson(
+            jsonDecode(e) as Map<String, dynamic>,
+          ),
+        )
+        .toList();
+  }
+
+  static Future<void> saveUsagePatterns(
+    List<DecisionUsagePattern> patterns,
+  ) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setStringList(
+      _usagePatternsKey,
+      patterns.map((p) => jsonEncode(p.toJson())).toList(),
+    );
+  }
+
+  static Future<void> saveUsagePattern(DecisionUsagePattern pattern) async {
+    final patterns = await getUsagePatterns();
+    final index = patterns.indexWhere((p) => p.decisionId == pattern.decisionId);
+    if (index >= 0) {
+      patterns[index] = pattern;
+    } else {
+      patterns.add(pattern);
+    }
+    await saveUsagePatterns(patterns);
   }
 }

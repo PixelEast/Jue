@@ -12,6 +12,7 @@ import '../../../data/repositories/decision_repository.dart';
 import '../../../data/repositories/history_repository.dart';
 import '../../../core/utils/algorithms.dart';
 import '../../../core/utils/app_events.dart';
+import '../../../core/utils/usage_analyzer.dart';
 import '../../widgets/app_slogan_footer.dart';
 import '../../widgets/frosted_back_button.dart';
 import '../create/create_decision_page.dart';
@@ -270,6 +271,8 @@ class _ExecutePageState extends State<ExecutePage>
       _showResult = true;
       _result = selectedOption.name;
     });
+
+    UsageAnalyzer().analyzeAndUpdate();
   }
 
   @override
