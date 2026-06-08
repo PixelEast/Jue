@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/theme/app_colors_helper.dart';
 import '../../widgets/app_slogan_footer.dart';
 import 'notification_settings_page.dart';
 import 'display_settings_page.dart';
@@ -14,30 +15,37 @@ class SettingsPage extends StatefulWidget {
 class _SettingsPageState extends State<SettingsPage> {
   @override
   Widget build(BuildContext context) {
+    final bgColor = AppColorsHelper.scaffoldBackground(context);
+    final primaryTextColor = AppColorsHelper.primaryText(context);
+    final cardBg = AppColorsHelper.cardBackground(context);
+    final cardBorder = AppColorsHelper.cardBorder(context);
+    final iconBg = AppColorsHelper.iconBackground(context);
+    final iconFg = AppColorsHelper.iconForeground(context);
+
     return Scaffold(
       extendBody: true,
-      backgroundColor: const Color(0xFFFFFFFF),
+      backgroundColor: bgColor,
       body: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.fromLTRB(32, 100, 32, 100),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
+              Text(
                 '设置',
                 style: TextStyle(
                   fontSize: 48,
                   fontWeight: FontWeight.w700,
-                  color: Color(0xFF000000),
+                  color: primaryTextColor,
                 ),
               ),
               const SizedBox(height: 4),
-              const Text(
+              Text(
                 '定制你的决定体验',
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w400,
-                  color: Color(0xFF5E5E5E),
+                  color: AppColorsHelper.secondaryText(context),
                 ),
               ),
               const SizedBox(height: 24),
@@ -47,6 +55,11 @@ class _SettingsPageState extends State<SettingsPage> {
                 icon: Icons.notifications_none_rounded,
                 title: '通知',
                 subtitle: '智能决定提醒，免打扰时段',
+                cardBg: cardBg,
+                cardBorder: cardBorder,
+                iconBg: iconBg,
+                iconFg: iconFg,
+                primaryTextColor: primaryTextColor,
                 onTap: () {
                   Navigator.push(
                     context,
@@ -61,6 +74,11 @@ class _SettingsPageState extends State<SettingsPage> {
                 icon: Icons.palette_outlined,
                 title: '界面与显示',
                 subtitle: '深色模式，多语言',
+                cardBg: cardBg,
+                cardBorder: cardBorder,
+                iconBg: iconBg,
+                iconFg: iconFg,
+                primaryTextColor: primaryTextColor,
                 onTap: () {
                   Navigator.push(
                     context,
@@ -75,6 +93,11 @@ class _SettingsPageState extends State<SettingsPage> {
                 icon: Icons.key_outlined,
                 title: '系统权限',
                 subtitle: '位置，后台刷新',
+                cardBg: cardBg,
+                cardBorder: cardBorder,
+                iconBg: iconBg,
+                iconFg: iconFg,
+                primaryTextColor: primaryTextColor,
                 onTap: () {},
               ),
               const SizedBox(height: 12),
@@ -82,21 +105,20 @@ class _SettingsPageState extends State<SettingsPage> {
                 icon: Icons.storage_outlined,
                 title: '数据与存储',
                 subtitle: '查看存储，清理缓存，历史记录',
+                cardBg: cardBg,
+                cardBorder: cardBorder,
+                iconBg: iconBg,
+                iconFg: iconFg,
+                primaryTextColor: primaryTextColor,
                 onTap: () {},
               ),
               const SizedBox(height: 24),
-              const Padding(
-                padding: EdgeInsets.only(left: 10),
-                child: Align(
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    '其他信息',
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF5E5E5E),
-                    ),
-                  ),
+              Text(
+                '其他信息',
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  color: AppColorsHelper.secondaryText(context),
                 ),
               ),
               const SizedBox(height: 12),
@@ -106,8 +128,16 @@ class _SettingsPageState extends State<SettingsPage> {
                 borderRadius: BorderRadius.circular(32),
                 child: Ink(
                   decoration: BoxDecoration(
-                    color: Colors.black,
+                    color: AppColorsHelper.isDark(context)
+                        ? const Color(0xFF1E1E1E)
+                        : Colors.black,
                     borderRadius: BorderRadius.circular(32),
+                    border: Border.all(
+                      color: AppColorsHelper.isDark(context)
+                          ? const Color(0xFF2E2E2E)
+                          : const Color(0xFF333333),
+                      width: 1,
+                    ),
                   ),
                   child: InkWell(
                     onTap: () {
@@ -129,12 +159,10 @@ class _SettingsPageState extends State<SettingsPage> {
                             width: 48,
                             height: 48,
                             decoration: BoxDecoration(
-                              color: const Color(0xFF191919),
+                              color: AppColorsHelper.isDark(context)
+                                  ? const Color(0xFF2E2E2E)
+                                  : const Color(0xFF191919),
                               borderRadius: BorderRadius.circular(16),
-                              border: Border.all(
-                                color: const Color(0xFF474747),
-                                width: 1,
-                              ),
                             ),
                             child: const Icon(
                               Icons.info_outline,
@@ -189,6 +217,11 @@ class _SettingsPageState extends State<SettingsPage> {
     required IconData icon,
     required String title,
     String? subtitle,
+    required Color cardBg,
+    required Color cardBorder,
+    required Color iconBg,
+    required Color iconFg,
+    required Color primaryTextColor,
     required VoidCallback onTap,
   }) {
     return Material(
@@ -196,9 +229,9 @@ class _SettingsPageState extends State<SettingsPage> {
       borderRadius: BorderRadius.circular(32),
       child: Ink(
         decoration: BoxDecoration(
-          color: const Color(0xFFF7F7F7),
+          color: cardBg,
           borderRadius: BorderRadius.circular(32),
-          border: Border.all(color: Colors.black.withValues(alpha: 0.05)),
+          border: Border.all(color: cardBorder),
         ),
         child: InkWell(
           onTap: onTap,
@@ -212,11 +245,11 @@ class _SettingsPageState extends State<SettingsPage> {
                 Container(
                   width: 48,
                   height: 48,
-                  decoration: const BoxDecoration(
-                    color: Colors.black,
-                    borderRadius: BorderRadius.all(Radius.circular(16)),
+                  decoration: BoxDecoration(
+                    color: iconBg,
+                    borderRadius: const BorderRadius.all(Radius.circular(16)),
                   ),
-                  child: Icon(icon, size: 20, color: Colors.white),
+                  child: Icon(icon, size: 20, color: iconFg),
                 ),
                 const SizedBox(width: 16),
                 Expanded(
@@ -225,10 +258,10 @@ class _SettingsPageState extends State<SettingsPage> {
                     children: [
                       Text(
                         title,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.w600,
-                          color: Color(0xFF000000),
+                          color: primaryTextColor,
                         ),
                       ),
                       if (subtitle != null) ...[

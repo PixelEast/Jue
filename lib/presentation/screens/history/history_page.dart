@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import '../../../core/theme/app_colors_helper.dart';
 import '../../../data/models/app_models.dart';
 import '../../../data/repositories/decision_repository.dart';
 import '../../../data/repositories/history_repository.dart';
@@ -220,9 +221,10 @@ class _HistoryPageState extends State<HistoryPage> {
 
   @override
   Widget build(BuildContext context) {
+    final bgColor = AppColorsHelper.scaffoldBackground(context);
     return Scaffold(
       extendBody: true,
-      backgroundColor: const Color(0xFFFFFFFF),
+      backgroundColor: bgColor,
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : CustomScrollView(
@@ -234,26 +236,26 @@ class _HistoryPageState extends State<HistoryPage> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
+                        Text(
                           '定睛回看',
                           style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w400,
-                            color: Color(0xFF5E5E5E),
+                            color: AppColorsHelper.secondaryText(context),
                             letterSpacing: 2,
                           ),
                         ),
                         const SizedBox(height: 6),
                         RichText(
-                          text: const TextSpan(
+                          text: TextSpan(
                             style: TextStyle(
                               fontSize: 48,
                               fontWeight: FontWeight.w700,
-                              color: Color(0xFF000000),
+                              color: AppColorsHelper.primaryText(context),
                               letterSpacing: 0,
                               height: 1.1,
                             ),
-                            children: [
+                            children: const [
                               TextSpan(text: '历史'),
                               TextSpan(text: '决定'),
                             ],
@@ -334,19 +336,22 @@ class _HistoryPageState extends State<HistoryPage> {
   }
 
   Widget _buildStatsCard() {
+    final isDark = AppColorsHelper.isDark(context);
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: const Color(0xFFF7F7F7),
+        color: isDark ? const Color(0xFF1E1E1E) : const Color(0xFFF7F7F7),
         borderRadius: BorderRadius.circular(32),
         border: Border.all(
-          color: const Color(0xFFEAEAEA),
+          color: isDark
+              ? Colors.white.withValues(alpha: 0.1)
+              : const Color(0xFFEAEAEA),
           width: 1,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
+            color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.03),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -355,12 +360,12 @@ class _HistoryPageState extends State<HistoryPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             '累积帮你决定了',
             style: TextStyle(
               fontSize: 11,
               fontWeight: FontWeight.w400,
-              color: Color(0xFF5E5E5E),
+              color: AppColorsHelper.secondaryText(context),
               letterSpacing: 1.2,
             ),
           ),
@@ -408,18 +413,18 @@ class _HistoryPageState extends State<HistoryPage> {
                     children: [
                       Text(
                         '${_formatSavedTime(_totalCount)}小时',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 24,
                           fontWeight: FontWeight.w700,
-                          color: Color(0xFF000000),
+                          color: AppColorsHelper.primaryText(context),
                         ),
                       ),
-                      const Text(
+                      Text(
                         '已节省',
                         style: TextStyle(
                           fontSize: 24,
                           fontWeight: FontWeight.w700,
-                          color: Color(0xFF000000),
+                          color: AppColorsHelper.primaryText(context),
                         ),
                       ),
                     ],
@@ -501,6 +506,7 @@ class _HistoryPageState extends State<HistoryPage> {
     final canAct = record.feedback == 'none' && optionStillExists;
     final canRemove = _canRemoveByRecordId[record.id] ?? false;
     final isLatest = _records.isNotEmpty && identical(record, _records.first);
+    final isDark = AppColorsHelper.isDark(context);
     return Stack(
       children: [
         if (!isLast)
@@ -510,7 +516,9 @@ class _HistoryPageState extends State<HistoryPage> {
             bottom: 0,
             child: Container(
               width: 2,
-              color: const Color(0xFFC6C6C6).withValues(alpha: 0.3),
+              color: isDark
+                  ? Colors.white.withValues(alpha: 0.15)
+                  : const Color(0xFFC6C6C6).withValues(alpha: 0.3),
             ),
           ),
         Padding(
@@ -522,11 +530,11 @@ class _HistoryPageState extends State<HistoryPage> {
                 width: 12,
                 height: 12,
                 decoration: BoxDecoration(
-                  color: Colors.black,
+                  color: isDark ? Colors.white : Colors.black,
                   shape: BoxShape.circle,
-                  boxShadow: const [
+                  boxShadow: [
                     BoxShadow(
-                      color: Colors.white,
+                      color: isDark ? Colors.black : Colors.white,
                       blurRadius: 0,
                       spreadRadius: 4,
                     ),
@@ -540,10 +548,12 @@ class _HistoryPageState extends State<HistoryPage> {
               children: [
                 Text(
                   _formatRecordTime(record.createdAt),
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 10,
                     fontWeight: FontWeight.w400,
-                    color: Color(0xFF5E5E5E),
+                    color: isDark
+                        ? Colors.white.withValues(alpha: 0.5)
+                        : const Color(0xFF5E5E5E),
                     letterSpacing: 1.2,
                   ),
                 ),
@@ -553,19 +563,19 @@ class _HistoryPageState extends State<HistoryPage> {
                     children: [
                       TextSpan(
                         text: '判决：${record.decisionTheme}',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.w700,
-                          color: Color(0xFF000000),
+                          color: isDark ? Colors.white : const Color(0xFF000000),
                           height: 1.2,
                         ),
                       ),
                       TextSpan(
                         text: '（${record.optionGroupName}）',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.w700,
-                          color: Color(0xFF000000),
+                          color: isDark ? Colors.white : const Color(0xFF000000),
                           height: 1.2,
                         ),
                       ),
@@ -577,15 +587,17 @@ class _HistoryPageState extends State<HistoryPage> {
                   width: double.infinity,
                   padding: const EdgeInsets.all(24),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFF7F7F7),
+                    color: isDark ? const Color(0xFF252525) : const Color(0xFFF7F7F7),
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(
-                      color: const Color(0xFFEAEAEA),
+                      color: isDark
+                          ? Colors.white.withValues(alpha: 0.1)
+                          : const Color(0xFFEAEAEA),
                       width: 1,
                     ),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.04),
+                        color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.04),
                         blurRadius: 12,
                         offset: const Offset(0, 4),
                       ),
@@ -594,12 +606,14 @@ class _HistoryPageState extends State<HistoryPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
+                      Text(
                         '判决结果:',
                         style: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.w600,
-                          color: Color(0xFF5E5E5E),
+                          color: isDark
+                              ? Colors.white.withValues(alpha: 0.5)
+                              : const Color(0xFF5E5E5E),
                           letterSpacing: 1.2,
                         ),
                       ),
@@ -611,7 +625,7 @@ class _HistoryPageState extends State<HistoryPage> {
                           fontWeight: FontWeight.w700,
                           color: isLatest
                               ? const Color(0xFF004EE8)
-                              : const Color(0xFF1B1B1B),
+                              : (isDark ? Colors.white : const Color(0xFF1B1B1B)),
                         ),
                       ),
                       const SizedBox(height: 12),

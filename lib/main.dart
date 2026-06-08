@@ -3,11 +3,15 @@ import 'package:flutter/services.dart';
 import 'package:timezone/data/latest.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
 import 'dart:ui';
+import 'core/theme/app_theme.dart';
+import 'core/theme/theme_notifier.dart';
 import 'core/utils/notification_service.dart';
 import 'core/utils/notification_scheduler.dart';
 import 'presentation/screens/home/home_page.dart';
 import 'presentation/screens/history/history_page.dart';
 import 'presentation/screens/settings/settings_page.dart';
+
+final ThemeNotifier themeNotifier = ThemeNotifier();
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -17,24 +21,47 @@ void main() async {
 
   await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
 
-  SystemChrome.setSystemUIOverlayStyle(
-    const SystemUiOverlayStyle(
-      statusBarColor: Colors.transparent,
-      statusBarIconBrightness: Brightness.dark,
-      systemNavigationBarColor: Colors.transparent,
-      systemNavigationBarIconBrightness: Brightness.dark,
-      systemNavigationBarContrastEnforced: false,
-    ),
-  );
-
   await NotificationService().init();
   NotificationScheduler().start();
 
   runApp(const JueApp());
 }
 
-class JueApp extends StatelessWidget {
+class JueApp extends StatefulWidget {
   const JueApp({super.key});
+
+  @override
+  State<JueApp> createState() => _JueAppState();
+}
+
+class _JueAppState extends State<JueApp> {
+  @override
+  void initState() {
+    super.initState();
+    themeNotifier.addListener(_onThemeChanged);
+  }
+
+  @override
+  void dispose() {
+    themeNotifier.removeListener(_onThemeChanged);
+    super.dispose();
+  }
+
+  void _onThemeChanged() {
+    setState(() {});
+    final brightness = themeNotifier.isDarkMode
+        ? Brightness.light
+        : Brightness.dark;
+    SystemChrome.setSystemUIOverlayStyle(
+      SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: brightness,
+        systemNavigationBarColor: Colors.transparent,
+        systemNavigationBarIconBrightness: brightness,
+        systemNavigationBarContrastEnforced: false,
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -42,69 +69,19 @@ class JueApp extends StatelessWidget {
       title: '决',
       debugShowCheckedModeBanner: false,
       scrollBehavior: const ScrollBehavior().copyWith(physics: const BouncingScrollPhysics()),
-      theme: ThemeData(
-        useMaterial3: true,
-        brightness: Brightness.light,
-        fontFamily: 'Noto Sans SC',
-        primaryColor: const Color(0xFF002FA7),
-        scaffoldBackgroundColor: Colors.white,
-        textTheme: const TextTheme(
-          displayLarge: TextStyle(
-            fontSize: 32,
-            fontWeight: FontWeight.bold,
-            color: Colors.black,
-          ),
-          displayMedium: TextStyle(
-            fontSize: 24,
-            fontWeight: FontWeight.w500,
-            color: Color(0xFF002FA7),
-          ),
-          titleLarge: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.w500,
-            color: Colors.black,
-          ),
-          bodyLarge: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.normal,
-            color: Colors.black,
-          ),
-          bodyMedium: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.normal,
-            color: Color(0xFF8E8E93),
-          ),
-          bodySmall: TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.normal,
-            color: Color(0xFF8E8E93),
-          ),
-        ),
-        elevatedButtonTheme: ElevatedButtonThemeData(
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.black,
-            foregroundColor: Colors.white,
-            elevation: 0,
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-            minimumSize: const Size(double.infinity, 48),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-          ),
-        ),
-        appBarTheme: const AppBarTheme(
-          backgroundColor: Colors.transparent,
-          elevation: 0,
-          systemOverlayStyle: SystemUiOverlayStyle.dark,
-        ),
-      ),
+      theme: AppTheme.lightTheme,
+      darkTheme: AppTheme.darkTheme,
+      themeMode: themeNotifier.isDarkMode ? ThemeMode.dark : ThemeMode.light,
       builder: (context, child) {
+        final brightness = themeNotifier.isDarkMode
+            ? Brightness.light
+            : Brightness.dark;
         return AnnotatedRegion<SystemUiOverlayStyle>(
-          value: const SystemUiOverlayStyle(
+          value: SystemUiOverlayStyle(
             statusBarColor: Colors.transparent,
-            statusBarIconBrightness: Brightness.dark,
+            statusBarIconBrightness: brightness,
             systemNavigationBarColor: Colors.transparent,
-            systemNavigationBarIconBrightness: Brightness.dark,
+            systemNavigationBarIconBrightness: brightness,
             systemNavigationBarContrastEnforced: false,
           ),
           child: child!,
@@ -143,15 +120,28 @@ class _MainScreenState extends State<MainScreen> {
   void initState() {
     super.initState();
     _instance = this;
+    themeNotifier.addListener(_onThemeChanged);
+  }
+
+  @override
+  void dispose() {
+    themeNotifier.removeListener(_onThemeChanged);
+    super.dispose();
+  }
+
+  void _onThemeChanged() {
+    setState(() {});
   }
 
   @override
   Widget build(BuildContext context) {
     final bottomInset = MediaQuery.viewPaddingOf(context).bottom;
+    final isDark = themeNotifier.isDarkMode;
+    final bgColor = isDark ? const Color(0xFF121212) : Colors.white;
     return Scaffold(
       extendBody: true,
       extendBodyBehindAppBar: true,
-      backgroundColor: Colors.white,
+      backgroundColor: bgColor,
       body: Stack(
         children: [
           Positioned(
@@ -159,7 +149,7 @@ class _MainScreenState extends State<MainScreen> {
             right: 0,
             bottom: 0,
             height: bottomInset + 120,
-            child: Container(color: Colors.white),
+            child: Container(color: bgColor),
           ),
           ...List.generate(_pages.length, (index) {
             final isActive = index == _currentIndex;
@@ -200,6 +190,16 @@ class _MainScreenState extends State<MainScreen> {
   }
 
   Widget _buildBottomNavBar() {
+    final isDark = themeNotifier.isDarkMode;
+    final navBgColor = isDark
+        ? Colors.white.withValues(alpha: 0.10)
+        : Colors.white.withValues(alpha: 0.80);
+    final navBorderColor = isDark
+        ? Colors.white.withValues(alpha: 0.1)
+        : Colors.black.withValues(alpha: 0.1);
+    final navShadowColor = isDark
+        ? Colors.black.withValues(alpha: 0.40)
+        : Colors.black.withValues(alpha: 0.25);
     return ClipRRect(
       borderRadius: BorderRadius.circular(32),
       child: BackdropFilter(
@@ -207,12 +207,12 @@ class _MainScreenState extends State<MainScreen> {
         child: Container(
           height: 58,
           decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.80),
+            color: navBgColor,
             borderRadius: BorderRadius.circular(32),
-            border: Border.all(color: Colors.black.withValues(alpha: 0.1)),
+            border: Border.all(color: navBorderColor),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.25),
+                color: navShadowColor,
                 blurRadius: 50,
                 offset: const Offset(0, 25),
               ),
@@ -258,6 +258,11 @@ class _MainScreenState extends State<MainScreen> {
     required bool isActive,
     required VoidCallback onTap,
   }) {
+    final isDark = themeNotifier.isDarkMode;
+    final activeColor = isDark ? Colors.white : Colors.black;
+    final inactiveColor = isDark
+        ? Colors.white.withValues(alpha: 0.5)
+        : const Color(0xFF8E8E93);
     return Expanded(
       child: InkWell(
         onTap: onTap,
@@ -268,7 +273,7 @@ class _MainScreenState extends State<MainScreen> {
           children: [
             Icon(
               icon,
-              color: isActive ? Colors.black : const Color(0xFF8E8E93),
+              color: isActive ? activeColor : inactiveColor,
               size: 24,
             ),
             const SizedBox(height: 4),
@@ -277,7 +282,7 @@ class _MainScreenState extends State<MainScreen> {
               style: TextStyle(
                 fontSize: 8,
                 fontWeight: FontWeight.w600,
-                color: isActive ? Colors.black : const Color(0xFF8E8E93),
+                color: isActive ? activeColor : inactiveColor,
               ),
             ),
           ],

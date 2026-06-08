@@ -7,6 +7,7 @@ class AppStorage {
   static const String _historyKey = 'history';
   static const String _notificationSettingsKey = 'notification_settings';
   static const String _usagePatternsKey = 'usage_patterns';
+  static const String _darkModeKey = 'dark_mode';
 
   static Future<List<Decision>> getDecisions() async {
     final prefs = await SharedPreferences.getInstance();
@@ -63,6 +64,14 @@ class AppStorage {
 
   static Future<HistoryRecord> addHistoryRecord(HistoryRecord record) async {
     final records = await getHistory();
+
+    if (records.isNotEmpty) {
+      final lastRecordTime = records.first.createdAt;
+      if (!record.createdAt.isAfter(lastRecordTime)) {
+        record.createdAt = lastRecordTime.add(const Duration(milliseconds: 1));
+      }
+    }
+
     records.insert(0, record);
     await saveHistory(records);
     return record;
@@ -151,5 +160,15 @@ class AppStorage {
       patterns.add(pattern);
     }
     await saveUsagePatterns(patterns);
+  }
+
+  static Future<bool> getDarkMode() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(_darkModeKey) ?? false;
+  }
+
+  static Future<void> saveDarkMode(bool isDark) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_darkModeKey, isDark);
   }
 }

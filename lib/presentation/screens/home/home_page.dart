@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/constants/app_constants.dart';
+import '../../../core/theme/app_colors_helper.dart';
 import '../../../data/models/app_models.dart';
 import '../../../data/repositories/decision_repository.dart';
 import '../../../core/utils/algorithms.dart';
@@ -118,13 +119,14 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
+    final bgColor = AppColorsHelper.scaffoldBackground(context);
+    final primaryTextColor = AppColorsHelper.primaryText(context);
     return Scaffold(
       extendBody: true,
-      backgroundColor: const Color(0xFFFFFFFF),
+      backgroundColor: bgColor,
       body: Stack(
         children: [
-          // Static background
-          Container(color: Colors.white),
+          Container(color: bgColor),
           Container(
             decoration: BoxDecoration(
               gradient: RadialGradient(
@@ -187,12 +189,12 @@ class _HomePageState extends State<HomePage> {
                               ),
                             ),
                             const SizedBox(height: 4),
-                            const Text(
+                            Text(
                               '即刻判决',
                               style: TextStyle(
                                 fontSize: 61,
                                 fontWeight: FontWeight.bold,
-                                color: Colors.black,
+                                color: primaryTextColor,
                                 letterSpacing: 1,
                                 height: 1.2,
                               ),
@@ -221,12 +223,12 @@ class _HomePageState extends State<HomePage> {
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                const Text(
+                                Text(
                                   '我的决定',
                                   style: TextStyle(
                                     fontSize: 20,
                                     fontWeight: FontWeight.w600,
-                                    color: Colors.black,
+                                    color: primaryTextColor,
                                   ),
                                 ),
                                 _buildToggleSwitch(),
@@ -316,15 +318,20 @@ class _HomePageState extends State<HomePage> {
   );
 
   Widget _buildToggleSwitch() {
+    final isDark = AppColorsHelper.isDark(context);
     return GestureDetector(
       onTap: _animateToggleViewMode,
       child: Container(
         width: 74,
         height: 42,
         decoration: BoxDecoration(
-          color: const Color(0xFFF7F7F7),
+          color: isDark ? const Color(0xFF2A2A2A) : const Color(0xFFF7F7F7),
           borderRadius: BorderRadius.circular(21),
-          border: Border.all(color: Colors.black.withValues(alpha: 0.05)),
+          border: Border.all(
+            color: isDark
+                ? Colors.white.withValues(alpha: 0.1)
+                : Colors.black.withValues(alpha: 0.05),
+          ),
         ),
         child: Stack(
           children: [
@@ -338,8 +345,8 @@ class _HomePageState extends State<HomePage> {
                 width: 32,
                 height: 32,
                 margin: const EdgeInsets.all(5),
-                decoration: const BoxDecoration(
-                  color: Colors.black,
+                decoration: BoxDecoration(
+                  color: isDark ? Colors.white : Colors.black,
                   shape: BoxShape.circle,
                 ),
               ),
@@ -354,7 +361,9 @@ class _HomePageState extends State<HomePage> {
                 child: Icon(
                   Icons.view_list,
                   size: 18,
-                  color: _isGridView ? Colors.black : Colors.white,
+                  color: _isGridView
+                      ? (isDark ? Colors.white : Colors.black)
+                      : (isDark ? Colors.black : Colors.white),
                 ),
               ),
             ),
@@ -368,7 +377,9 @@ class _HomePageState extends State<HomePage> {
                 child: Icon(
                   Icons.grid_view,
                   size: 18,
-                  color: _isGridView ? Colors.white : Colors.black,
+                  color: _isGridView
+                      ? (isDark ? Colors.black : Colors.white)
+                      : (isDark ? Colors.white : Colors.black),
                 ),
               ),
             ),
@@ -404,16 +415,22 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _buildListCard(Decision decision) {
+    final isDark = AppColorsHelper.isDark(context);
+    final primaryTextColor = AppColorsHelper.primaryText(context);
     return Ink(
       width: double.infinity,
       height: 106,
       decoration: BoxDecoration(
-        color: const Color(0xFFF7F7F7),
+        color: isDark ? const Color(0xFF1E1E1E) : const Color(0xFFF7F7F7),
         borderRadius: BorderRadius.circular(32),
-        border: Border.all(color: Colors.black.withValues(alpha: 0.05)),
+        border: Border.all(
+          color: isDark
+              ? Colors.white.withValues(alpha: 0.1)
+              : Colors.black.withValues(alpha: 0.05),
+        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
+            color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.05),
             blurRadius: 1,
             offset: const Offset(0, 1),
           ),
@@ -426,11 +443,12 @@ class _HomePageState extends State<HomePage> {
             Container(
               width: 56,
               height: 56,
-              decoration: const BoxDecoration(
-                color: Colors.black,
-                borderRadius: BorderRadius.all(Radius.circular(16)),
+              decoration: BoxDecoration(
+                color: isDark ? Colors.white : Colors.black,
+                borderRadius: const BorderRadius.all(Radius.circular(16)),
               ),
-              child: const Icon(Icons.bolt, color: Colors.white, size: 24),
+              child: Icon(Icons.bolt,
+                  color: isDark ? Colors.black : Colors.white, size: 24),
             ),
             const SizedBox(width: 20),
             Expanded(
@@ -440,10 +458,10 @@ class _HomePageState extends State<HomePage> {
                 children: [
                   Text(
                     decision.theme,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.w600,
-                      color: Colors.black,
+                      color: primaryTextColor,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -460,10 +478,10 @@ class _HomePageState extends State<HomePage> {
               ),
             ),
             const SizedBox(width: 8),
-            const Icon(
+            Icon(
               Icons.arrow_forward_ios,
               size: 16,
-              color: Color(0xFF1B1B1B),
+              color: isDark ? Colors.white : const Color(0xFF1B1B1B),
             ),
           ],
         ),
@@ -472,6 +490,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _buildListCreateCard() {
+    final isDark = AppColorsHelper.isDark(context);
     return Material(
       color: Colors.transparent,
       borderRadius: BorderRadius.circular(32),
@@ -484,9 +503,13 @@ class _HomePageState extends State<HomePage> {
           width: double.infinity,
           height: 106,
           decoration: BoxDecoration(
-            color: Colors.black,
+            color: isDark ? const Color(0xFF1E1E1E) : Colors.black,
             borderRadius: BorderRadius.circular(32),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.5)),
+            border: Border.all(
+              color: isDark
+                  ? Colors.white.withValues(alpha: 0.2)
+                  : Colors.white.withValues(alpha: 0.5),
+            ),
           ),
           child: const Padding(
             padding: EdgeInsets.all(25),
@@ -546,11 +569,17 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _buildGridCard(Decision decision) {
+    final isDark = AppColorsHelper.isDark(context);
+    final primaryTextColor = AppColorsHelper.primaryText(context);
     return Ink(
       decoration: BoxDecoration(
-        color: const Color(0xFFF7F7F7),
+        color: isDark ? const Color(0xFF1E1E1E) : const Color(0xFFF7F7F7),
         borderRadius: BorderRadius.circular(32),
-        border: Border.all(color: Colors.black.withValues(alpha: 0.05)),
+        border: Border.all(
+          color: isDark
+              ? Colors.white.withValues(alpha: 0.1)
+              : Colors.black.withValues(alpha: 0.05),
+        ),
       ),
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -561,19 +590,20 @@ class _HomePageState extends State<HomePage> {
             Container(
               width: 56,
               height: 56,
-              decoration: const BoxDecoration(
-                color: Colors.black,
-                borderRadius: BorderRadius.all(Radius.circular(12)),
+              decoration: BoxDecoration(
+                color: isDark ? Colors.white : Colors.black,
+                borderRadius: const BorderRadius.all(Radius.circular(12)),
               ),
-              child: const Icon(Icons.bolt, color: Colors.white, size: 24),
+              child: Icon(Icons.bolt,
+                  color: isDark ? Colors.black : Colors.white, size: 24),
             ),
             const SizedBox(height: 20),
             Text(
               decision.theme,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 15,
                 fontWeight: FontWeight.w600,
-                color: Colors.black,
+                color: primaryTextColor,
               ),
               textAlign: TextAlign.center,
               maxLines: 1,
@@ -592,6 +622,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _buildGridCreateCard() {
+    final isDark = AppColorsHelper.isDark(context);
     return Material(
       color: Colors.transparent,
       borderRadius: BorderRadius.circular(32),
@@ -602,9 +633,13 @@ class _HomePageState extends State<HomePage> {
         highlightColor: Colors.white.withValues(alpha: 0.04),
         child: Ink(
           decoration: BoxDecoration(
-            color: Colors.black,
+            color: isDark ? const Color(0xFF1E1E1E) : Colors.black,
             borderRadius: BorderRadius.circular(32),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.5)),
+            border: Border.all(
+              color: isDark
+                  ? Colors.white.withValues(alpha: 0.2)
+                  : Colors.white.withValues(alpha: 0.5),
+            ),
           ),
           child: Padding(
             padding: const EdgeInsets.all(16),

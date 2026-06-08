@@ -1,5 +1,6 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import '../../../main.dart';
 import '../../widgets/frosted_back_button.dart';
 
 class DisplaySettingsPage extends StatefulWidget {
@@ -10,8 +11,23 @@ class DisplaySettingsPage extends StatefulWidget {
 }
 
 class _DisplaySettingsPageState extends State<DisplaySettingsPage> {
-  bool _isDarkMode = false;
   String _selectedLanguage = '简体中文';
+
+  @override
+  void initState() {
+    super.initState();
+    themeNotifier.addListener(_onThemeChanged);
+  }
+
+  @override
+  void dispose() {
+    themeNotifier.removeListener(_onThemeChanged);
+    super.dispose();
+  }
+
+  void _onThemeChanged() {
+    setState(() {});
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -49,9 +65,9 @@ class _DisplaySettingsPageState extends State<DisplaySettingsPage> {
                     icon: Icons.dark_mode_outlined,
                     title: '深色模式',
                     subtitle: '跟随系统或手动切换',
-                    value: _isDarkMode,
+                    value: themeNotifier.isDarkMode,
                     onChanged: (value) {
-                      setState(() => _isDarkMode = value);
+                      themeNotifier.setDarkMode(value);
                     },
                   ),
                   const SizedBox(height: 12),
