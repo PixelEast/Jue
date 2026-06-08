@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../widgets/app_slogan_footer.dart';
 import 'notification_settings_page.dart';
+import 'display_settings_page.dart';
+import 'about_page.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -58,8 +60,15 @@ class _SettingsPageState extends State<SettingsPage> {
               _buildSettingCard(
                 icon: Icons.palette_outlined,
                 title: '界面与显示',
-                subtitle: '深色模式，字体大小',
-                onTap: () {},
+                subtitle: '深色模式，多语言',
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const DisplaySettingsPage(),
+                    ),
+                  );
+                },
               ),
               const SizedBox(height: 12),
               _buildSettingCard(
@@ -73,13 +82,6 @@ class _SettingsPageState extends State<SettingsPage> {
                 icon: Icons.storage_outlined,
                 title: '数据与存储',
                 subtitle: '查看存储，清理缓存，历史记录',
-                onTap: () {},
-              ),
-              const SizedBox(height: 12),
-              _buildSettingCard(
-                icon: Icons.language_outlined,
-                title: '语言设置',
-                subtitle: '简体中文',
                 onTap: () {},
               ),
               const SizedBox(height: 24),
@@ -108,7 +110,14 @@ class _SettingsPageState extends State<SettingsPage> {
                     borderRadius: BorderRadius.circular(32),
                   ),
                   child: InkWell(
-                    onTap: () {},
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const AboutPage(),
+                        ),
+                      );
+                    },
                     borderRadius: BorderRadius.circular(32),
                     splashColor: Colors.white.withValues(alpha: 0.08),
                     highlightColor: Colors.white.withValues(alpha: 0.04),
@@ -148,7 +157,7 @@ class _SettingsPageState extends State<SettingsPage> {
                                 ),
                                 SizedBox(height: 2),
                                 Text(
-                                  'V0.2 Beta',
+                                  '版本信息，反馈，开发者信息',
                                   style: TextStyle(
                                     fontSize: 12,
                                     color: Color(0xFF8E8E93),

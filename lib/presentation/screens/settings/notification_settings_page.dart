@@ -172,7 +172,7 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
                             borderRadius: BorderRadius.circular(12),
                             child: Ink(
                               decoration: BoxDecoration(
-                                color: const Color(0xFFF7F7F7),
+                                color: const Color(0xFFF3F3F3),
                                 borderRadius: BorderRadius.circular(12),
                                 border: Border.all(
                                   color: const Color(0xFFEAEAEA),
@@ -381,8 +381,8 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
       child: Ink(
         decoration: BoxDecoration(
           color: enabled
-              ? const Color(0xFFF7F7F7)
-              : const Color(0xFFF7F7F7).withValues(alpha: 0.5),
+              ? const Color(0xFFF3F3F3)
+              : const Color(0xFFF3F3F3).withValues(alpha: 0.5),
           borderRadius: BorderRadius.circular(32),
           border: Border.all(color: const Color(0xFFE7E7E7)),
         ),
@@ -463,8 +463,8 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
       child: Ink(
         decoration: BoxDecoration(
           color: enabled
-              ? const Color(0xFFF7F7F7)
-              : const Color(0xFFF7F7F7).withValues(alpha: 0.5),
+              ? const Color(0xFFF3F3F3)
+              : const Color(0xFFF3F3F3).withValues(alpha: 0.5),
           borderRadius: BorderRadius.circular(32),
           border: Border.all(color: const Color(0xFFE7E7E7)),
         ),
