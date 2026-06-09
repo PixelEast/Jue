@@ -64,10 +64,12 @@ class _DisplaySettingsPageState extends State<DisplaySettingsPage> {
                   _buildSettingCard(
                     icon: Icons.dark_mode_outlined,
                     title: '深色模式',
-                    subtitle: '跟随系统或手动切换',
-                    value: themeNotifier.isDarkMode,
+                    subtitle: themeNotifier.themeMode == ThemeMode.system
+                        ? '跟随系统'
+                        : '已关闭',
+                    value: themeNotifier.themeMode == ThemeMode.system,
                     onChanged: (value) {
-                      themeNotifier.setDarkMode(value);
+                      themeNotifier.toggleDarkMode(value);
                     },
                   ),
                   const SizedBox(height: 12),
@@ -96,17 +98,21 @@ class _DisplaySettingsPageState extends State<DisplaySettingsPage> {
     String? subtitle,
     required bool value,
     required ValueChanged<bool> onChanged,
+    VoidCallback? onTap,
   }) {
     return Material(
       color: Colors.transparent,
       borderRadius: BorderRadius.circular(32),
-      child: Ink(
-        decoration: BoxDecoration(
-          color: const Color(0xFFF3F3F3),
-          borderRadius: BorderRadius.circular(32),
-          border: Border.all(color: const Color(0xFFE7E7E7)),
-        ),
-        child: Padding(
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(32),
+        child: Ink(
+          decoration: BoxDecoration(
+            color: const Color(0xFFF3F3F3),
+            borderRadius: BorderRadius.circular(32),
+            border: Border.all(color: const Color(0xFFE7E7E7)),
+          ),
+          child: Padding(
           padding: const EdgeInsets.all(16),
           child: Row(
             children: [
@@ -164,6 +170,7 @@ class _DisplaySettingsPageState extends State<DisplaySettingsPage> {
             ],
           ),
         ),
+      ),
       ),
     );
   }

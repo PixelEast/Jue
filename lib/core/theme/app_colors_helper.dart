@@ -3,6 +3,9 @@ import 'package:flutter/material.dart';
 class AppColorsHelper {
   const AppColorsHelper._();
 
+  // 品牌色
+  static const Color brandColor = Color(0xFF2D5BFF);
+
   static Color scaffoldBackground(BuildContext context) {
     return Theme.of(context).scaffoldBackgroundColor;
   }
@@ -21,12 +24,14 @@ class AppColorsHelper {
 
   static Color primaryText(BuildContext context) {
     return Theme.of(context).brightness == Brightness.dark
-        ? Colors.white
-        : Colors.black;
+        ? const Color(0xFFF1F5F9)
+        : const Color(0xFF0F172A);
   }
 
   static Color secondaryText(BuildContext context) {
-    return const Color(0xFF5E5E5E);
+    return Theme.of(context).brightness == Brightness.dark
+        ? const Color(0xFF94A3B8)
+        : const Color(0xFF5E5E5E);
   }
 
   static Color tertiaryText(BuildContext context) {
@@ -35,13 +40,13 @@ class AppColorsHelper {
 
   static Color iconBackground(BuildContext context) {
     return Theme.of(context).brightness == Brightness.dark
-        ? Colors.white
+        ? brandColor.withValues(alpha: 0.12)
         : Colors.black;
   }
 
   static Color iconForeground(BuildContext context) {
     return Theme.of(context).brightness == Brightness.dark
-        ? Colors.black
+        ? brandColor
         : Colors.white;
   }
 
@@ -63,7 +68,43 @@ class AppColorsHelper {
         : Colors.black.withValues(alpha: 0.1);
   }
 
+  static Color decisionCardText(BuildContext context) {
+    return Theme.of(context).brightness == Brightness.dark
+        ? const Color(0xFF60A5FA)
+        : const Color(0xFF004EE8);
+  }
+
+  static Color brandColorSoft(BuildContext context) {
+    return Theme.of(context).brightness == Brightness.dark
+        ? const Color(0xFF60A5FA)
+        : const Color(0xFF2D5BFF);
+  }
+
   static bool isDark(BuildContext context) {
     return Theme.of(context).brightness == Brightness.dark;
+  }
+
+  static Color executeButtonCenter(BuildContext context) {
+    return isDark(context) ? const Color(0xFF3B5FCC) : const Color(0xFF5075FF);
+  }
+
+  static Color executeButtonEdge(BuildContext context) {
+    return isDark(context) ? const Color(0xFF1E3A8A) : const Color(0xFF2D5BFF);
+  }
+
+  static Color executeButtonBorder(BuildContext context) {
+    return isDark(context) ? const Color(0xFF4A6FCC) : const Color(0xFF577CFF);
+  }
+
+  static Color executeExpandCenter(BuildContext context) {
+    return isDark(context) ? const Color(0xFF3B5FCC) : const Color(0xFF5075FF);
+  }
+
+  static Color executeExpandEdge(BuildContext context) {
+    return isDark(context) ? const Color(0xFF1A2D6B) : const Color(0xFF2D5BFF);
+  }
+
+  static Color executeResultBg(BuildContext context) {
+    return isDark(context) ? const Color(0xFF0F172A) : const Color(0xFFF9F9F9);
   }
 }

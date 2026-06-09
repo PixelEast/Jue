@@ -13,6 +13,7 @@ import '../../../data/repositories/history_repository.dart';
 import '../../../core/utils/algorithms.dart';
 import '../../../core/utils/app_events.dart';
 import '../../../core/utils/usage_analyzer.dart';
+import '../../../core/theme/app_colors_helper.dart';
 import '../../widgets/app_slogan_footer.dart';
 import '../../widgets/frosted_back_button.dart';
 import '../create/create_decision_page.dart';
@@ -222,6 +223,8 @@ class _ExecutePageState extends State<ExecutePage>
 
   void _endLongPress() {
     if (_isExecuting && _isLongPress && !_showResult) {
+      _isLongPress = false;
+      _showResult = true;
       _showResultPage();
     }
   }
@@ -298,7 +301,7 @@ class _ExecutePageState extends State<ExecutePage>
           final titleTextColor = isResult
               ? Colors.white
               : _colorFromCoverage(
-                  baseColor: Colors.black,
+                  baseColor: AppColorsHelper.primaryText(context),
                   targetColor: Colors.white,
                   targetCenter: titleCenter,
                   animationValue: _animationController.value,
@@ -307,7 +310,7 @@ class _ExecutePageState extends State<ExecutePage>
           final secondaryTextColor = isResult
               ? Colors.white.withValues(alpha: 0.86)
               : _colorFromCoverage(
-                  baseColor: const Color(0xFF5E5E5E),
+                  baseColor: AppColorsHelper.secondaryText(context),
                   targetColor: Colors.white.withValues(alpha: 0.86),
                   targetCenter: subtitleCenter,
                   animationValue: _animationController.value,
@@ -316,30 +319,33 @@ class _ExecutePageState extends State<ExecutePage>
           final footerTextColor = isResult
               ? Colors.white.withValues(alpha: 0.86)
               : _colorFromCoverage(
-                  baseColor: const Color(0xFF5E5E5E),
+                  baseColor: AppColorsHelper.secondaryText(context),
                   targetColor: Colors.white.withValues(alpha: 0.86),
                   targetCenter: footerCenter,
                   animationValue: _animationController.value,
                   screenSize: size,
                 );
           return Container(
-            color: const Color(0xFFF9F9F9),
+            color: _showResult
+                ? AppColorsHelper.executeResultBg(context)
+                : AppColorsHelper.scaffoldBackground(context),
             child: Stack(
               children: [
                   if (_buttonCenter != null)
                   Positioned.fill(
-                    child: IgnorePointer(
-                      child: CustomPaint(
-                        painter: _ExpandingDecisionBackgroundPainter(
-                          progress: Curves.easeInOutCubic.transform(
-                            _animationController.value,
-                          ),
-                          darkCornerProgress: _darkCornerController.value,
-                          startCenter: _buttonCenter!,
-                          endCenter: Offset(size.width / 2, size.height / 2),
-                          screenSize: size,
-                          cornerRadius: _buttonRadius,
+                  child: IgnorePointer(
+                    child: CustomPaint(
+                      painter: _ExpandingDecisionBackgroundPainter(
+                        progress: Curves.easeInOutCubic.transform(
+                          _animationController.value,
                         ),
+                        darkCornerProgress: _darkCornerController.value,
+                        startCenter: _buttonCenter!,
+                        endCenter: Offset(size.width / 2, size.height / 2),
+                        screenSize: size,
+                        cornerRadius: _buttonRadius,
+                        isDark: AppColorsHelper.isDark(context),
+                      ),
                       ),
                     ),
                   ),
@@ -574,43 +580,57 @@ class _ExecutePageState extends State<ExecutePage>
                                 const Spacer(),
                                 Opacity(
                                   opacity: _resultFadeIn.value,
-                                  child: Container(
-                                    decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(16),
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: Colors.black.withValues(alpha: 0.08),
-                                          blurRadius: 12,
-                                          spreadRadius: 0,
-                                          offset: const Offset(0, 4),
-                                        ),
-                                      ],
-                                    ),
-                                    child: ElevatedButton(
-                                      onPressed: () {
-                                        Navigator.of(
-                                          context,
-                                        ).popUntil((route) => route.isFirst);
-                                      },
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: Colors.white,
-                                        foregroundColor: Colors.black,
-                                        fixedSize: const Size(342, 68),
-                                        elevation: 0,
-                                        shadowColor: Colors.transparent,
-                                        shape: RoundedRectangleBorder(
+                                  child: Builder(
+                                    builder: (context) {
+                                      final isDark = AppColorsHelper.isDark(context);
+                                      return Container(
+                                        decoration: BoxDecoration(
                                           borderRadius: BorderRadius.circular(16),
+                                          boxShadow: [
+                                            BoxShadow(
+                                              color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.08),
+                                              blurRadius: 12,
+                                              spreadRadius: 0,
+                                              offset: const Offset(0, 4),
+                                            ),
+                                          ],
                                         ),
-                                      ),
-                                      child: const Text(
-                                        '返回主页',
-                                        style: TextStyle(
-                                          fontSize: 18,
-                                          fontWeight: FontWeight.w700,
-                                          letterSpacing: 1.8,
+                                        child: ElevatedButton(
+                                          onPressed: () {
+                                            Navigator.of(
+                                              context,
+                                            ).popUntil((route) => route.isFirst);
+                                          },
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor: isDark
+                                                ? const Color(0xFF1E1E1E)
+                                                : Colors.white,
+                                            foregroundColor: isDark
+                                                ? Colors.white
+                                                : Colors.black,
+                                            fixedSize: const Size(342, 68),
+                                            elevation: 0,
+                                            shadowColor: Colors.transparent,
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius: BorderRadius.circular(16),
+                                              side: BorderSide(
+                                                color: isDark
+                                                    ? Colors.white.withValues(alpha: 0.15)
+                                                    : Colors.black.withValues(alpha: 0.1),
+                                              ),
+                                            ),
+                                          ),
+                                          child: const Text(
+                                            '返回主页',
+                                            style: TextStyle(
+                                              fontSize: 18,
+                                              fontWeight: FontWeight.w700,
+                                              letterSpacing: 1.8,
+                                            ),
+                                          ),
                                         ),
-                                      ),
-                                    ),
+                                      );
+                                    },
                                   ),
                                 ),
                                 const SizedBox(height: 125),
@@ -653,7 +673,7 @@ class _ExecutePageState extends State<ExecutePage>
           border: Border.all(
             color: isDisabled
                 ? const Color(0xFFD4D4D4)
-                : const Color(0xFF577CFF),
+                : AppColorsHelper.executeButtonBorder(context),
             width: 2,
           ),
           gradient: isDisabled
@@ -662,10 +682,13 @@ class _ExecutePageState extends State<ExecutePage>
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                 )
-              : const RadialGradient(
+              : RadialGradient(
                   center: Alignment.center,
                   radius: 0.9,
-                  colors: [Color(0xFF5075FF), Color(0xFF2D5BFF)],
+                  colors: [
+                    AppColorsHelper.executeButtonCenter(context),
+                    AppColorsHelper.executeButtonEdge(context),
+                  ],
                 ),
           boxShadow: [
             BoxShadow(
@@ -752,6 +775,7 @@ class _ExpandingDecisionBackgroundPainter extends CustomPainter {
   final Offset endCenter;
   final Size screenSize;
   final double cornerRadius;
+  final bool isDark;
 
   const _ExpandingDecisionBackgroundPainter({
     required this.progress,
@@ -760,6 +784,7 @@ class _ExpandingDecisionBackgroundPainter extends CustomPainter {
     required this.endCenter,
     required this.screenSize,
     required this.cornerRadius,
+    this.isDark = false,
   });
 
   @override
@@ -797,10 +822,12 @@ class _ExpandingDecisionBackgroundPainter extends CustomPainter {
     );
     final rrect = RRect.fromRectAndRadius(rect, Radius.circular(currentRadius));
 
-    final lightColor = const Color(0xFF5075FF);
+    final lightColor = isDark
+        ? const Color(0xFF3B5FCC)
+        : const Color(0xFF5075FF);
     final darkEdgeColor = Color.lerp(
-      const Color(0xFF1E3D85),
-      const Color(0xFF1A3578),
+      isDark ? const Color(0xFF1A2D6B) : const Color(0xFF1E3D85),
+      isDark ? const Color(0xFF121E3D) : const Color(0xFF1A3578),
       darkCornerProgress,
     )!;
 
@@ -825,6 +852,7 @@ class _ExpandingDecisionBackgroundPainter extends CustomPainter {
         oldDelegate.darkCornerProgress != darkCornerProgress ||
         oldDelegate.startCenter != startCenter ||
         oldDelegate.endCenter != endCenter ||
-        oldDelegate.screenSize != screenSize;
+        oldDelegate.screenSize != screenSize ||
+        oldDelegate.isDark != isDark;
   }
 }

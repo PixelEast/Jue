@@ -71,17 +71,18 @@ class _JueAppState extends State<JueApp> {
       scrollBehavior: const ScrollBehavior().copyWith(physics: const BouncingScrollPhysics()),
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
-      themeMode: themeNotifier.isDarkMode ? ThemeMode.dark : ThemeMode.light,
+      themeMode: themeNotifier.themeMode,
       builder: (context, child) {
-        final brightness = themeNotifier.isDarkMode
+        final brightness = Theme.of(context).brightness;
+        final statusBarBrightness = brightness == Brightness.dark
             ? Brightness.light
             : Brightness.dark;
         return AnnotatedRegion<SystemUiOverlayStyle>(
           value: SystemUiOverlayStyle(
             statusBarColor: Colors.transparent,
-            statusBarIconBrightness: brightness,
+            statusBarIconBrightness: statusBarBrightness,
             systemNavigationBarColor: Colors.transparent,
-            systemNavigationBarIconBrightness: brightness,
+            systemNavigationBarIconBrightness: statusBarBrightness,
             systemNavigationBarContrastEnforced: false,
           ),
           child: child!,

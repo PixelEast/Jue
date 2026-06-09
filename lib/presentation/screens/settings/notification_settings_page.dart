@@ -1,5 +1,6 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import '../../../core/theme/app_colors_helper.dart';
 import '../../../data/local/app_storage.dart';
 import '../../../data/models/app_models.dart';
 import '../../../core/utils/notification_service.dart';
@@ -218,14 +219,14 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
   Widget build(BuildContext context) {
     if (_isLoading) {
       return Scaffold(
-        backgroundColor: const Color(0xFFF9F9F9),
+        backgroundColor: AppColorsHelper.scaffoldBackground(context),
         body: const Center(child: CircularProgressIndicator()),
       );
     }
 
     return Scaffold(
       extendBody: true,
-      backgroundColor: const Color(0xFFF9F9F9),
+      backgroundColor: AppColorsHelper.scaffoldBackground(context),
       body: Stack(
         children: [
           SingleChildScrollView(
@@ -235,21 +236,21 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const SizedBox(height: 24),
-                  const Text(
+                  Text(
                     '通知',
                     style: TextStyle(
                       fontSize: 48,
                       fontWeight: FontWeight.w700,
-                      color: Color(0xFF000000),
+                      color: AppColorsHelper.primaryText(context),
                     ),
                   ),
                   const SizedBox(height: 4),
-                  const Text(
+                  Text(
                     '不错过每一个决定',
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w400,
-                      color: Color(0xFF5E5E5E),
+                      color: AppColorsHelper.secondaryText(context),
                     ),
                   ),
                   const SizedBox(height: 24),
@@ -301,14 +302,19 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
   }
 
   Widget _buildPermissionCard() {
+    final isDark = AppColorsHelper.isDark(context);
     return Material(
       color: Colors.transparent,
       borderRadius: BorderRadius.circular(24),
       child: Ink(
         decoration: BoxDecoration(
-          color: const Color(0xFF2D5BFF).withValues(alpha: 0.08),
+          color: isDark
+              ? AppColorsHelper.brandColor.withValues(alpha: 0.12)
+              : AppColorsHelper.brandColor.withValues(alpha: 0.08),
           borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: const Color(0xFF2D5BFF).withValues(alpha: 0.2)),
+          border: Border.all(
+            color: AppColorsHelper.brandColor.withValues(alpha: 0.2),
+          ),
         ),
         child: InkWell(
           onTap: _requestPermission,
@@ -375,16 +381,23 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
     required ValueChanged<bool>? onChanged,
   }) {
     final enabled = onChanged != null;
+    final isDark = AppColorsHelper.isDark(context);
     return Material(
       color: Colors.transparent,
       borderRadius: BorderRadius.circular(32),
       child: Ink(
         decoration: BoxDecoration(
-          color: enabled
-              ? const Color(0xFFF3F3F3)
-              : const Color(0xFFF3F3F3).withValues(alpha: 0.5),
+          color: isDark
+              ? AppColorsHelper.cardBackground(context)
+              : (enabled
+                  ? const Color(0xFFF3F3F3)
+                  : const Color(0xFFF3F3F3).withValues(alpha: 0.5)),
           borderRadius: BorderRadius.circular(32),
-          border: Border.all(color: const Color(0xFFE7E7E7)),
+          border: Border.all(
+            color: isDark
+                ? AppColorsHelper.cardBorder(context)
+                : const Color(0xFFE7E7E7),
+          ),
         ),
         child: Padding(
           padding: const EdgeInsets.all(16),
@@ -394,10 +407,12 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
                 width: 48,
                 height: 48,
                 decoration: BoxDecoration(
-                  color: enabled ? Colors.black : const Color(0xFFC6C6C6),
+                  color: enabled
+                      ? AppColorsHelper.iconBackground(context)
+                      : const Color(0xFFC6C6C6),
                   borderRadius: const BorderRadius.all(Radius.circular(16)),
                 ),
-                child: Icon(icon, size: 20, color: Colors.white),
+                child: Icon(icon, size: 20, color: AppColorsHelper.iconForeground(context)),
               ),
               const SizedBox(width: 16),
               Expanded(
@@ -410,7 +425,7 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
                         fontSize: 18,
                         fontWeight: FontWeight.w600,
                         color: enabled
-                            ? const Color(0xFF000000)
+                            ? AppColorsHelper.primaryText(context)
                             : const Color(0xFF8E8E93),
                       ),
                     ),
@@ -423,7 +438,7 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
                         style: TextStyle(
                           fontSize: 12,
                           color: enabled
-                              ? const Color(0xFF5E5E5E)
+                              ? AppColorsHelper.secondaryText(context)
                               : const Color(0xFFC6C6C6),
                         ),
                       ),
@@ -440,7 +455,7 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
                   child: Switch(
                     value: value,
                     onChanged: onChanged,
-                    activeTrackColor: Colors.black,
+                    activeTrackColor: AppColorsHelper.iconBackground(context),
                     inactiveTrackColor: const Color(0xFFC6C6C6),
                     activeThumbColor: Colors.white,
                     inactiveThumbColor: Colors.white,
@@ -454,19 +469,25 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
       ),
     );
   }
-
   Widget _buildDndCard() {
     final enabled = _settings.enabled;
+    final isDark = AppColorsHelper.isDark(context);
     return Material(
       color: Colors.transparent,
       borderRadius: BorderRadius.circular(32),
       child: Ink(
         decoration: BoxDecoration(
-          color: enabled
-              ? const Color(0xFFF3F3F3)
-              : const Color(0xFFF3F3F3).withValues(alpha: 0.5),
+          color: isDark
+              ? AppColorsHelper.cardBackground(context)
+              : (enabled
+                  ? const Color(0xFFF3F3F3)
+                  : const Color(0xFFF3F3F3).withValues(alpha: 0.5)),
           borderRadius: BorderRadius.circular(32),
-          border: Border.all(color: const Color(0xFFE7E7E7)),
+          border: Border.all(
+            color: isDark
+                ? AppColorsHelper.cardBorder(context)
+                : const Color(0xFFE7E7E7),
+          ),
         ),
         child: Padding(
           padding: const EdgeInsets.all(16),
@@ -478,14 +499,16 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
                     width: 48,
                     height: 48,
                     decoration: BoxDecoration(
-                      color: enabled ? Colors.black : const Color(0xFFC6C6C6),
+                      color: enabled
+                          ? AppColorsHelper.iconBackground(context)
+                          : const Color(0xFFC6C6C6),
                       borderRadius:
                           const BorderRadius.all(Radius.circular(16)),
                     ),
-                    child: const Icon(
+                    child: Icon(
                       Icons.do_not_disturb_on_outlined,
                       size: 20,
-                      color: Colors.white,
+                      color: AppColorsHelper.iconForeground(context),
                     ),
                   ),
                   const SizedBox(width: 16),
@@ -499,7 +522,7 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
                             fontSize: 18,
                             fontWeight: FontWeight.w600,
                             color: enabled
-                                ? const Color(0xFF000000)
+                                ? AppColorsHelper.primaryText(context)
                                 : const Color(0xFF8E8E93),
                           ),
                         ),
@@ -509,7 +532,7 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
                           style: TextStyle(
                             fontSize: 12,
                             color: enabled
-                                ? const Color(0xFF5E5E5E)
+                                ? AppColorsHelper.secondaryText(context)
                                 : const Color(0xFFC6C6C6),
                           ),
                         ),
@@ -529,7 +552,7 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
                                 _saveSettings();
                               }
                             : null,
-                        activeTrackColor: Colors.black,
+                        activeTrackColor: AppColorsHelper.iconBackground(context),
                         inactiveTrackColor: const Color(0xFFC6C6C6),
                         activeThumbColor: Colors.white,
                         inactiveThumbColor: Colors.white,
@@ -562,7 +585,7 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
                       child: Container(
                         width: 16,
                         height: 1,
-                        color: const Color(0xFFE7E7E7),
+                        color: AppColorsHelper.dividerColor(context),
                       ),
                     ),
                     Expanded(
@@ -600,10 +623,10 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: AppColorsHelper.isDark(context) ? const Color(0xFF2A2A2A) : Colors.white,
           borderRadius: BorderRadius.circular(14),
           border: Border.all(
-            color: const Color(0xFFE7E7E7),
+            color: AppColorsHelper.isDark(context) ? const Color(0xFF3A3A3A) : const Color(0xFFE7E7E7),
             width: 1,
           ),
         ),
@@ -612,19 +635,19 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
           children: [
             Text(
               label,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 10,
-                color: Color(0xFF8E8E93),
+                color: AppColorsHelper.secondaryText(context),
                 fontWeight: FontWeight.w500,
               ),
             ),
             const SizedBox(height: 2),
             Text(
               '${hour.toString().padLeft(2, '0')}:${minute.toString().padLeft(2, '0')}',
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.w700,
-                color: Color(0xFF000000),
+                color: AppColorsHelper.primaryText(context),
               ),
             ),
           ],

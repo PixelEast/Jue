@@ -158,7 +158,7 @@ class _HomePageState extends State<HomePage> {
                         top: 192,
                         left: 0,
                         right: 0,
-                        child: _buildHLine(const Color(0xFF2D5BFF)),
+                                child: _buildHLine(AppColorsHelper.brandColor),
                       ),
                       Positioned(
                         top: -40,
@@ -185,7 +185,7 @@ class _HomePageState extends State<HomePage> {
                               style: TextStyle(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w600,
-                                color: Color(0xFF2D5BFF),
+                                color: AppColorsHelper.brandColorSoft(context),
                               ),
                             ),
                             const SizedBox(height: 4),
@@ -200,12 +200,12 @@ class _HomePageState extends State<HomePage> {
                               ),
                             ),
                             const SizedBox(height: 6),
-                            const Text(
+                            Text(
                               '享受当下',
                               style: TextStyle(
                                 fontSize: 61,
                                 fontWeight: FontWeight.bold,
-                                color: Color(0xFF2D5BFF),
+                                color: AppColorsHelper.brandColorSoft(context),
                                 height: 1.2,
                               ),
                             ),
@@ -444,11 +444,11 @@ class _HomePageState extends State<HomePage> {
               width: 56,
               height: 56,
               decoration: BoxDecoration(
-                color: isDark ? Colors.white : Colors.black,
+                color: AppColorsHelper.iconBackground(context),
                 borderRadius: const BorderRadius.all(Radius.circular(16)),
               ),
               child: Icon(Icons.bolt,
-                  color: isDark ? Colors.black : Colors.white, size: 24),
+                  color: AppColorsHelper.iconForeground(context), size: 24),
             ),
             const SizedBox(width: 20),
             Expanded(
@@ -591,11 +591,11 @@ class _HomePageState extends State<HomePage> {
               width: 56,
               height: 56,
               decoration: BoxDecoration(
-                color: isDark ? Colors.white : Colors.black,
+                color: AppColorsHelper.iconBackground(context),
                 borderRadius: const BorderRadius.all(Radius.circular(12)),
               ),
               child: Icon(Icons.bolt,
-                  color: isDark ? Colors.black : Colors.white, size: 24),
+                  color: AppColorsHelper.iconForeground(context), size: 24),
             ),
             const SizedBox(height: 20),
             Text(

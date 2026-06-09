@@ -159,10 +159,11 @@ class _SettingsPageState extends State<SettingsPage> {
                             width: 48,
                             height: 48,
                             decoration: BoxDecoration(
-                              color: AppColorsHelper.isDark(context)
-                                  ? const Color(0xFF2E2E2E)
-                                  : const Color(0xFF191919),
-                              borderRadius: BorderRadius.circular(16),
+                              color: Colors.white.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: Colors.white.withValues(alpha: 0.2),
+                              ),
                             ),
                             child: const Icon(
                               Icons.info_outline,

@@ -379,20 +379,20 @@ class _HistoryPageState extends State<HistoryPage> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
+                          Text(
+                            '$_totalCount',
+                            style: TextStyle(
+                              fontSize: 24,
+                              fontWeight: FontWeight.w700,
+                              color: AppColorsHelper.decisionCardText(context),
+                            ),
+                          ),
                       Text(
-                        '$_totalCount',
-                        style: const TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.w700,
-                          color: Color(0xFF004EE8),
-                        ),
-                      ),
-                      const Text(
                         '次决定',
                         style: TextStyle(
                           fontSize: 24,
                           fontWeight: FontWeight.w700,
-                          color: Color(0xFF004EE8),
+                          color: AppColorsHelper.decisionCardText(context),
                         ),
                       ),
                     ],
@@ -465,7 +465,7 @@ class _HistoryPageState extends State<HistoryPage> {
         final distanceFromToday = 6 - i;
         Color barColor;
         if (distanceFromToday == 0) {
-          barColor = const Color(0xFF004EE8);
+          barColor = AppColorsHelper.decisionCardText(context);
         } else if (distanceFromToday == 1) {
           barColor = const Color(0xFF6392EE);
         } else if (distanceFromToday == 2) {
@@ -654,10 +654,10 @@ class _HistoryPageState extends State<HistoryPage> {
                                     height: 15,
                                     colorFilter: ColorFilter.mode(
                                       record.feedback == 'like'
-                                          ? const Color(0xFF004EE8)
+                                          ? AppColorsHelper.decisionCardText(context)
                                           : (canAct
-                                                ? const Color(0xFF231815)
-                                                : const Color(0xFFC6C6C6)),
+                                                ? const Color(0xFF94A3B8)
+                                                : const Color(0xFF475569)),
                                       BlendMode.srcIn,
                                     ),
                                   ),
@@ -677,8 +677,8 @@ class _HistoryPageState extends State<HistoryPage> {
                                       record.feedback == 'dislike'
                                           ? const Color(0xFFE49B87)
                                           : (canAct
-                                                ? const Color(0xFF231815)
-                                                : const Color(0xFFC6C6C6)),
+                                                ? const Color(0xFF94A3B8)
+                                                : const Color(0xFF475569)),
                                       BlendMode.srcIn,
                                     ),
                                   ),
@@ -696,8 +696,8 @@ class _HistoryPageState extends State<HistoryPage> {
                                   record.feedback == 'removed'
                                       ? const Color(0xFFBA1A1A)
                                       : (canAct && canRemove
-                                            ? const Color(0xFF231815)
-                                            : const Color(0xFFC6C6C6)),
+                                            ? const Color(0xFF94A3B8)
+                                            : const Color(0xFF475569)),
                                   BlendMode.srcIn,
                                 ),
                               ),

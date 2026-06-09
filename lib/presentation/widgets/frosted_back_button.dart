@@ -1,6 +1,7 @@
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
+import '../../core/theme/app_colors_helper.dart';
 
 class FrostedBackButton extends StatefulWidget {
   final VoidCallback onTap;
@@ -21,6 +22,15 @@ class _FrostedBackButtonState extends State<FrostedBackButton> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = AppColorsHelper.isDark(context);
+    final bgColor = isDark
+        ? Colors.white.withValues(alpha: 0.12)
+        : Colors.white.withValues(alpha: 0.78);
+    final borderColor = isDark
+        ? Colors.white.withValues(alpha: 0.15)
+        : const Color(0xFFF2F2F2);
+    final iconColor = isDark ? Colors.white : const Color(0xFF000000);
+
     return GestureDetector(
       onTap: widget.onTap,
       onTapDown: (_) => setState(() => _pressed = true),
@@ -39,10 +49,10 @@ class _FrostedBackButtonState extends State<FrostedBackButton> {
               height: 50,
               decoration: BoxDecoration(
                 color: _pressed
-                    ? Colors.white.withValues(alpha: 0.68)
-                    : Colors.white.withValues(alpha: 0.78),
+                    ? bgColor.withValues(alpha: bgColor.a * 0.85)
+                    : bgColor,
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: const Color(0xFFF2F2F2), width: 1),
+                border: Border.all(color: borderColor, width: 1),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withValues(
@@ -61,7 +71,7 @@ class _FrostedBackButtonState extends State<FrostedBackButton> {
               child: Center(
                 child: Icon(
                   widget.icon,
-                  color: const Color(0xFF000000),
+                  color: iconColor,
                   size: 24,
                 ),
               ),

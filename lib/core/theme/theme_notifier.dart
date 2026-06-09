@@ -2,29 +2,43 @@ import 'package:flutter/material.dart';
 import '../../data/local/app_storage.dart';
 
 class ThemeNotifier extends ChangeNotifier {
-  bool _isDarkMode = false;
+  ThemeMode _themeMode = ThemeMode.system;
 
-  bool get isDarkMode => _isDarkMode;
+  ThemeMode get themeMode => _themeMode;
+
+  bool get isDarkMode {
+    if (_themeMode == ThemeMode.system) {
+      return WidgetsBinding.instance.platformDispatcher.platformBrightness == Brightness.dark;
+    }
+    return _themeMode == ThemeMode.dark;
+  }
 
   ThemeNotifier() {
     _loadFromStorage();
+    WidgetsBinding.instance.platformDispatcher.onPlatformBrightnessChanged = _onPlatformBrightnessChanged;
+  }
+
+  void _onPlatformBrightnessChanged() {
+    if (_themeMode == ThemeMode.system) {
+      notifyListeners();
+    }
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.platformDispatcher.onPlatformBrightnessChanged = null;
+    super.dispose();
   }
 
   Future<void> _loadFromStorage() async {
-    _isDarkMode = await AppStorage.getDarkMode();
+    final isDark = await AppStorage.getDarkMode();
+    _themeMode = isDark ? ThemeMode.system : ThemeMode.light;
     notifyListeners();
   }
 
-  Future<void> toggleDarkMode() async {
-    _isDarkMode = !_isDarkMode;
-    await AppStorage.saveDarkMode(_isDarkMode);
-    notifyListeners();
-  }
-
-  Future<void> setDarkMode(bool value) async {
-    if (_isDarkMode == value) return;
-    _isDarkMode = value;
-    await AppStorage.saveDarkMode(_isDarkMode);
+  Future<void> toggleDarkMode(bool enabled) async {
+    _themeMode = enabled ? ThemeMode.system : ThemeMode.light;
+    await AppStorage.saveDarkMode(enabled);
     notifyListeners();
   }
 }

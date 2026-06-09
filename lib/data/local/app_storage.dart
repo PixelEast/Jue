@@ -164,7 +164,10 @@ class AppStorage {
 
   static Future<bool> getDarkMode() async {
     final prefs = await SharedPreferences.getInstance();
-    return prefs.getBool(_darkModeKey) ?? false;
+    final data = prefs.get(_darkModeKey);
+    if (data is bool) return data;
+    if (data is int) return data != 0;
+    return true;
   }
 
   static Future<void> saveDarkMode(bool isDark) async {
