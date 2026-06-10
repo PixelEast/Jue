@@ -1,6 +1,10 @@
 import 'dart:convert';
+import 'dart:io';
+import 'package:flutter/services.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/app_models.dart';
+import '../../core/utils/app_events.dart';
 
 class AppStorage {
   static const String _decisionsKey = 'decisions';
@@ -173,5 +177,99 @@ class AppStorage {
   static Future<void> saveDarkMode(bool isDark) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_darkModeKey, isDark);
+  }
+
+  static Future<int> _getPrefsKeySize(String key) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final value = prefs.get(key);
+      if (value == null) return 0;
+      if (value is String) return utf8.encode(value).length;
+      if (value is List<String>) {
+        int total = 0;
+        for (final s in value) {
+          total += utf8.encode(s).length;
+        }
+        return total;
+      }
+      if (value is bool) return 1;
+      if (value is int) return 8;
+      if (value is double) return 8;
+    } catch (_) {}
+    return 0;
+  }
+
+  static Future<int> getDecisionsSize() => _getPrefsKeySize(_decisionsKey);
+  static Future<int> getHistorySize() => _getPrefsKeySize(_historyKey);
+
+  static Future<int> getOtherDataSize() async {
+    int total = 0;
+    total += await _getPrefsKeySize(_usagePatternsKey);
+    total += await _getPrefsKeySize(_notificationSettingsKey);
+    total += await _getPrefsKeySize(_darkModeKey);
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      if (prefs.containsKey('version_history_cache')) {
+        total += await _getPrefsKeySize('version_history_cache');
+      }
+    } catch (_) {}
+    return total;
+  }
+
+  static Future<int> _getDirectorySize(Directory dir) async {
+    int total = 0;
+    try {
+      if (await dir.exists()) {
+        await for (final entity in dir.list(recursive: true, followLinks: false)) {
+          if (entity is File) {
+            total += await entity.length();
+          }
+        }
+      }
+    } catch (_) {}
+    return total;
+  }
+
+  static Future<int> getTotalAppStorageSize() async {
+    // Try native Android StorageStats API
+    try {
+      const channel = MethodChannel('com.example.jue/storage');
+      final size = await channel.invokeMethod<int>('getAppSize');
+      if (size != null && size > 0) return size;
+    } catch (_) {}
+
+    // Fallback: measure directories manually
+    int fallback = 0;
+    try {
+      final supportDir = await getApplicationSupportDirectory();
+      final appRoot = supportDir.parent;
+      fallback += await _getDirectorySize(appRoot);
+    } catch (_) {}
+    try {
+      final cacheDir = await getTemporaryDirectory();
+      fallback += await _getDirectorySize(cacheDir);
+    } catch (_) {}
+    return fallback;
+  }
+
+  static Future<void> clearDecisions() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_decisionsKey);
+    AppEvents.notifyDecisionsChanged();
+  }
+
+  static Future<void> clearHistory() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_historyKey);
+    AppEvents.notifyHistoryChanged();
+  }
+
+  static Future<void> clearOtherData() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_usagePatternsKey);
+    await prefs.remove('version_history_cache');
+    final decisions = await getDecisions();
+    final nonDraft = decisions.where((d) => !d.isDraft).toList();
+    await saveDecisions(nonDraft);
   }
 }

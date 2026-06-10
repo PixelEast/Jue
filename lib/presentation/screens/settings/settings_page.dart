@@ -3,6 +3,8 @@ import '../../../core/theme/app_colors_helper.dart';
 import '../../widgets/app_slogan_footer.dart';
 import 'notification_settings_page.dart';
 import 'display_settings_page.dart';
+import 'permissions_page.dart';
+import 'data_storage_page.dart';
 import 'about_page.dart';
 
 class SettingsPage extends StatefulWidget {
@@ -92,13 +94,20 @@ class _SettingsPageState extends State<SettingsPage> {
               _buildSettingCard(
                 icon: Icons.key_outlined,
                 title: '系统权限',
-                subtitle: '位置，后台刷新',
+                subtitle: '通知，位置信息',
                 cardBg: cardBg,
                 cardBorder: cardBorder,
                 iconBg: iconBg,
                 iconFg: iconFg,
                 primaryTextColor: primaryTextColor,
-                onTap: () {},
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const PermissionsPage(),
+                    ),
+                  );
+                },
               ),
               const SizedBox(height: 12),
               _buildSettingCard(
@@ -110,7 +119,14 @@ class _SettingsPageState extends State<SettingsPage> {
                 iconBg: iconBg,
                 iconFg: iconFg,
                 primaryTextColor: primaryTextColor,
-                onTap: () {},
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const DataStoragePage(),
+                    ),
+                  );
+                },
               ),
               const SizedBox(height: 24),
               Text(

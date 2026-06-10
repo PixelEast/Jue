@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../main.dart';
 
 class AppColorsHelper {
   const AppColorsHelper._();
@@ -104,5 +105,17 @@ class AppColorsHelper {
 
   static Color executeResultBg(BuildContext context) {
     return isDark(context) ? const Color(0xFF0F172A) : const Color(0xFFF9F9F9);
+  }
+
+  static Widget buildThemeAwareDialog({
+    required Widget Function(BuildContext context, bool isDark) builder,
+  }) {
+    return AnimatedBuilder(
+      animation: themeNotifier,
+      builder: (context, _) {
+        final isDark = Theme.of(context).brightness == Brightness.dark;
+        return builder(context, isDark);
+      },
+    );
   }
 }
