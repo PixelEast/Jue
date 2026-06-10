@@ -655,8 +655,8 @@ class _HistoryPageState extends State<HistoryPage> {
                                       record.feedback == 'like'
                                           ? AppColorsHelper.decisionCardText(context)
                                           : (canAct
-                                                ? const Color(0xFF94A3B8)
-                                                : const Color(0xFF475569)),
+                                                ? (isDark ? const Color(0xFFCBD5E1) : const Color(0xFF475569))
+                                                : (isDark ? const Color(0xFF475569) : const Color(0xFFCBD5E1))),
                                       BlendMode.srcIn,
                                     ),
                                   ),
@@ -676,8 +676,8 @@ class _HistoryPageState extends State<HistoryPage> {
                                       record.feedback == 'dislike'
                                           ? const Color(0xFFE49B87)
                                           : (canAct
-                                                ? const Color(0xFF94A3B8)
-                                                : const Color(0xFF475569)),
+                                                ? (isDark ? const Color(0xFFCBD5E1) : const Color(0xFF475569))
+                                                : (isDark ? const Color(0xFF475569) : const Color(0xFFCBD5E1))),
                                       BlendMode.srcIn,
                                     ),
                                   ),
@@ -695,8 +695,8 @@ class _HistoryPageState extends State<HistoryPage> {
                                   record.feedback == 'removed'
                                       ? const Color(0xFFBA1A1A)
                                       : (canAct && canRemove
-                                            ? const Color(0xFF94A3B8)
-                                            : const Color(0xFF475569)),
+                                            ? (isDark ? const Color(0xFFCBD5E1) : const Color(0xFF475569))
+                                            : (isDark ? const Color(0xFF475569) : const Color(0xFFCBD5E1))),
                                   BlendMode.srcIn,
                                 ),
                               ),

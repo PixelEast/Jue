@@ -3,6 +3,7 @@ class Option {
   String name;
   double baseWeight;
   double currentWeight;
+  double feedbackBias;
   int timesSelected;
   DateTime? lastSelectedAt;
   bool pendingRecovery;
@@ -13,6 +14,7 @@ class Option {
     required this.name,
     this.baseWeight = 1.0,
     this.currentWeight = 1.0,
+    this.feedbackBias = 0.0,
     this.timesSelected = 0,
     this.lastSelectedAt,
     this.pendingRecovery = false,
@@ -24,6 +26,7 @@ class Option {
     'name': name,
     'baseWeight': baseWeight,
     'currentWeight': currentWeight,
+    'feedbackBias': feedbackBias,
     'timesSelected': timesSelected,
     'lastSelectedAt': lastSelectedAt?.toIso8601String(),
     'pendingRecovery': pendingRecovery,
@@ -37,6 +40,7 @@ class Option {
     name: json['name'] as String? ?? '选项',
     baseWeight: (json['baseWeight'] as num?)?.toDouble() ?? 1.0,
     currentWeight: (json['currentWeight'] as num?)?.toDouble() ?? 1.0,
+    feedbackBias: (json['feedbackBias'] as num?)?.toDouble() ?? 0.0,
     timesSelected: json['timesSelected'] as int? ?? 0,
     lastSelectedAt: json['lastSelectedAt'] != null
         ? DateTime.tryParse(json['lastSelectedAt'] as String)

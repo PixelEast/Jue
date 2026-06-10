@@ -83,6 +83,8 @@ class WeightCalculator {
   }
 
   void _advanceRecovery(Option option) {
+    final recoveryTarget = (option.baseWeight + option.feedbackBias).clamp(0.1, 3.0);
+
     if (option.pendingRecovery) {
       option.currentWeight = option.baseWeight * 0.4;
       option.pendingRecovery = false;
@@ -97,12 +99,12 @@ class WeightCalculator {
       final t = (completed / _maxRecoverySteps).clamp(0.0, 1.0);
       option.currentWeight = _lerpDouble(
         option.baseWeight * 0.4,
-        option.baseWeight,
+        recoveryTarget,
         t,
       ).clamp(0.1, 3.0);
       option.recoveryStepsRemaining -= 1;
       if (option.recoveryStepsRemaining <= 0) {
-        option.currentWeight = option.baseWeight;
+        option.currentWeight = recoveryTarget;
         option.recoveryStepsRemaining = 0;
       }
     }
@@ -115,9 +117,11 @@ class WeightCalculator {
   void applyFeedback(Option option, String feedback, OptionGroup group) {
     switch (feedback) {
       case 'like':
-        option.currentWeight = (option.currentWeight * 1.1).clamp(0.1, 3.0);
+        option.feedbackBias += 0.3;
+        option.currentWeight = (option.currentWeight + 0.3).clamp(0.1, 3.0);
         break;
       case 'dislike':
+        option.feedbackBias -= 0.33;
         option.currentWeight = (option.currentWeight * 0.67).clamp(0.1, 3.0);
         break;
       case 'removed':
