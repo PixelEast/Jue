@@ -403,21 +403,25 @@ class _ExecutePageState extends State<ExecutePage>
                         right: 24,
                         child: Column(
                           children: [
-                            Text(
-                              widget.decision.theme,
-                              style: TextStyle(
-                                fontSize: 50,
-                                fontWeight: FontWeight.w800,
-                                color: titleTextColor,
-                                height: 1,
-                                fontFamilyFallback: const [
-                                  'Noto Sans SC',
-                                  'PingFang SC',
-                                  'Microsoft YaHei',
-                                  'sans-serif',
-                                ],
+                            FittedBox(
+                              fit: BoxFit.scaleDown,
+                              child: Text(
+                                widget.decision.theme,
+                                maxLines: 1,
+                                style: TextStyle(
+                                  fontSize: 50,
+                                  fontWeight: FontWeight.w800,
+                                  color: titleTextColor,
+                                  height: 1,
+                                  fontFamilyFallback: const [
+                                    'Noto Sans SC',
+                                    'PingFang SC',
+                                    'Microsoft YaHei',
+                                    'sans-serif',
+                                  ],
+                                ),
+                                textAlign: TextAlign.center,
                               ),
-                              textAlign: TextAlign.center,
                             ),
                             const SizedBox(height: 16),
                             Text(
@@ -548,19 +552,23 @@ class _ExecutePageState extends State<ExecutePage>
                                 const SizedBox(height: 50),
                                 Opacity(
                                   opacity: _resultFadeIn.value,
-                                  child: Text(
-                                    _result,
-                                    style: const TextStyle(
-                                      fontSize: 45,
-                                      fontWeight: FontWeight.w800,
-                                      letterSpacing: 3.6,
-                                      color: Colors.white,
-                                      fontFamilyFallback: [
-                                        'Noto Sans SC',
-                                        'PingFang SC',
-                                        'Microsoft YaHei',
-                                        'sans-serif',
-                                      ],
+                                  child: FittedBox(
+                                    fit: BoxFit.scaleDown,
+                                    child: Text(
+                                      _result,
+                                      maxLines: 1,
+                                      style: const TextStyle(
+                                        fontSize: 45,
+                                        fontWeight: FontWeight.w800,
+                                        letterSpacing: 3.6,
+                                        color: Colors.white,
+                                        fontFamilyFallback: [
+                                          'Noto Sans SC',
+                                          'PingFang SC',
+                                          'Microsoft YaHei',
+                                          'sans-serif',
+                                        ],
+                                      ),
                                     ),
                                   ),
                                 ),

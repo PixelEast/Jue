@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../../core/theme/app_colors_helper.dart';
 
 class TimeWheelPicker extends StatefulWidget {
   final int initialHour;
@@ -111,8 +112,8 @@ class _TimeWheelPickerState extends State<TimeWheelPicker> {
                 fontSize: isSelected ? 22 : 18,
                 fontWeight: isSelected ? FontWeight.w700 : FontWeight.w400,
                 color: isSelected
-                    ? const Color(0xFF000000)
-                    : const Color(0xFFC6C6C6),
+                    ? AppColorsHelper.primaryText(context)
+                    : AppColorsHelper.tertiaryText(context),
               ),
               child: Text(itemBuilder(index)),
             ),
@@ -171,11 +172,12 @@ class _TimeWheelPickerDialogState extends State<TimeWheelPickerDialog> {
   @override
   Widget build(BuildContext context) {
     final bottomPadding = MediaQuery.of(context).viewPadding.bottom;
+    final isDark = AppColorsHelper.isDark(context);
 
     return Container(
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -185,7 +187,7 @@ class _TimeWheelPickerDialogState extends State<TimeWheelPickerDialog> {
             width: 40,
             height: 4,
             decoration: BoxDecoration(
-              color: const Color(0xFFE5E5E5),
+              color: isDark ? const Color(0xFF3A3A3A) : const Color(0xFFE5E5E5),
               borderRadius: BorderRadius.circular(2),
             ),
           ),
@@ -197,21 +199,21 @@ class _TimeWheelPickerDialogState extends State<TimeWheelPickerDialog> {
               children: [
                 GestureDetector(
                   onTap: () => Navigator.pop(context),
-                  child: const Text(
+                  child: Text(
                     '取消',
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w500,
-                      color: Color(0xFF8E8E93),
+                      color: AppColorsHelper.tertiaryText(context),
                     ),
                   ),
                 ),
                 Text(
                   widget.title,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w600,
-                    color: Color(0xFF000000),
+                    color: AppColorsHelper.primaryText(context),
                   ),
                 ),
                 GestureDetector(
@@ -219,12 +221,12 @@ class _TimeWheelPickerDialogState extends State<TimeWheelPickerDialog> {
                     context,
                     TimeOfDay(hour: _hour, minute: _minute),
                   ),
-                  child: const Text(
+                  child: Text(
                     '确定',
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
-                      color: Color(0xFF000000),
+                      color: AppColorsHelper.primaryText(context),
                     ),
                   ),
                 ),

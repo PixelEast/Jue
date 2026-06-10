@@ -129,31 +129,37 @@ class AppTheme {
       // 文字主题
       textTheme: const TextTheme(
         displayLarge: TextStyle(
+          fontFamily: 'Noto Sans SC',
           fontSize: 32,
           fontWeight: FontWeight.bold,
           color: Colors.white,
         ),
         displayMedium: TextStyle(
+          fontFamily: 'Noto Sans SC',
           fontSize: 24,
           fontWeight: FontWeight.w500,
           color: Color(0xFF6FA8FF),
         ),
         titleLarge: TextStyle(
+          fontFamily: 'Noto Sans SC',
           fontSize: 18,
           fontWeight: FontWeight.w500,
           color: Colors.white,
         ),
         bodyLarge: TextStyle(
+          fontFamily: 'Noto Sans SC',
           fontSize: 16,
           fontWeight: FontWeight.normal,
           color: Colors.white,
         ),
         bodyMedium: TextStyle(
+          fontFamily: 'Noto Sans SC',
           fontSize: 14,
           fontWeight: FontWeight.normal,
           color: Color(0xFF8E8E93),
         ),
         bodySmall: TextStyle(
+          fontFamily: 'Noto Sans SC',
           fontSize: 12,
           fontWeight: FontWeight.normal,
           color: Color(0xFF8E8E93),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../../../core/constants/app_constants.dart';
+import '../../../core/theme/app_colors_helper.dart';
 import '../../widgets/frosted_back_button.dart';
 import 'version_history_page.dart';
 
@@ -9,9 +10,10 @@ class AboutPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = AppColorsHelper.isDark(context);
     return Scaffold(
       extendBody: true,
-      backgroundColor: const Color(0xFFF9F9F9),
+      backgroundColor: AppColorsHelper.scaffoldBackground(context),
       bottomNavigationBar: Padding(
         padding: const EdgeInsets.only(bottom: 68),
         child: Column(
@@ -22,7 +24,7 @@ class AboutPage extends StatelessWidget {
               style: TextStyle(
                 fontSize: 11,
                 fontWeight: FontWeight.w400,
-                color: Colors.black.withValues(alpha: 0.2),
+                color: AppColorsHelper.tertiaryText(context),
               ),
             ),
             const SizedBox(height: 4),
@@ -31,7 +33,7 @@ class AboutPage extends StatelessWidget {
               style: TextStyle(
                 fontSize: 11,
                 fontWeight: FontWeight.w400,
-                color: Colors.black.withValues(alpha: 0.3),
+                color: AppColorsHelper.secondaryText(context),
               ),
             ),
           ],
@@ -56,7 +58,7 @@ class AboutPage extends StatelessWidget {
                         borderRadius: BorderRadius.circular(18),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.06),
+                            color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.06),
                             blurRadius: 12,
                             offset: const Offset(0, 4),
                           ),
@@ -70,12 +72,12 @@ class AboutPage extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 12),
-                  const Text(
+                  Text(
                     '决',
                     style: TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.w700,
-                      color: Color(0xFF000000),
+                      color: AppColorsHelper.primaryText(context),
                     ),
                   ),
                   const SizedBox(height: 2),
@@ -84,11 +86,12 @@ class AboutPage extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w400,
-                      color: Color(0xFF000000),
+                      color: AppColorsHelper.primaryText(context),
                     ),
                   ),
                   const SizedBox(height: 32),
                   _buildAboutCard(
+                    context,
                     icon: Icons.history_outlined,
                     title: '版本记录',
                     subtitle: '查看历次版本更新内容',
@@ -103,6 +106,7 @@ class AboutPage extends StatelessWidget {
                   ),
                   const SizedBox(height: 12),
                   _buildAboutCard(
+                    context,
                     icon: Icons.feedback_outlined,
                     title: '反馈与建议',
                     subtitle: '帮助我们变得更好',
@@ -110,6 +114,7 @@ class AboutPage extends StatelessWidget {
                   ),
                   const SizedBox(height: 12),
                   _buildAboutCard(
+                    context,
                     icon: Icons.system_update_outlined,
                     title: '版本更新',
                     subtitle: '当前已是最新版本',
@@ -133,7 +138,8 @@ class AboutPage extends StatelessWidget {
     );
   }
 
-  Widget _buildAboutCard({
+  Widget _buildAboutCard(
+    BuildContext context, {
     required IconData icon,
     required String title,
     String? subtitle,
@@ -144,9 +150,9 @@ class AboutPage extends StatelessWidget {
       borderRadius: BorderRadius.circular(32),
       child: Ink(
         decoration: BoxDecoration(
-          color: const Color(0xFFF3F3F3),
+          color: AppColorsHelper.cardBackground(context),
           borderRadius: BorderRadius.circular(32),
-          border: Border.all(color: const Color(0xFFE7E7E7)),
+          border: Border.all(color: AppColorsHelper.cardBorder(context)),
         ),
         child: InkWell(
           onTap: onTap,
@@ -160,11 +166,11 @@ class AboutPage extends StatelessWidget {
                 Container(
                   width: 48,
                   height: 48,
-                  decoration: const BoxDecoration(
-                    color: Colors.black,
-                    borderRadius: BorderRadius.all(Radius.circular(16)),
+                  decoration: BoxDecoration(
+                    color: AppColorsHelper.iconBackground(context),
+                    borderRadius: const BorderRadius.all(Radius.circular(16)),
                   ),
-                  child: Icon(icon, size: 20, color: Colors.white),
+                  child: Icon(icon, size: 20, color: AppColorsHelper.iconForeground(context)),
                 ),
                 const SizedBox(width: 16),
                 Expanded(
@@ -173,28 +179,28 @@ class AboutPage extends StatelessWidget {
                     children: [
                       Text(
                         title,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.w600,
-                          color: Color(0xFF000000),
+                          color: AppColorsHelper.primaryText(context),
                         ),
                       ),
                       if (subtitle != null) ...[
                         const SizedBox(height: 2),
                         Text(
                           subtitle,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 12,
-                            color: Color(0xFF5E5E5E),
+                            color: AppColorsHelper.secondaryText(context),
                           ),
                         ),
                       ],
                     ],
                   ),
                 ),
-                const Icon(
+                Icon(
                   Icons.chevron_right,
-                  color: Color(0xFFC6C6C6),
+                  color: AppColorsHelper.tertiaryText(context),
                   size: 20,
                 ),
               ],

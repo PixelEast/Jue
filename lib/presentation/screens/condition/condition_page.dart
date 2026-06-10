@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
-import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
 import 'package:latlong2/latlong.dart';
 import 'dart:convert';
 import 'dart:ui';
+import '../../../core/theme/app_colors_helper.dart';
 import '../../widgets/frosted_back_button.dart';
 
 class ConditionPage extends StatefulWidget {
@@ -64,11 +64,6 @@ class _ConditionPageState extends State<ConditionPage>
   final GlobalKey _timelineKey = GlobalKey();
   final ScrollController _scrollController = ScrollController();
 
-  static const Color _primary = Color(0xFF000000);
-  static const Color _surface = Color(0xFFF9F9F9);
-  static const Color _secondary = Color(0xFF5E5E5E);
-  static const Color _outlineVariant = Color(0xFFC6C6C6);
-
   bool get _isLocationUnavailable =>
       !_locationServiceEnabled || !_locationPermissionGranted;
 
@@ -82,6 +77,9 @@ class _ConditionPageState extends State<ConditionPage>
     _selectedMode = widget.initialMode == 'location' ? 1 : 0;
     _initializeTimeRanges();
     _initializeLocations();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _checkLocationCapabilityAndInitialize();
+    });
   }
 
   void _initializeTimeRanges() {
@@ -204,8 +202,6 @@ class _ConditionPageState extends State<ConditionPage>
         }
       }
     }
-
-    _checkLocationCapabilityAndInitialize();
   }
 
   Future<void> _checkLocationCapabilityAndInitialize() async {
@@ -272,7 +268,7 @@ class _ConditionPageState extends State<ConditionPage>
         position = await Geolocator.getCurrentPosition(
           locationSettings: const LocationSettings(
             accuracy: LocationAccuracy.high,
-            timeLimit: Duration(seconds: 12),
+            timeLimit: Duration(seconds: 5),
           ),
         );
       } catch (_) {
@@ -323,17 +319,17 @@ class _ConditionPageState extends State<ConditionPage>
   }
 
   Future<void> _refreshAllPlaceLabelsSequentially() async {
-    if (_isLocationUnavailable) return;
     for (int i = 0; i < widget.optionGroupNames.length; i++) {
       await _refreshPlaceLabel(i);
     }
   }
 
   void _syncAllReadyMapsToCenters() {
+    if (!mounted) return;
     for (int i = 0; i < widget.optionGroupNames.length; i++) {
+      if (!(_mapReady[i] ?? false)) continue;
       final center = _mapCenters[i];
-      if ((_mapReady[i] ?? false) &&
-          center != null &&
+      if (center != null &&
           center.latitude.abs() > 0.0001 &&
           center.longitude.abs() > 0.0001) {
         _mapControllers[i]?.move(
@@ -346,221 +342,74 @@ class _ConditionPageState extends State<ConditionPage>
   }
 
   Future<void> _refreshPlaceLabel(int index) async {
-    if (_isLocationUnavailable) return;
+    if (_isLocationUnavailable) {
+      if (mounted) setState(() => _locationLoading[index] = false);
+      return;
+    }
     final location = _locations[index];
-    if (location == null) return;
+    if (location == null) {
+      if (mounted) setState(() => _locationLoading[index] = false);
+      return;
+    }
+    if (location.latitude.abs() < 0.0001 && location.longitude.abs() < 0.0001) {
+      if (mounted) setState(() => _locationLoading[index] = false);
+      return;
+    }
+
+    final lat = location.latitude;
+    final lng = location.longitude;
+
+    // Try Amap API (domestic, reliable in China)
     try {
-      final placemarks = await placemarkFromCoordinates(
-        location.latitude,
-        location.longitude,
+      final uri = Uri.parse(
+        'https://restapi.amap.com/v3/geocode/regeo?key=7560453ea783129eafd90e8965f99487&location=$lng,$lat&extensions=base',
       );
-      if (placemarks.isNotEmpty) {
-        final place = placemarks.first;
-        final label = _bestPlaceLabelFromPlacemark(place);
-        if (mounted) {
-          setState(() {
-            _placeLabels[index] = label;
-            _locationLoading[index] = false;
-          });
+      final response = await http.get(uri).timeout(const Duration(seconds: 6));
+      if (response.statusCode == 200) {
+        final json = jsonDecode(response.body) as Map<String, dynamic>;
+        if (json['status'] == '1') {
+          final regeocode = json['regeocode'] as Map<String, dynamic>?;
+          final address = regeocode?['addressComponent'] as Map<String, dynamic>?;
+          if (address != null) {
+            final label = _pickLabelFromAmap(address);
+            if (label.isNotEmpty) {
+              if (mounted) {
+                setState(() {
+                  _placeLabels[index] = label;
+                  _locationLoading[index] = false;
+                });
+              }
+              return;
+            }
+          }
         }
-        return;
       }
     } catch (_) {}
 
-    try {
-      final uri = Uri.parse(
-        'https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${location.latitude}&lon=${location.longitude}',
-      );
-      final response = await http.get(
-        uri,
-        headers: {'User-Agent': 'jue-condition-page/1.0'},
-      );
-      if (response.statusCode == 200) {
-        final json = jsonDecode(response.body) as Map<String, dynamic>;
-        final address = json['address'] as Map<String, dynamic>?;
-        final label = _bestPlaceLabelFromNominatim(json, address);
-        if (mounted) {
-          setState(() {
-            _placeLabels[index] = label;
-            _locationLoading[index] = false;
-          });
-        }
-      } else if (mounted) {
-        setState(() {
-          _placeLabels[index] = '当前位置';
-          _locationLoading[index] = false;
-        });
-      }
-    } catch (_) {
-      if (mounted) {
-        setState(() {
-          _placeLabels[index] = '当前位置';
-          _locationLoading[index] = false;
-        });
-      }
+    // Last resort
+    if (mounted) {
+      setState(() {
+        _placeLabels[index] = '${lat.toStringAsFixed(4)}, ${lng.toStringAsFixed(4)}';
+        _locationLoading[index] = false;
+      });
     }
   }
 
-  String _bestPlaceLabelFromPlacemark(Placemark place) {
+  String _pickLabelFromAmap(Map<String, dynamic> address) {
+    final streetNumber = address['streetNumber'] as Map<String, dynamic>?;
+    final township = address['township'] as Map<String, dynamic>?;
+
     final candidates = <String>[
-      if ((place.name ?? '').trim().isNotEmpty) place.name!.trim(),
-      if ((place.street ?? '').trim().isNotEmpty) place.street!.trim(),
-      if ((place.subLocality ?? '').trim().isNotEmpty)
-        place.subLocality!.trim(),
-      if ((place.locality ?? '').trim().isNotEmpty) place.locality!.trim(),
-      if ((place.subAdministrativeArea ?? '').trim().isNotEmpty)
-        place.subAdministrativeArea!.trim(),
+      if (streetNumber != null && (streetNumber['street'] ?? '').toString().trim().isNotEmpty)
+        streetNumber['street'].toString().trim(),
+      if ((address['neighborhood'] ?? '').toString().trim().isNotEmpty)
+        address['neighborhood'].toString().trim(),
+      if (township != null && (township['name'] ?? '').toString().trim().isNotEmpty)
+        township['name'].toString().trim(),
+      if ((address['district'] ?? '').toString().trim().isNotEmpty)
+        address['district'].toString().trim(),
     ];
-
-    final preferred = _pickMostSpecificLabel(candidates);
-    if (preferred != null) return _trimAdministrativePrefix(preferred);
-
-    final street = (place.street ?? '').trim();
-    final subLocality = (place.subLocality ?? '').trim();
-    if (street.isNotEmpty && subLocality.isNotEmpty && street != subLocality) {
-      return _trimAdministrativePrefix('$street · $subLocality');
-    }
-
-    return candidates.isNotEmpty
-        ? _trimAdministrativePrefix(candidates.first)
-        : '当前位置';
-  }
-
-  String _bestPlaceLabelFromNominatim(
-    Map<String, dynamic> json,
-    Map<String, dynamic>? address,
-  ) {
-    final candidates = <String>[
-      if ((address?['building'] ?? '').toString().trim().isNotEmpty)
-        (address?['building'] ?? '').toString().trim(),
-      if ((address?['amenity'] ?? '').toString().trim().isNotEmpty)
-        (address?['amenity'] ?? '').toString().trim(),
-      if ((address?['leisure'] ?? '').toString().trim().isNotEmpty)
-        (address?['leisure'] ?? '').toString().trim(),
-      if ((address?['road'] ?? '').toString().trim().isNotEmpty)
-        (address?['road'] ?? '').toString().trim(),
-      if ((address?['neighbourhood'] ?? '').toString().trim().isNotEmpty)
-        (address?['neighbourhood'] ?? '').toString().trim(),
-      if ((address?['suburb'] ?? '').toString().trim().isNotEmpty)
-        (address?['suburb'] ?? '').toString().trim(),
-      if ((json['name'] ?? '').toString().trim().isNotEmpty)
-        (json['name'] ?? '').toString().trim(),
-    ];
-
-    final picked = _pickMostSpecificLabel(candidates);
-    return picked != null ? _trimAdministrativePrefix(picked) : '当前位置';
-  }
-
-  String _trimAdministrativePrefix(String input) {
-    var text = input.trim();
-    if (text.isEmpty) return '当前位置';
-
-    text = text.replaceAll(RegExp(r'[（(][^）)]*[）)]$'), '').trim();
-    text = text.replaceAll(RegExp(r'(东|西|南|北)\d+米$'), '').trim();
-    text = text.replaceAll(RegExp(r'(东|西|南|北)$'), '').trim();
-
-    final cnParenIndex = text.indexOf('（');
-    final enParenIndex = text.indexOf('(');
-    int parenIndex = -1;
-    if (cnParenIndex >= 0 && enParenIndex >= 0) {
-      parenIndex = cnParenIndex < enParenIndex ? cnParenIndex : enParenIndex;
-    } else if (cnParenIndex >= 0) {
-      parenIndex = cnParenIndex;
-    } else if (enParenIndex >= 0) {
-      parenIndex = enParenIndex;
-    }
-    final plainPart = parenIndex >= 0 ? text.substring(0, parenIndex) : text;
-
-    final segments = plainPart
-        .split(RegExp(r'[,/·\-]|\s+'))
-        .map((e) => e.trim())
-        .where((e) => e.isNotEmpty)
-        .toList();
-
-    String candidate = plainPart;
-    if (segments.isNotEmpty) {
-      candidate = segments.last;
-    }
-
-    final adminPrefixPattern = RegExp(r'^(.*省)?(.*市)?(.*?(区|县))');
-    final adminMatch = adminPrefixPattern.firstMatch(plainPart);
-    if (adminMatch != null) {
-      final trimmed = plainPart.substring(adminMatch.end).trim();
-      if (trimmed.isNotEmpty) {
-        candidate = trimmed;
-      }
-    }
-
-    candidate = candidate.trim();
-    return candidate.isEmpty ? text : candidate;
-  }
-
-  String? _pickMostSpecificLabel(List<String> rawCandidates) {
-    final candidates = rawCandidates
-        .map((e) => e.trim())
-        .where((e) => e.isNotEmpty)
-        .where((e) => !_isDirectionOnly(e))
-        .toSet()
-        .toList();
-    if (candidates.isEmpty) return null;
-
-    const preferredKeywords = [
-      '小区',
-      '家园',
-      '花园',
-      '大厦',
-      '广场',
-      '公园',
-      '苑',
-      '城',
-      '园',
-      '厦',
-      '府',
-      '路',
-      '街',
-      '道',
-    ];
-
-    for (final keyword in preferredKeywords) {
-      final match = candidates.where((e) => e.contains(keyword)).toList();
-      if (match.isNotEmpty) {
-        match.sort((a, b) => b.length.compareTo(a.length));
-        return match.first;
-      }
-    }
-
-    final filtered = candidates.where((e) {
-      return !(e.endsWith('省') ||
-          e.endsWith('市') ||
-          ((e.endsWith('区') || e.endsWith('县')) &&
-              !(e.endsWith('小区') || e.endsWith('社区'))));
-    }).toList();
-
-    if (filtered.isNotEmpty) {
-      filtered.sort((a, b) => b.length.compareTo(a.length));
-      return filtered.first;
-    }
-
-    candidates.sort((a, b) => b.length.compareTo(a.length));
-    return candidates.first;
-  }
-
-  bool _isDirectionOnly(String text) {
-    const directionOnly = {
-      '东',
-      '西',
-      '南',
-      '北',
-      '东北',
-      '东南',
-      '西北',
-      '西南',
-      '东门',
-      '西门',
-      '南门',
-      '北门',
-    };
-    return directionOnly.contains(text.trim());
+    return candidates.isNotEmpty ? candidates.first : '';
   }
 
   bool _isDarkColor(Color color) => color.computeLuminance() < 0.5;
@@ -590,11 +439,15 @@ class _ConditionPageState extends State<ConditionPage>
     final controller = _zoomControllers[index];
     final mapController = _mapControllers[index];
     if (controller == null || mapController == null) return;
+    if (!mounted) return;
+    if (!(_mapReady[index] ?? false)) return;
 
     final currentZoom = _animatedZooms[index] ?? _getZoomLevel(200);
     if ((currentZoom - targetZoom).abs() < 0.01) {
       _animatedZooms[index] = targetZoom;
-      mapController.move(center, targetZoom);
+      if (mounted && (_mapReady[index] ?? false)) {
+        mapController.move(center, targetZoom);
+      }
       return;
     }
 
@@ -607,6 +460,8 @@ class _ConditionPageState extends State<ConditionPage>
     final tween = Tween<double>(begin: currentZoom, end: targetZoom);
 
     void listener() {
+      if (!mounted) return;
+      if (!(_mapReady[index] ?? false)) return;
       final zoom = tween.evaluate(curved);
       _animatedZooms[index] = zoom;
       mapController.move(center, zoom);
@@ -618,16 +473,28 @@ class _ConditionPageState extends State<ConditionPage>
     });
   }
 
+  void _stopAllZoomAnimations() {
+    for (final controller in _zoomControllers.values) {
+      controller.stop();
+      controller.reset();
+    }
+    for (final i in _mapReady.keys) {
+      _mapReady[i] = false;
+    }
+    _removeDefaultGroupDropdown(immediate: true);
+  }
+
   @override
   void dispose() {
     _removeDefaultGroupDropdown(immediate: true);
     _defaultGroupDropdownController.dispose();
     _defaultGroupDropdownOpen.dispose();
     _scrollController.dispose();
-    for (var controller in _mapControllers.values) {
+    _stopAllZoomAnimations();
+    for (var controller in _zoomControllers.values) {
       controller.dispose();
     }
-    for (var controller in _zoomControllers.values) {
+    for (var controller in _mapControllers.values) {
       controller.dispose();
     }
     super.dispose();
@@ -650,6 +517,9 @@ class _ConditionPageState extends State<ConditionPage>
 
     final fieldSize = renderBox.size;
     final offset = renderBox.localToGlobal(Offset.zero);
+    final isDark = AppColorsHelper.isDark(context);
+    final cPrimary = AppColorsHelper.primaryText(context);
+    final cOutlineVariant = AppColorsHelper.dividerColor(context);
 
     _defaultGroupDropdownOpen.value = true;
     _defaultGroupDropdownEntry = OverlayEntry(
@@ -688,14 +558,18 @@ class _ConditionPageState extends State<ConditionPage>
                           filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
                           child: Container(
                             decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.68),
+                              color: isDark
+                                  ? const Color(0xFF1E1E1E).withValues(alpha: 0.85)
+                                  : Colors.white.withValues(alpha: 0.68),
                               borderRadius: BorderRadius.circular(12),
                               border: Border.all(
-                                color: _outlineVariant.withValues(alpha: 0.18),
+                                color: isDark
+                                    ? const Color(0xFF2E2E2E)
+                                    : cOutlineVariant.withValues(alpha: 0.18),
                               ),
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.black.withValues(alpha: 0.05),
+                                  color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.05),
                                   blurRadius: 10,
                                   offset: const Offset(0, 3),
                                 ),
@@ -730,17 +604,14 @@ class _ConditionPageState extends State<ConditionPage>
                                         ),
                                         decoration: BoxDecoration(
                                           color: isSelected
-                                              ? Colors.black.withValues(
-                                                  alpha: 0.04,
-                                                )
+                                              ? cPrimary.withValues(alpha: 0.04)
                                               : Colors.transparent,
                                           border: !isLast
                                               ? Border(
                                                   bottom: BorderSide(
-                                                    color: _outlineVariant
-                                                        .withValues(
-                                                          alpha: 0.12,
-                                                        ),
+                                                    color: cOutlineVariant.withValues(
+                                                      alpha: 0.12,
+                                                    ),
                                                   ),
                                                 )
                                               : null,
@@ -755,15 +626,15 @@ class _ConditionPageState extends State<ConditionPage>
                                                   fontWeight: isSelected
                                                       ? FontWeight.w700
                                                       : FontWeight.w500,
-                                                  color: _primary,
+                                                  color: cPrimary,
                                                 ),
                                               ),
                                             ),
                                             if (isSelected)
-                                              const Icon(
+                                              Icon(
                                                 Icons.check,
                                                 size: 18,
-                                                color: _primary,
+                                                color: cPrimary,
                                               ),
                                           ],
                                         ),
@@ -811,6 +682,10 @@ class _ConditionPageState extends State<ConditionPage>
   @override
   Widget build(BuildContext context) {
     final topInset = MediaQuery.paddingOf(context).top;
+    final isDark = AppColorsHelper.isDark(context);
+    final cPrimary = AppColorsHelper.primaryText(context);
+    final cSecondary = AppColorsHelper.secondaryText(context);
+    final cSurface = AppColorsHelper.scaffoldBackground(context);
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, result) {
@@ -819,7 +694,7 @@ class _ConditionPageState extends State<ConditionPage>
         }
       },
       child: Scaffold(
-        backgroundColor: _surface,
+        backgroundColor: cSurface,
         body: Stack(
           children: [
             Column(
@@ -835,22 +710,22 @@ class _ConditionPageState extends State<ConditionPage>
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         const SizedBox(height: 24),
-                        const Text(
+                        Text(
                           '即刻判决！',
                           style: TextStyle(
                             fontSize: 10,
                             fontWeight: FontWeight.w500,
-                            color: _secondary,
+                            color: cSecondary,
                             letterSpacing: 1.5,
                           ),
                         ),
                         const SizedBox(height: 8),
-                        const Text(
+                        Text(
                           '设置逻辑条件',
                           style: TextStyle(
                             fontSize: 48,
                             fontWeight: FontWeight.w800,
-                            color: _primary,
+                            color: cPrimary,
                             letterSpacing: -0.05,
                             height: 1.1,
                           ),
@@ -861,7 +736,7 @@ class _ConditionPageState extends State<ConditionPage>
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w400,
-                            color: _secondary,
+                            color: cSecondary,
                             height: 1.5,
                           ),
                         ),
@@ -869,15 +744,15 @@ class _ConditionPageState extends State<ConditionPage>
                         Container(
                           height: 55,
                           decoration: BoxDecoration(
-                            color: Colors.white,
+                            color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
                             borderRadius: BorderRadius.circular(999),
                             border: Border.all(
-                              color: _primary.withValues(alpha: 0.1),
+                              color: cPrimary.withValues(alpha: isDark ? 0.2 : 0.1),
                               width: 1,
                             ),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.05),
+                                color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.05),
                                 blurRadius: 4,
                                 offset: const Offset(0, 2),
                               ),
@@ -896,7 +771,7 @@ class _ConditionPageState extends State<ConditionPage>
                                   child: Container(
                                     margin: const EdgeInsets.all(6),
                                     decoration: BoxDecoration(
-                                      color: _primary,
+                                      color: isDark ? AppColorsHelper.executeButtonEdge(context) : Colors.black,
                                       borderRadius: BorderRadius.circular(999),
                                     ),
                                   ),
@@ -907,8 +782,10 @@ class _ConditionPageState extends State<ConditionPage>
                                   Expanded(
                                     child: GestureDetector(
                                       behavior: HitTestBehavior.opaque,
-                                      onTap: () =>
-                                          setState(() => _selectedMode = 0),
+                                      onTap: () {
+                                        _stopAllZoomAnimations();
+                                        setState(() => _selectedMode = 0);
+                                      },
                                       child: Container(
                                         alignment: Alignment.center,
                                         child: AnimatedDefaultTextStyle(
@@ -921,7 +798,7 @@ class _ConditionPageState extends State<ConditionPage>
                                             fontWeight: FontWeight.w800,
                                             color: _selectedMode == 0
                                                 ? Colors.white
-                                                : _secondary,
+                                                : cSecondary,
                                             letterSpacing: 0.2,
                                           ),
                                           child: const Text('时间范围'),
@@ -932,8 +809,10 @@ class _ConditionPageState extends State<ConditionPage>
                                   Expanded(
                                     child: GestureDetector(
                                       behavior: HitTestBehavior.opaque,
-                                      onTap: () =>
-                                          setState(() => _selectedMode = 1),
+                                      onTap: () {
+                                        _stopAllZoomAnimations();
+                                        setState(() => _selectedMode = 1);
+                                      },
                                       child: Container(
                                         alignment: Alignment.center,
                                         child: AnimatedDefaultTextStyle(
@@ -946,7 +825,7 @@ class _ConditionPageState extends State<ConditionPage>
                                             fontWeight: FontWeight.w800,
                                             color: _selectedMode == 1
                                                 ? Colors.white
-                                                : _secondary,
+                                                : cSecondary,
                                             letterSpacing: 0.2,
                                           ),
                                           child: const Text('位置范围'),
@@ -1040,158 +919,7 @@ class _ConditionPageState extends State<ConditionPage>
                 child: GestureDetector(
                   behavior: HitTestBehavior.translucent,
                   onTap: _removeDefaultGroupDropdown,
-                  child: Builder(
-                    builder: (context) {
-                      final renderBox =
-                          _defaultGroupFieldKey.currentContext
-                                  ?.findRenderObject()
-                              as RenderBox?;
-                      if (renderBox == null) return const SizedBox.expand();
-                      final offset = renderBox.localToGlobal(Offset.zero);
-                      final size = renderBox.size;
-
-                      return Stack(
-                        children: [
-                          Positioned(
-                            left: offset.dx,
-                            top: offset.dy + size.height + 4,
-                            width: size.width,
-                            child: Material(
-                              color: Colors.transparent,
-                              child: AnimatedOpacity(
-                                opacity: 1,
-                                duration: const Duration(milliseconds: 180),
-                                child: TweenAnimationBuilder<double>(
-                                  tween: Tween(begin: 0.96, end: 1.0),
-                                  duration: const Duration(milliseconds: 180),
-                                  curve: Curves.easeOutCubic,
-                                  builder: (context, scale, child) {
-                                    return Transform.scale(
-                                      scale: scale,
-                                      alignment: Alignment.topCenter,
-                                      child: child,
-                                    );
-                                  },
-                                  child: ClipRRect(
-                                    borderRadius: BorderRadius.circular(12),
-                                    child: BackdropFilter(
-                                      filter: ImageFilter.blur(
-                                        sigmaX: 14,
-                                        sigmaY: 14,
-                                      ),
-                                      child: Container(
-                                        decoration: BoxDecoration(
-                                          color: Colors.white.withValues(
-                                            alpha: 0.68,
-                                          ),
-                                          borderRadius: BorderRadius.circular(
-                                            12,
-                                          ),
-                                          border: Border.all(
-                                            color: _outlineVariant.withValues(
-                                              alpha: 0.18,
-                                            ),
-                                          ),
-                                          boxShadow: [
-                                            BoxShadow(
-                                              color: Colors.black.withValues(
-                                                alpha: 0.05,
-                                              ),
-                                              blurRadius: 10,
-                                              offset: const Offset(0, 3),
-                                            ),
-                                          ],
-                                        ),
-                                        child: Column(
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: widget.optionGroupNames
-                                              .asMap()
-                                              .entries
-                                              .map((entry) {
-                                                final isSelected =
-                                                    entry.key ==
-                                                    _selectedDefaultGroupIndex;
-                                                final isLast =
-                                                    entry.key ==
-                                                    widget
-                                                            .optionGroupNames
-                                                            .length -
-                                                        1;
-                                                return InkWell(
-                                                  onTap: () {
-                                                    setState(() {
-                                                      _selectedDefaultGroupIndex =
-                                                          entry.key;
-                                                    });
-                                                    _removeDefaultGroupDropdown();
-                                                  },
-                                                  child: Container(
-                                                    width: double.infinity,
-                                                    padding:
-                                                        const EdgeInsets.symmetric(
-                                                          horizontal: 16,
-                                                          vertical: 14,
-                                                        ),
-                                                    decoration: BoxDecoration(
-                                                      color: isSelected
-                                                          ? Colors.black
-                                                                .withValues(
-                                                                  alpha: 0.04,
-                                                                )
-                                                          : Colors.transparent,
-                                                      border: !isLast
-                                                          ? Border(
-                                                              bottom: BorderSide(
-                                                                color: _outlineVariant
-                                                                    .withValues(
-                                                                      alpha:
-                                                                          0.12,
-                                                                    ),
-                                                              ),
-                                                            )
-                                                          : null,
-                                                    ),
-                                                    child: Row(
-                                                      children: [
-                                                        Expanded(
-                                                          child: Text(
-                                                            entry.value,
-                                                            style: TextStyle(
-                                                              fontSize: 14,
-                                                              fontWeight:
-                                                                  isSelected
-                                                                  ? FontWeight
-                                                                        .w700
-                                                                  : FontWeight
-                                                                        .w500,
-                                                              color: _primary,
-                                                            ),
-                                                          ),
-                                                        ),
-                                                        if (isSelected)
-                                                          const Icon(
-                                                            Icons.check,
-                                                            size: 18,
-                                                            color: _primary,
-                                                          ),
-                                                      ],
-                                                    ),
-                                                  ),
-                                                );
-                                              })
-                                              .toList(),
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      );
-                    },
-                  ),
+                  child: const SizedBox.expand(),
                 ),
               ),
           ],
@@ -1201,6 +929,13 @@ class _ConditionPageState extends State<ConditionPage>
   }
 
   Widget _buildLocationContent() {
+    final isDark = AppColorsHelper.isDark(context);
+    final cPrimary = AppColorsHelper.primaryText(context);
+    final cSecondary = AppColorsHelper.secondaryText(context);
+    final cTertiary = AppColorsHelper.tertiaryText(context);
+    final cOutlineVariant = AppColorsHelper.dividerColor(context);
+    final cSurface = AppColorsHelper.scaffoldBackground(context);
+
     if (_locationInitErrorMessage != null && !_hasAnySavedLocation) {
       return Container(
         width: double.infinity,
@@ -1209,18 +944,18 @@ class _ConditionPageState extends State<ConditionPage>
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(
+            Icon(
               Icons.location_off_outlined,
               size: 28,
-              color: Color(0xFF9E9E9E),
+              color: cTertiary,
             ),
             const SizedBox(height: 12),
             Text(
               _locationInitErrorMessage!,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w500,
-                color: Color(0xFF9E9E9E),
+                color: cTertiary,
               ),
               textAlign: TextAlign.center,
             ),
@@ -1235,15 +970,15 @@ class _ConditionPageState extends State<ConditionPage>
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: _primary,
+            color: isDark ? AppColorsHelper.executeButtonEdge(context) : Colors.black,
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: _primary),
+            border: Border.all(color: isDark ? AppColorsHelper.executeButtonEdge(context) : Colors.black),
           ),
-          child: const Row(
+          child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(Icons.info_outline, color: Colors.white, size: 20),
-              SizedBox(width: 12),
+              const Icon(Icons.info_outline, color: Colors.white, size: 20),
+              const SizedBox(width: 12),
               Expanded(
                 child: Text(
                   '注意：如果所在位置在多个选项组的位置范围内，则会选择距离中心点最近的选项组为目标；若与多个选项组的距离相等，则会在这些选项组内随机选择一个作为抽选目标。',
@@ -1263,36 +998,36 @@ class _ConditionPageState extends State<ConditionPage>
         Container(
           padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(
-            color: const Color(0xFFE2E2E2).withValues(alpha: 0.3),
+            color: isDark ? const Color(0xFF252525) : const Color(0xFFE2E2E2).withValues(alpha: 0.3),
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: _outlineVariant.withValues(alpha: 0.3),
+              color: isDark ? const Color(0xFF3A3A3A) : cOutlineVariant.withValues(alpha: 0.3),
               width: 1,
             ),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Row(
+              Row(
                 children: [
-                  Icon(Icons.error_outline, size: 20, color: _primary),
-                  SizedBox(width: 8),
+                  Icon(Icons.error_outline, size: 20, color: cPrimary),
+                  const SizedBox(width: 8),
                   Text(
                     '默认组',
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.bold,
-                      color: _primary,
+                      color: cPrimary,
                     ),
                   ),
                 ],
               ),
               const SizedBox(height: 8),
-              const Text(
+              Text(
                 '这个逻辑条件的默认选项组，在所有条件都不符合的情况下，会优先选定这个选项组作为抽选目标。',
                 style: TextStyle(
                   fontSize: 12,
-                  color: _secondary,
+                  color: cSecondary,
                   fontWeight: FontWeight.w400,
                   height: 1.5,
                 ),
@@ -1306,10 +1041,10 @@ class _ConditionPageState extends State<ConditionPage>
                     height: 48,
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     decoration: BoxDecoration(
-                      color: _surface,
+                      color: cSurface,
                       borderRadius: BorderRadius.circular(8),
                       border: Border.all(
-                        color: _outlineVariant.withValues(alpha: 0.16),
+                        color: isDark ? const Color(0xFF3A3A3A) : cOutlineVariant.withValues(alpha: 0.16),
                       ),
                     ),
                     child: Row(
@@ -1317,19 +1052,19 @@ class _ConditionPageState extends State<ConditionPage>
                         Expanded(
                           child: Text(
                             widget.optionGroupNames[_selectedDefaultGroupIndex],
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w500,
-                              color: _primary,
+                              color: cPrimary,
                             ),
                           ),
                         ),
                         AnimatedRotation(
                           turns: _defaultGroupDropdownEntry != null ? 0.5 : 0,
                           duration: const Duration(milliseconds: 180),
-                          child: const Icon(
+                          child: Icon(
                             Icons.expand_more,
-                            color: _primary,
+                            color: cPrimary,
                             size: 20,
                           ),
                         ),
@@ -1366,16 +1101,19 @@ class _ConditionPageState extends State<ConditionPage>
         !isLoadingLocation &&
         (_hasAnySavedLocation &&
             (!_locationServiceEnabled || !_locationPermissionGranted));
+    final isDark = AppColorsHelper.isDark(context);
+    final cPrimary = AppColorsHelper.primaryText(context);
+    final cSecondary = AppColorsHelper.secondaryText(context);
 
     return Container(
       margin: EdgeInsets.only(bottom: isLast ? 0 : 24),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFF4F4F4), width: 1),
+        border: Border.all(color: isDark ? const Color(0xFF2E2E2E) : const Color(0xFFF4F4F4), width: 1),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
+            color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.04),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -1393,7 +1131,7 @@ class _ConditionPageState extends State<ConditionPage>
             child: Stack(
               children: [
                 Positioned.fill(
-                  child: Container(color: const Color(0xFFF0F0F0)),
+                  child: Container(color: isDark ? const Color(0xFF252525) : const Color(0xFFF0F0F0)),
                 ),
                 FlutterMap(
                   mapController: _mapControllers[index],
@@ -1411,11 +1149,12 @@ class _ConditionPageState extends State<ConditionPage>
                         ? InteractiveFlag.none
                         : InteractiveFlag.drag,
                     onMapReady: () {
+                      if (!mounted) return;
                       _mapReady[index] = true;
                       final center = _mapCenters[index];
                       if (center != null &&
-                          center.latitude != 0 &&
-                          center.longitude != 0) {
+                          center.latitude.abs() > 0.0001 &&
+                          center.longitude.abs() > 0.0001) {
                         _mapControllers[index]?.move(
                           center,
                           _animatedZooms[index] ??
@@ -1468,9 +1207,9 @@ class _ConditionPageState extends State<ConditionPage>
                   child: IgnorePointer(
                     ignoring: !isLoadingLocation,
                     child: Container(
-                      color: Colors.white.withValues(alpha: 0.72),
+                      color: (isDark ? Colors.black : Colors.white).withValues(alpha: 0.72),
                       alignment: Alignment.center,
-                      child: const Column(
+                      child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           SizedBox(
@@ -1478,16 +1217,16 @@ class _ConditionPageState extends State<ConditionPage>
                             height: 24,
                             child: CircularProgressIndicator(
                               strokeWidth: 2,
-                              color: _secondary,
+                              color: cSecondary,
                             ),
                           ),
-                          SizedBox(height: 12),
+                          const SizedBox(height: 12),
                           Text(
                             '载入中.',
                             style: TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.w500,
-                              color: _secondary,
+                              color: cSecondary,
                             ),
                           ),
                         ],
@@ -1501,23 +1240,23 @@ class _ConditionPageState extends State<ConditionPage>
                   child: IgnorePointer(
                     ignoring: !isLocationInteractionLocked,
                     child: Container(
-                      color: Colors.white.withValues(alpha: 0.72),
+                      color: (isDark ? Colors.black : Colors.white).withValues(alpha: 0.72),
                       alignment: Alignment.center,
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Icon(
+                          Icon(
                             Icons.location_off_outlined,
-                            color: _primary,
+                            color: cPrimary,
                             size: 24,
                           ),
                           const SizedBox(height: 10),
                           Text(
                             !_locationServiceEnabled ? '定位服务未开启' : '定位权限未开启',
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.w600,
-                              color: _primary,
+                              color: cPrimary,
                             ),
                           ),
                         ],
@@ -1580,18 +1319,18 @@ class _ConditionPageState extends State<ConditionPage>
                       vertical: 4,
                     ),
                     decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.9),
+                      color: (isDark ? Colors.black : Colors.white).withValues(alpha: 0.9),
                       borderRadius: BorderRadius.circular(6),
                       border: Border.all(
-                        color: Colors.black.withValues(alpha: 0.05),
+                        color: cPrimary.withValues(alpha: 0.05),
                       ),
                     ),
                     child: Text(
                       placeLabel.toUpperCase(),
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 10,
                         fontWeight: FontWeight.w700,
-                        color: _primary,
+                        color: cPrimary,
                         letterSpacing: 1.1,
                       ),
                     ),
@@ -1608,10 +1347,10 @@ class _ConditionPageState extends State<ConditionPage>
                       width: 36,
                       height: 36,
                       decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.9),
+                        color: (isDark ? Colors.black : Colors.white).withValues(alpha: 0.9),
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
-                          color: Colors.black.withValues(alpha: 0.1),
+                          color: cPrimary.withValues(alpha: 0.1),
                         ),
                         boxShadow: [
                           BoxShadow(
@@ -1620,9 +1359,9 @@ class _ConditionPageState extends State<ConditionPage>
                           ),
                         ],
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Icons.navigation_outlined,
-                        color: _primary,
+                        color: cPrimary,
                         size: 20,
                       ),
                     ),
@@ -1638,10 +1377,10 @@ class _ConditionPageState extends State<ConditionPage>
               children: [
                 Text(
                   groupName,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
-                    color: _primary,
+                    color: cPrimary,
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -1651,23 +1390,23 @@ class _ConditionPageState extends State<ConditionPage>
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
-                        const Expanded(
+                        Expanded(
                           child: Text(
                             '范围距离(半径)',
                             style: TextStyle(
                               fontSize: 10,
                               fontWeight: FontWeight.w600,
-                              color: _secondary,
+                              color: cSecondary,
                               letterSpacing: 1.4,
                             ),
                           ),
                         ),
                         Text(
                           '${location.radius.toInt()}m',
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.bold,
-                            color: _primary,
+                            color: cPrimary,
                           ),
                         ),
                       ],
@@ -1677,9 +1416,9 @@ class _ConditionPageState extends State<ConditionPage>
                       data: SliderTheme.of(context).copyWith(
                         trackHeight: 4,
                         trackShape: const _FullWidthRoundedTrackShape(),
-                        activeTrackColor: const Color(0xFF5E5E5E),
-                        inactiveTrackColor: const Color(0xFFE2E2E2),
-                        thumbColor: _primary,
+                        activeTrackColor: isDark ? const Color(0xFF8E8E93) : const Color(0xFF5E5E5E),
+                        inactiveTrackColor: isDark ? const Color(0xFF3A3A3A) : const Color(0xFFE2E2E2),
+                        thumbColor: isDark ? const Color(0xFF8E8E93) : cPrimary,
                         thumbShape: const RoundSliderThumbShape(
                           enabledThumbRadius: 9.6,
                         ),
@@ -1690,7 +1429,7 @@ class _ConditionPageState extends State<ConditionPage>
                         tickMarkShape: SliderTickMarkShape.noTickMark,
                         activeTickMarkColor: Colors.transparent,
                         inactiveTickMarkColor: Colors.transparent,
-                        overlayColor: _primary.withValues(alpha: 0.08),
+                        overlayColor: cPrimary.withValues(alpha: 0.08),
                       ),
                       child: Slider(
                         value: location.radius,
@@ -1785,6 +1524,7 @@ class _ConditionPageState extends State<ConditionPage>
     const hourIntervalHeight = 60.0;
     const totalHeight = 24 * hourIntervalHeight;
     const timeAxisWidth = 80.0;
+    final cPrimary = AppColorsHelper.primaryText(context);
 
     return SizedBox(
       key: _timelineKey,
@@ -1803,7 +1543,7 @@ class _ConditionPageState extends State<ConditionPage>
             top: 0,
             height: totalHeight,
             width: 4,
-            child: Container(color: _primary),
+            child: Container(color: AppColorsHelper.isDark(context) ? cPrimary : Colors.black),
           ),
           Positioned(
             left: timeAxisWidth + 2,
@@ -1832,6 +1572,8 @@ class _ConditionPageState extends State<ConditionPage>
 
   Widget _buildTimeAxis(double totalHeight) {
     const hourIntervalHeight = 60.0;
+    final cPrimary = AppColorsHelper.primaryText(context);
+    final cSecondary = AppColorsHelper.secondaryText(context);
     return Column(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -1855,7 +1597,7 @@ class _ConditionPageState extends State<ConditionPage>
                       fontWeight: hour % 6 == 0
                           ? FontWeight.w600
                           : FontWeight.w500,
-                      color: hour % 6 == 0 ? _primary : _secondary,
+                      color: hour % 6 == 0 ? cPrimary : cSecondary,
                       fontFeatures: [FontFeature.tabularFigures()],
                     ),
                   ),
@@ -1896,7 +1638,7 @@ class _ConditionPageState extends State<ConditionPage>
             bottom: BorderSide(
               color: isDark
                   ? Colors.white.withValues(alpha: 0.1)
-                  : _primary.withValues(alpha: 0.1),
+                  : Colors.black.withValues(alpha: 0.1),
             ),
           ),
         ),
@@ -1984,9 +1726,9 @@ class _ConditionPageState extends State<ConditionPage>
                           FadeTransition(opacity: animation, child: child),
                       child: Icon(
                         Icons.drag_indicator,
-                        key: ValueKey<Color>(isDark ? Colors.white : _primary),
+                        key: ValueKey<Color>(isDark ? Colors.white : Colors.black),
                         size: 26,
-                        color: isDark ? Colors.white : _primary,
+                        color: isDark ? Colors.white : Colors.black,
                       ),
                     ),
                   ),
@@ -2006,7 +1748,7 @@ class _ConditionPageState extends State<ConditionPage>
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w800,
-                      color: isDark ? Colors.white : _primary,
+                      color: isDark ? Colors.white : Colors.black,
                       letterSpacing: 0.2,
                       height: 1.2,
                     ),
@@ -2027,7 +1769,7 @@ class _ConditionPageState extends State<ConditionPage>
                       fontWeight: FontWeight.w500,
                       color: isDark
                           ? Colors.white.withValues(alpha: 0.6)
-                          : _secondary,
+                          : Colors.black.withValues(alpha: 0.5),
                       letterSpacing: 1.5,
                       height: 1.1,
                     ),
@@ -2113,10 +1855,10 @@ class _ConditionPageState extends State<ConditionPage>
               width: 72,
               decoration: BoxDecoration(
                 color: _draggingBoundaryIndex == boundaryIndex
-                    ? (isDark ? Colors.white : _primary)
+                    ? (isDark ? Colors.white : Colors.black)
                     : (isDark
                           ? Colors.white.withValues(alpha: 0.8)
-                          : _primary.withValues(alpha: 0.4)),
+                          : Colors.black.withValues(alpha: 0.4)),
                 borderRadius: BorderRadius.circular(999),
               ),
             ),
@@ -2127,11 +1869,12 @@ class _ConditionPageState extends State<ConditionPage>
   }
 
   Widget _buildFooterButton() {
+    final isDark = AppColorsHelper.isDark(context);
     return Container(
       width: double.infinity,
       height: 64,
       decoration: BoxDecoration(
-        color: _primary,
+        color: isDark ? AppColorsHelper.executeButtonEdge(context) : Colors.black,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(

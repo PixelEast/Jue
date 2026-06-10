@@ -558,29 +558,28 @@ class _HistoryPageState extends State<HistoryPage> {
                   ),
                 ),
                 const SizedBox(height: 6),
-                RichText(
-                  text: TextSpan(
-                    children: [
-                      TextSpan(
-                        text: '判决：${record.decisionTheme}',
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w700,
-                          color: isDark ? Colors.white : const Color(0xFF000000),
-                          height: 1.2,
-                        ),
+                Wrap(
+                  crossAxisAlignment: WrapCrossAlignment.end,
+                  children: [
+                    Text(
+                      '判决：${record.decisionTheme}',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w700,
+                        color: isDark ? Colors.white : const Color(0xFF000000),
+                        height: 1.2,
                       ),
-                      TextSpan(
-                        text: '（${record.optionGroupName}）',
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w700,
-                          color: isDark ? Colors.white : const Color(0xFF000000),
-                          height: 1.2,
-                        ),
+                    ),
+                    Text(
+                      '（${record.optionGroupName}）',
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                        color: isDark ? Colors.white : const Color(0xFF000000),
+                        height: 1.2,
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 12),
                 Container(
@@ -624,7 +623,7 @@ class _HistoryPageState extends State<HistoryPage> {
                           fontSize: 24,
                           fontWeight: FontWeight.w700,
                           color: isLatest
-                              ? const Color(0xFF004EE8)
+                              ? (isDark ? const Color(0xFF60A5FA) : const Color(0xFF004EE8))
                               : (isDark ? Colors.white : const Color(0xFF1B1B1B)),
                         ),
                       ),

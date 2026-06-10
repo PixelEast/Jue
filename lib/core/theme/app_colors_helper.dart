@@ -40,14 +40,12 @@ class AppColorsHelper {
 
   static Color iconBackground(BuildContext context) {
     return Theme.of(context).brightness == Brightness.dark
-        ? brandColor.withValues(alpha: 0.12)
+        ? brandColor.withValues(alpha: 0.35)
         : Colors.black;
   }
 
   static Color iconForeground(BuildContext context) {
-    return Theme.of(context).brightness == Brightness.dark
-        ? brandColor
-        : Colors.white;
+    return Colors.white;
   }
 
   static Color dividerColor(BuildContext context) {
@@ -89,7 +87,7 @@ class AppColorsHelper {
   }
 
   static Color executeButtonEdge(BuildContext context) {
-    return isDark(context) ? const Color(0xFF1E3A8A) : const Color(0xFF2D5BFF);
+    return isDark(context) ? const Color(0xFF1B4D8F) : const Color(0xFF2D5BFF);
   }
 
   static Color executeButtonBorder(BuildContext context) {
@@ -101,7 +99,7 @@ class AppColorsHelper {
   }
 
   static Color executeExpandEdge(BuildContext context) {
-    return isDark(context) ? const Color(0xFF1A2D6B) : const Color(0xFF2D5BFF);
+    return isDark(context) ? const Color(0xFF1B4D8F) : const Color(0xFF2D5BFF);
   }
 
   static Color executeResultBg(BuildContext context) {

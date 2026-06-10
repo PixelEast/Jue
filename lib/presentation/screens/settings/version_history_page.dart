@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../../core/theme/app_colors_helper.dart';
 import '../../widgets/frosted_back_button.dart';
 
 class VersionHistoryPage extends StatefulWidget {
@@ -113,7 +114,7 @@ class _VersionHistoryPageState extends State<VersionHistoryPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       extendBody: true,
-      backgroundColor: const Color(0xFFF9F9F9),
+      backgroundColor: AppColorsHelper.scaffoldBackground(context),
       body: Stack(
         children: [
           _isLoading
@@ -139,12 +140,12 @@ class _VersionHistoryPageState extends State<VersionHistoryPage> {
                 child: Container(
                   height: 50,
                   alignment: Alignment.center,
-                  child: const Text(
+                  child: Text(
                     '版本记录',
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.w600,
-                      color: Color(0xFF000000),
+                      color: AppColorsHelper.primaryText(context),
                     ),
                   ),
                 ),
@@ -157,6 +158,7 @@ class _VersionHistoryPageState extends State<VersionHistoryPage> {
   }
 
   Widget _buildErrorState() {
+    final isDark = AppColorsHelper.isDark(context);
     return Center(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 48),
@@ -168,7 +170,7 @@ class _VersionHistoryPageState extends State<VersionHistoryPage> {
                   ? Icons.wifi_off_rounded
                   : Icons.error_outline_rounded,
               size: 72,
-              color: Colors.grey[300],
+              color: isDark ? Colors.grey[700] : Colors.grey[300],
             ),
             const SizedBox(height: 20),
             Text(
@@ -176,7 +178,7 @@ class _VersionHistoryPageState extends State<VersionHistoryPage> {
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
-                color: Colors.grey[600],
+                color: isDark ? Colors.grey[400] : Colors.grey[600],
               ),
             ),
             const SizedBox(height: 8),
@@ -187,7 +189,7 @@ class _VersionHistoryPageState extends State<VersionHistoryPage> {
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 14,
-                color: Colors.grey[400],
+                color: isDark ? Colors.grey[500] : Colors.grey[400],
               ),
             ),
             const SizedBox(height: 24),
@@ -199,7 +201,7 @@ class _VersionHistoryPageState extends State<VersionHistoryPage> {
                 borderRadius: BorderRadius.circular(12),
                 child: Ink(
                   decoration: BoxDecoration(
-                    color: Colors.black,
+                    color: isDark ? const Color(0xFF2D5BFF) : Colors.black,
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: InkWell(
@@ -238,6 +240,7 @@ class _VersionHistoryPageState extends State<VersionHistoryPage> {
   Widget _buildReleaseItem(int index) {
     final release = _releases[index];
     final isExpanded = _expandedIndex == index;
+    final isDark = AppColorsHelper.isDark(context);
 
     return GestureDetector(
       onTap: () {
@@ -251,9 +254,9 @@ class _VersionHistoryPageState extends State<VersionHistoryPage> {
         margin: const EdgeInsets.only(bottom: 8),
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
         decoration: BoxDecoration(
-          color: const Color(0xFFF3F3F3),
+          color: AppColorsHelper.cardBackground(context),
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: const Color(0xFFE7E7E7)),
+          border: Border.all(color: AppColorsHelper.cardBorder(context)),
         ),
         child: AnimatedSize(
           duration: const Duration(milliseconds: 250),
@@ -271,7 +274,7 @@ class _VersionHistoryPageState extends State<VersionHistoryPage> {
                       vertical: 4,
                     ),
                     decoration: BoxDecoration(
-                      color: Colors.black,
+                      color: isDark ? const Color(0xFF2D5BFF) : Colors.black,
                       borderRadius: BorderRadius.circular(14),
                     ),
                     child: Text(
@@ -287,19 +290,19 @@ class _VersionHistoryPageState extends State<VersionHistoryPage> {
                   if (release.publishedAt.isNotEmpty)
                     Text(
                       _formatDate(release.publishedAt),
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 12,
-                        color: Color(0xFF8E8E93),
+                        color: AppColorsHelper.tertiaryText(context),
                       ),
                     ),
                   const Spacer(),
                   AnimatedRotation(
                     turns: isExpanded ? 0.5 : 0,
                     duration: const Duration(milliseconds: 250),
-                    child: const Icon(
+                    child: Icon(
                       Icons.keyboard_arrow_down,
                       size: 20,
-                      color: Color(0xFF8E8E93),
+                      color: AppColorsHelper.tertiaryText(context),
                     ),
                   ),
                 ],
@@ -310,16 +313,16 @@ class _VersionHistoryPageState extends State<VersionHistoryPage> {
                   width: double.infinity,
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: isDark ? const Color(0xFF252525) : Colors.white,
                     borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: const Color(0xFFE7E7E7)),
+                    border: Border.all(color: AppColorsHelper.cardBorder(context)),
                   ),
                   child: Text(
                     release.body,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w400,
-                      color: Color(0xFF5E5E5E),
+                      color: AppColorsHelper.secondaryText(context),
                       height: 1.6,
                     ),
                   ),
