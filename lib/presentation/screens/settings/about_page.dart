@@ -1,6 +1,9 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:dio/dio.dart';
+import 'package:open_file/open_file.dart';
+import 'package:path_provider/path_provider.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_colors_helper.dart';
 import '../../../core/utils/version_service.dart';
@@ -19,6 +22,9 @@ class _AboutPageState extends State<AboutPage> {
   VersionInfo? _updateInfo;
   bool _isChecking = false;
   bool _hasChecked = false;
+  bool _isDownloading = false;
+  double _downloadProgress = 0;
+  String? _downloadedFilePath;
 
   @override
   void initState() {
@@ -36,7 +42,7 @@ class _AboutPageState extends State<AboutPage> {
       setState(() {
         _isChecking = false;
         _hasChecked = true;
-        if (info != null && VersionService().hasUpdate(info)) {
+        if (info != null && VersionService().hasUpdate) {
           _updateInfo = info;
         } else {
           _updateInfo = null;
@@ -46,18 +52,70 @@ class _AboutPageState extends State<AboutPage> {
   }
 
   Future<void> _downloadUpdate() async {
-    if (_updateInfo?.downloadUrl.isNotEmpty == true) {
-      final uri = Uri.parse(_updateInfo!.downloadUrl);
-      try {
-        if (await canLaunchUrl(uri)) {
-          await launchUrl(uri, mode: LaunchMode.externalApplication);
-        }
-      } catch (e) {
+    if (_updateInfo?.downloadUrl.isEmpty != false) return;
+    if (_isDownloading) return;
+
+    setState(() {
+      _isDownloading = true;
+      _downloadProgress = 0;
+    });
+
+    try {
+      final dir = await getExternalStorageDirectory();
+      if (dir == null) {
         if (mounted) {
+          setState(() => _isDownloading = false);
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('无法打开下载链接')),
+            const SnackBar(content: Text('无法获取存储目录')),
           );
         }
+        return;
+      }
+
+      final savePath = '${dir.path}/jue-update.apk';
+      final dio = Dio();
+
+      await dio.download(
+        _updateInfo!.downloadUrl,
+        savePath,
+        onReceiveProgress: (received, total) {
+          if (total > 0 && mounted) {
+            setState(() {
+              _downloadProgress = received / total;
+            });
+          }
+        },
+      );
+
+      if (mounted) {
+        setState(() {
+          _isDownloading = false;
+          _downloadedFilePath = savePath;
+        });
+        _installApk();
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isDownloading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('下载失败: $e')),
+        );
+      }
+    }
+  }
+
+  Future<void> _installApk() async {
+    if (_downloadedFilePath == null) return;
+    try {
+      final file = File(_downloadedFilePath!);
+      if (await file.exists()) {
+        await OpenFile.open(_downloadedFilePath!);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('无法打开安装包: $e')),
+        );
       }
     }
   }
@@ -269,34 +327,56 @@ class _AboutPageState extends State<AboutPage> {
                 ),
               ],
               const SizedBox(height: 16),
-              SizedBox(
-                width: double.infinity,
-                height: 44,
-                child: Material(
-                  color: Colors.transparent,
-                  borderRadius: BorderRadius.circular(12),
-                  child: Ink(
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: InkWell(
-                      onTap: _downloadUpdate,
-                      borderRadius: BorderRadius.circular(12),
-                      child: const Center(
-                        child: Text(
-                          '立即更新',
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            color: Color(0xFF2D5BFF),
+              if (_isDownloading) ...[
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: LinearProgressIndicator(
+                    value: _downloadProgress > 0 ? _downloadProgress : null,
+                    backgroundColor: Colors.white.withValues(alpha: 0.2),
+                    valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
+                    minHeight: 8,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  _downloadProgress > 0
+                      ? '下载中 ${(_downloadProgress * 100).toInt()}%'
+                      : '准备下载...',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.white.withValues(alpha: 0.8),
+                  ),
+                ),
+              ] else ...[
+                SizedBox(
+                  width: double.infinity,
+                  height: 44,
+                  child: Material(
+                    color: Colors.transparent,
+                    borderRadius: BorderRadius.circular(12),
+                    child: Ink(
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: InkWell(
+                        onTap: _downloadUpdate,
+                        borderRadius: BorderRadius.circular(12),
+                        child: const Center(
+                          child: Text(
+                            '立即更新',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFF2D5BFF),
+                            ),
                           ),
                         ),
                       ),
                     ),
                   ),
                 ),
-              ),
+              ],
             ],
           ),
         ),

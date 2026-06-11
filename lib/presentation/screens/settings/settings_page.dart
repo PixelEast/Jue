@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../core/theme/app_colors_helper.dart';
+import '../../../core/utils/version_service.dart';
 import '../../widgets/app_slogan_footer.dart';
 import 'notification_settings_page.dart';
 import 'display_settings_page.dart';
@@ -188,24 +189,53 @@ class _SettingsPageState extends State<SettingsPage> {
                             ),
                           ),
                           const SizedBox(width: 12),
-                          const Expanded(
+                          Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(
-                                  '关于决 App',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w600,
-                                    color: Colors.white,
-                                  ),
+                                Row(
+                                  children: [
+                                    const Text(
+                                      '关于决 App',
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w600,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                    if (VersionService().hasUpdate) ...[
+                                      const SizedBox(width: 8),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 6,
+                                          vertical: 2,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xFFFF6B6B),
+                                          borderRadius: BorderRadius.circular(6),
+                                        ),
+                                        child: Text(
+                                          '新版本',
+                                          style: TextStyle(
+                                            fontSize: 10,
+                                            fontWeight: FontWeight.w600,
+                                            color: Colors.white,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ],
                                 ),
-                                SizedBox(height: 2),
+                                const SizedBox(height: 2),
                                 Text(
-                                  '版本信息，反馈，开发者信息',
+                                  VersionService().hasUpdate
+                                      ? '发现新版本 ${VersionService().latestVersion}'
+                                      : '版本信息，反馈，开发者信息',
                                   style: TextStyle(
                                     fontSize: 12,
-                                    color: Color(0xFF8E8E93),
+                                    color: VersionService().hasUpdate
+                                        ? const Color(0xFFFF6B6B)
+                                        : const Color(0xFF8E8E93),
                                   ),
                                 ),
                               ],

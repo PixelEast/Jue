@@ -5,6 +5,7 @@ import 'package:timezone/timezone.dart' as tz;
 import 'dart:ui';
 import 'core/theme/app_theme.dart';
 import 'core/theme/theme_notifier.dart';
+import 'core/utils/version_service.dart';
 import 'core/utils/notification_service.dart';
 import 'core/utils/notification_scheduler.dart';
 import 'presentation/screens/home/home_page.dart';
@@ -23,6 +24,7 @@ void main() async {
 
   await NotificationService().init();
   NotificationScheduler().start();
+  VersionService().checkOnStartup();
 
   runApp(const JueApp());
 }
