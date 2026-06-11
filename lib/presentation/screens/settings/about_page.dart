@@ -1,13 +1,66 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_colors_helper.dart';
+import '../../../core/utils/version_service.dart';
 import '../../widgets/frosted_back_button.dart';
 import 'version_history_page.dart';
 import 'feedback_page.dart';
 
-class AboutPage extends StatelessWidget {
+class AboutPage extends StatefulWidget {
   const AboutPage({super.key});
+
+  @override
+  State<AboutPage> createState() => _AboutPageState();
+}
+
+class _AboutPageState extends State<AboutPage> {
+  VersionInfo? _updateInfo;
+  bool _isChecking = false;
+  bool _hasChecked = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkForUpdate();
+  }
+
+  Future<void> _checkForUpdate({bool forceRefresh = false}) async {
+    if (_isChecking) return;
+    setState(() => _isChecking = true);
+
+    final info = await VersionService().checkForUpdate(forceRefresh: forceRefresh);
+
+    if (mounted) {
+      setState(() {
+        _isChecking = false;
+        _hasChecked = true;
+        if (info != null && VersionService().hasUpdate(info)) {
+          _updateInfo = info;
+        } else {
+          _updateInfo = null;
+        }
+      });
+    }
+  }
+
+  Future<void> _downloadUpdate() async {
+    if (_updateInfo?.downloadUrl.isNotEmpty == true) {
+      final uri = Uri.parse(_updateInfo!.downloadUrl);
+      try {
+        if (await canLaunchUrl(uri)) {
+          await launchUrl(uri, mode: LaunchMode.externalApplication);
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('无法打开下载链接')),
+          );
+        }
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -91,6 +144,10 @@ class AboutPage extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 32),
+                  if (_updateInfo != null) ...[
+                    _buildUpdateCard(isDark),
+                    const SizedBox(height: 12),
+                  ],
                   _buildAboutCard(
                     context,
                     icon: Icons.history_outlined,
@@ -125,8 +182,12 @@ class AboutPage extends StatelessWidget {
                     context,
                     icon: Icons.system_update_outlined,
                     title: '版本更新',
-                    subtitle: '当前已是最新版本',
-                    onTap: () {},
+                    subtitle: _isChecking
+                        ? '正在检查更新...'
+                        : (_hasChecked
+                            ? (_updateInfo != null ? '发现新版本 ${_updateInfo!.version}' : '当前已是最新版本')
+                            : '点击检查更新'),
+                    onTap: () => _checkForUpdate(forceRefresh: true),
                   ),
                 ],
               ),
@@ -142,6 +203,103 @@ class AboutPage extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildUpdateCard(bool isDark) {
+    return Material(
+      color: Colors.transparent,
+      borderRadius: BorderRadius.circular(24),
+      child: Ink(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: isDark
+                ? [const Color(0xFF1B4D8F), const Color(0xFF0F2D5A)]
+                : [const Color(0xFF2D5BFF), const Color(0xFF1A3D9E)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(24),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Text(
+                      '新版本',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    _updateInfo!.version,
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white,
+                    ),
+                  ),
+                ],
+              ),
+              if (_updateInfo!.releaseNotes.isNotEmpty) ...[
+                const SizedBox(height: 12),
+                Text(
+                  _updateInfo!.releaseNotes,
+                  maxLines: 3,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: Colors.white.withValues(alpha: 0.8),
+                    height: 1.5,
+                  ),
+                ),
+              ],
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                height: 44,
+                child: Material(
+                  color: Colors.transparent,
+                  borderRadius: BorderRadius.circular(12),
+                  child: Ink(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: InkWell(
+                      onTap: _downloadUpdate,
+                      borderRadius: BorderRadius.circular(12),
+                      child: const Center(
+                        child: Text(
+                          '立即更新',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF2D5BFF),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
