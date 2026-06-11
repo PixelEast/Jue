@@ -4,6 +4,7 @@ import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_colors_helper.dart';
 import '../../widgets/frosted_back_button.dart';
 import 'version_history_page.dart';
+import 'feedback_page.dart';
 
 class AboutPage extends StatelessWidget {
   const AboutPage({super.key});
@@ -110,7 +111,14 @@ class AboutPage extends StatelessWidget {
                     icon: Icons.feedback_outlined,
                     title: '反馈与建议',
                     subtitle: '帮助我们变得更好',
-                    onTap: () {},
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const FeedbackPage(),
+                        ),
+                      );
+                    },
                   ),
                   const SizedBox(height: 12),
                   _buildAboutCard(
