@@ -79,9 +79,7 @@ class WeightCalculator {
     }
   }
 
-  void recoverWeights(OptionGroup group) {
-    // Recovery now advances on each subsequent execution in applyDynamicWeight.
-  }
+  void recoverWeights(OptionGroup group) {}
 
   void _advanceRecovery(Option option) {
     final recoveryTarget = (option.baseWeight + option.feedbackBias).clamp(0.1, 3.0);

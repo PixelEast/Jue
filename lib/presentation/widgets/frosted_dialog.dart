@@ -1,6 +1,6 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
-import '../../../core/theme/app_colors_helper.dart';
+import '../../core/theme/app_colors_helper.dart';
 
 class FrostedDialog extends StatelessWidget {
   final String title;

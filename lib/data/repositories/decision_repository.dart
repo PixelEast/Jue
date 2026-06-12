@@ -42,9 +42,4 @@ class DecisionRepository {
       await AppStorage.deleteDecision(id);
     }
   }
-
-  Future<int> getDecisionCount() async {
-    final decisions = await getAllDecisions();
-    return decisions.length;
-  }
 }

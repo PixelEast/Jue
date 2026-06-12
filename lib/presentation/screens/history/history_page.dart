@@ -142,8 +142,8 @@ class _HistoryPageState extends State<HistoryPage> {
   }
 
   Future<void> _updateFeedback(String id, String feedback) async {
-    final record = _records.firstWhere((r) => r.id == id);
-    if (record.feedback != 'none') return;
+    final record = _records.where((r) => r.id == id).firstOrNull;
+    if (record == null || record.feedback != 'none') return;
 
     final decision = await _decisionRepo.getDecisionById(record.decisionId);
     if (decision == null) return;

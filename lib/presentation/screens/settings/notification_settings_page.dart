@@ -55,6 +55,7 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
   }
 
   void _showPermissionDialog() {
+    final isDark = AppColorsHelper.isDark(context);
     showDialog(
       context: context,
       barrierDismissible: true,
@@ -88,15 +89,19 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
                       vertical: 55,
                     ),
                     decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.85),
+                      color: isDark
+                          ? const Color(0xFF1E1E1E).withValues(alpha: 0.85)
+                          : Colors.white.withValues(alpha: 0.85),
                       borderRadius: BorderRadius.circular(24),
                       border: Border.all(
-                        color: const Color(0xFFE5E5E5),
+                        color: isDark
+                            ? const Color(0xFF2E2E2E)
+                            : const Color(0xFFE5E5E5),
                         width: 1,
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.08),
+                          color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.08),
                           blurRadius: 16,
                           offset: const Offset(0, 4),
                         ),
@@ -106,21 +111,21 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
                       mainAxisSize: MainAxisSize.min,
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
+                        Text(
                           '需要通知权限',
                           textAlign: TextAlign.left,
                           style: TextStyle(
-                            color: Color(0xFF000000),
+                            color: AppColorsHelper.primaryText(context),
                             fontSize: 28,
                             fontWeight: FontWeight.w700,
                           ),
                         ),
                         const SizedBox(height: 30),
-                        const Text(
+                        Text(
                           '请在系统设置中开启通知权限，以便接收决定提醒。',
                           textAlign: TextAlign.left,
                           style: TextStyle(
-                            color: Color(0xFF5E5E5E),
+                            color: AppColorsHelper.secondaryText(context),
                             fontSize: 16,
                             fontWeight: FontWeight.w400,
                             height: 1.5,
@@ -135,7 +140,9 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
                             borderRadius: BorderRadius.circular(12),
                             child: Ink(
                               decoration: BoxDecoration(
-                                color: Colors.black,
+                                color: isDark
+                                    ? AppColorsHelper.executeButtonEdge(context)
+                                    : Colors.black,
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: InkWell(
@@ -144,12 +151,6 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
                                   _notificationService.openSystemSettings();
                                 },
                                 borderRadius: BorderRadius.circular(12),
-                                splashColor: Colors.white.withValues(
-                                  alpha: 0.08,
-                                ),
-                                highlightColor: Colors.white.withValues(
-                                  alpha: 0.04,
-                                ),
                                 child: const Center(
                                   child: Text(
                                     '去设置',
@@ -173,27 +174,25 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
                             borderRadius: BorderRadius.circular(12),
                             child: Ink(
                               decoration: BoxDecoration(
-                                color: const Color(0xFFF3F3F3),
+                                color: isDark
+                                    ? const Color(0xFF2A2A2A)
+                                    : const Color(0xFFF3F3F3),
                                 borderRadius: BorderRadius.circular(12),
                                 border: Border.all(
-                                  color: const Color(0xFFEAEAEA),
+                                  color: isDark
+                                      ? const Color(0xFF3A3A3A)
+                                      : const Color(0xFFEAEAEA),
                                   width: 1,
                                 ),
                               ),
                               child: InkWell(
                                 onTap: () => Navigator.pop(context),
                                 borderRadius: BorderRadius.circular(12),
-                                splashColor: Colors.black.withValues(
-                                  alpha: 0.04,
-                                ),
-                                highlightColor: Colors.black.withValues(
-                                  alpha: 0.02,
-                                ),
-                                child: const Center(
+                                child: Center(
                                   child: Text(
                                     '取消',
                                     style: TextStyle(
-                                      color: Color(0xFF000000),
+                                      color: AppColorsHelper.primaryText(context),
                                       fontSize: 14,
                                       fontWeight: FontWeight.w600,
                                     ),
