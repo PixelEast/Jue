@@ -1,5 +1,6 @@
 import 'dart:math';
 import '../../data/models/app_models.dart';
+import 'geo_utils.dart';
 
 class WeightCalculator {
   static final Random _random = Random();
@@ -232,7 +233,7 @@ class LogicConditionEngine {
           group.radiusMeters == null) {
         continue;
       }
-      final distance = _distanceMeters(
+      final distance = GeoUtils.distanceMeters(
         currentLatitude,
         currentLongitude,
         group.latitude!,
@@ -258,20 +259,4 @@ class LogicConditionEngine {
 
     return closestGroups[Random().nextInt(closestGroups.length)];
   }
-
-  double _distanceMeters(double lat1, double lon1, double lat2, double lon2) {
-    const earthRadius = 6371000.0;
-    final dLat = _degreesToRadians(lat2 - lat1);
-    final dLon = _degreesToRadians(lon2 - lon1);
-    final a =
-        sin(dLat / 2) * sin(dLat / 2) +
-        cos(_degreesToRadians(lat1)) *
-            cos(_degreesToRadians(lat2)) *
-            sin(dLon / 2) *
-            sin(dLon / 2);
-    final c = 2 * atan2(sqrt(a), sqrt(1 - a));
-    return earthRadius * c;
-  }
-
-  double _degreesToRadians(double degrees) => degrees * pi / 180;
 }

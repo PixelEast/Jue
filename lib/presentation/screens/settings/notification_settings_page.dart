@@ -219,14 +219,14 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
   Widget build(BuildContext context) {
     if (_isLoading) {
       return Scaffold(
-        backgroundColor: AppColorsHelper.scaffoldBackground(context),
-        body: const Center(child: CircularProgressIndicator()),
-      );
-    }
+      backgroundColor: AppColorsHelper.subPageBackground(context),
+      body: const Center(child: CircularProgressIndicator()),
+    );
+  }
 
     return Scaffold(
       extendBody: true,
-      backgroundColor: AppColorsHelper.scaffoldBackground(context),
+      backgroundColor: AppColorsHelper.subPageBackground(context),
       body: Stack(
         children: [
           SingleChildScrollView(

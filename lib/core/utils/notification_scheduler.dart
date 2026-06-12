@@ -1,8 +1,8 @@
 import 'dart:async';
-import 'dart:math';
 import 'package:geolocator/geolocator.dart';
 import '../../data/models/app_models.dart';
 import '../../data/repositories/decision_repository.dart';
+import 'geo_utils.dart';
 import '../../data/local/app_storage.dart';
 import 'notification_service.dart';
 import 'usage_analyzer.dart';
@@ -175,7 +175,7 @@ class NotificationScheduler {
       );
 
       for (final location in pattern.frequentLocations) {
-        final distance = _calculateDistance(
+        final distance = GeoUtils.distanceMeters(
           position.latitude,
           position.longitude,
           location.latitude,
@@ -189,26 +189,6 @@ class NotificationScheduler {
       return false;
     }
   }
-
-  double _calculateDistance(
-    double lat1,
-    double lon1,
-    double lat2,
-    double lon2,
-  ) {
-    const earthRadius = 6371000.0;
-    final dLat = _toRadians(lat2 - lat1);
-    final dLon = _toRadians(lon2 - lon1);
-    final a = sin(dLat / 2) * sin(dLat / 2) +
-        cos(_toRadians(lat1)) *
-            cos(_toRadians(lat2)) *
-            sin(dLon / 2) *
-            sin(dLon / 2);
-    final c = 2 * atan2(sqrt(a), sqrt(1 - a));
-    return earthRadius * c;
-  }
-
-  double _toRadians(double degree) => degree * pi / 180;
 }
 
 class _Candidate {

@@ -23,6 +23,16 @@ class JueWidgetProvider : AppWidgetProvider() {
         }
     }
 
+    override fun onDeleted(context: Context, appWidgetIds: IntArray) {
+        val prefs = context.getSharedPreferences("HomeWidgetPreferences", Context.MODE_PRIVATE)
+        val editor = prefs.edit()
+        for (id in appWidgetIds) {
+            editor.remove("widget_${id}_decision_id")
+            editor.remove("widget_${id}_decision_theme")
+        }
+        editor.apply()
+    }
+
     override fun onReceive(context: Context, intent: Intent) {
         super.onReceive(context, intent)
         if (intent.action == ACTION_UPDATE) {
@@ -44,8 +54,11 @@ class JueWidgetProvider : AppWidgetProvider() {
             appWidgetId: Int,
         ) {
             val prefs = context.getSharedPreferences("HomeWidgetPreferences", Context.MODE_PRIVATE)
-            val decisionId = prefs.getString("widget_decision_id", null)
-            val decisionTheme = prefs.getString("widget_decision_theme", null)
+            // Per-instance binding
+            val decisionId = prefs.getString("widget_${appWidgetId}_decision_id", null)
+                ?: prefs.getString("widget_decision_id", null)
+            val decisionTheme = prefs.getString("widget_${appWidgetId}_decision_theme", null)
+                ?: prefs.getString("widget_decision_theme", null)
 
             val isBound = decisionId != null && decisionTheme != null
             val title = if (isBound) decisionTheme else "未绑定决定"
@@ -82,12 +95,10 @@ class JueWidgetClickReceiver : BroadcastReceiver() {
         val decisionId = intent.getStringExtra("decision_id") ?: return
 
         if (decisionId.isNotEmpty()) {
-            // Write to FlutterSharedPreferences
             val flutterPrefs = context.getSharedPreferences("FlutterSharedPreferences", Context.MODE_PRIVATE)
             flutterPrefs.edit().putString("flutter.widget_pending_execution", decisionId).apply()
         }
 
-        // Launch app with explicit extra so MainActivity can read it
         val launchIntent = Intent(context, MainActivity::class.java).apply {
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
             putExtra("widget_pending_execution", decisionId)

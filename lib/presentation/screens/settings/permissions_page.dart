@@ -230,14 +230,14 @@ class _PermissionsPageState extends State<PermissionsPage> {
 
     if (_isLoading) {
       return Scaffold(
-        backgroundColor: AppColorsHelper.scaffoldBackground(context),
-        body: const Center(child: CircularProgressIndicator()),
-      );
-    }
+      backgroundColor: AppColorsHelper.subPageBackground(context),
+      body: const Center(child: CircularProgressIndicator()),
+    );
+  }
 
     return Scaffold(
       extendBody: true,
-      backgroundColor: AppColorsHelper.scaffoldBackground(context),
+      backgroundColor: AppColorsHelper.subPageBackground(context),
       bottomNavigationBar: Padding(
         padding: const EdgeInsets.only(bottom: 68),
         child: GestureDetector(

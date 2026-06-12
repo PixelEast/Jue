@@ -3,6 +3,7 @@ import 'dart:math';
 import 'dart:ui';
 import '../../../core/theme/app_colors_helper.dart';
 import '../../../data/models/app_models.dart';
+import '../../../data/models/option_models.dart';
 import '../../../data/repositories/decision_repository.dart';
 import '../../../core/utils/app_events.dart';
 import '../../widgets/frosted_back_button.dart';
@@ -1221,7 +1222,7 @@ class _CreateDecisionPageState extends State<CreateDecisionPage> {
         }
       },
       child: Scaffold(
-        backgroundColor: AppColorsHelper.scaffoldBackground(context),
+        backgroundColor: AppColorsHelper.subPageBackground(context),
         body: Stack(
         children: [
           SingleChildScrollView(
@@ -2583,42 +2584,3 @@ class _FullWidthSliderTrackShape extends RoundedRectSliderTrackShape {
     );
   }
 }
-
-class OptionGroupData {
-  String name;
-  List<OptionData> options;
-  bool dynamicWeightEnabled;
-  WeightMode weightMode;
-  String conditionSummary;
-  int? startHour;
-  int? endHour;
-  double? latitude;
-  double? longitude;
-  double? radiusMeters;
-  bool isDefaultGroup;
-  String locationLabel;
-  OptionGroupData({
-    required this.name,
-    required this.options,
-    this.dynamicWeightEnabled = true,
-    this.weightMode = WeightMode.lowerWeight,
-    this.conditionSummary = '',
-    this.startHour,
-    this.endHour,
-    this.latitude,
-    this.longitude,
-    this.radiusMeters,
-    this.isDefaultGroup = false,
-    this.locationLabel = '',
-  });
-}
-
-class OptionData {
-  String name;
-  double weight;
-  double currentWeight;
-  OptionData({required this.name, this.weight = 1.0, double? currentWeight})
-    : currentWeight = currentWeight ?? weight;
-}
-
-enum WeightMode { lowerWeight, nextRemove }

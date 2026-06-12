@@ -12,7 +12,6 @@
         android:orientation="vertical"
         android:gravity="top">
 
-        <!-- Icon + Text + Logo row -->
         <FrameLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content">
@@ -45,23 +44,24 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
+                        android:fontFamily="@font/noto_sans_sc"
                         android:text="小组件 - 决定"
                         android:textSize="15sp"
                         android:textStyle="bold"
-                        android:textColor="#000000" />
+                        android:textColor="@color/widget_title" />
 
                     <TextView
                         android:id="@+id/widget_subtitle"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="2dp"
+                        android:fontFamily="@font/noto_sans_sc"
                         android:text="\u201c\u7531\u903b\u8f91 \u7ec8\u7ed3\u7ea0\u7ed3.\u201d"
                         android:textSize="10sp"
-                        android:textColor="#777777" />
+                        android:textColor="@color/widget_subtitle_2" />
                 </LinearLayout>
             </LinearLayout>
 
-            <!-- App Logo top right, same top as icon -->
             <ImageView
                 android:layout_width="14dp"
                 android:layout_height="14dp"
@@ -70,14 +70,14 @@
                 android:src="@drawable/widget_ic_app_logo" />
         </FrameLayout>
 
-        <!-- Decision title -->
         <TextView
             android:id="@+id/widget_title"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
+            android:fontFamily="@font/noto_sans_sc"
             android:textSize="28sp"
-            android:textColor="#000000"
+            android:textColor="@color/widget_title"
             android:textStyle="bold"
             android:maxLines="1"
             android:autoSizeTextType="uniform"
@@ -89,7 +89,6 @@
             android:layout_height="0dp"
             android:layout_weight="1" />
 
-        <!-- Button -->
         <LinearLayout
             android:id="@+id/widget_button"
             android:layout_width="match_parent"
@@ -101,9 +100,10 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:fontFamily="@font/noto_sans_sc"
                 android:text="即刻判决"
                 android:textSize="15sp"
-                android:textColor="#FFFFFF"
+                android:textColor="@color/widget_button_text"
                 android:textStyle="bold" />
 
             <ImageView

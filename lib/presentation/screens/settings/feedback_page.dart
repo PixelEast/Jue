@@ -169,7 +169,7 @@ class _FeedbackPageState extends State<FeedbackPage> {
 
     return Scaffold(
       extendBody: true,
-      backgroundColor: AppColorsHelper.scaffoldBackground(context),
+      backgroundColor: AppColorsHelper.subPageBackground(context),
       body: Stack(
         children: [
           SingleChildScrollView(

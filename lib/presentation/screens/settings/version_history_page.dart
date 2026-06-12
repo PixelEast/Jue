@@ -114,7 +114,7 @@ class _VersionHistoryPageState extends State<VersionHistoryPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       extendBody: true,
-      backgroundColor: AppColorsHelper.scaffoldBackground(context),
+      backgroundColor: AppColorsHelper.subPageBackground(context),
       body: Stack(
         children: [
           _isLoading

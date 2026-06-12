@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import 'package:latlong2/latlong.dart';
 import 'dart:convert';
 import 'dart:ui';
+import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_colors_helper.dart';
 import '../../widgets/frosted_back_button.dart';
 
@@ -362,7 +363,7 @@ class _ConditionPageState extends State<ConditionPage>
     // Try Amap API (domestic, reliable in China)
     try {
       final uri = Uri.parse(
-        'https://restapi.amap.com/v3/geocode/regeo?key=7560453ea783129eafd90e8965f99487&location=$lng,$lat&extensions=base',
+        'https://restapi.amap.com/v3/geocode/regeo?key=${AppConstants.amapApiKey}&location=$lng,$lat&extensions=base',
       );
       final response = await http.get(uri).timeout(const Duration(seconds: 6));
       if (response.statusCode == 200) {
@@ -685,7 +686,7 @@ class _ConditionPageState extends State<ConditionPage>
     final isDark = AppColorsHelper.isDark(context);
     final cPrimary = AppColorsHelper.primaryText(context);
     final cSecondary = AppColorsHelper.secondaryText(context);
-    final cSurface = AppColorsHelper.scaffoldBackground(context);
+    final cSurface = AppColorsHelper.subPageBackground(context);
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, result) {
@@ -934,7 +935,7 @@ class _ConditionPageState extends State<ConditionPage>
     final cSecondary = AppColorsHelper.secondaryText(context);
     final cTertiary = AppColorsHelper.tertiaryText(context);
     final cOutlineVariant = AppColorsHelper.dividerColor(context);
-    final cSurface = AppColorsHelper.scaffoldBackground(context);
+    final cSurface = AppColorsHelper.subPageBackground(context);
 
     if (_locationInitErrorMessage != null && !_hasAnySavedLocation) {
       return Container(

@@ -125,7 +125,7 @@ class _AboutPageState extends State<AboutPage> {
     final isDark = AppColorsHelper.isDark(context);
     return Scaffold(
       extendBody: true,
-      backgroundColor: AppColorsHelper.scaffoldBackground(context),
+      backgroundColor: AppColorsHelper.subPageBackground(context),
       bottomNavigationBar: Padding(
         padding: const EdgeInsets.only(bottom: 68),
         child: Column(

@@ -21,6 +21,16 @@ class JueWidgetWideProvider : AppWidgetProvider() {
         }
     }
 
+    override fun onDeleted(context: Context, appWidgetIds: IntArray) {
+        val prefs = context.getSharedPreferences("HomeWidgetPreferences", Context.MODE_PRIVATE)
+        val editor = prefs.edit()
+        for (id in appWidgetIds) {
+            editor.remove("widget_${id}_decision_id")
+            editor.remove("widget_${id}_decision_theme")
+        }
+        editor.apply()
+    }
+
     override fun onReceive(context: Context, intent: Intent) {
         super.onReceive(context, intent)
         if (intent.action == ACTION_UPDATE) {
@@ -42,8 +52,10 @@ class JueWidgetWideProvider : AppWidgetProvider() {
             appWidgetId: Int,
         ) {
             val prefs = context.getSharedPreferences("HomeWidgetPreferences", Context.MODE_PRIVATE)
-            val decisionId = prefs.getString("widget_decision_id", null)
-            val decisionTheme = prefs.getString("widget_decision_theme", null)
+            val decisionId = prefs.getString("widget_${appWidgetId}_decision_id", null)
+                ?: prefs.getString("widget_decision_id", null)
+            val decisionTheme = prefs.getString("widget_${appWidgetId}_decision_theme", null)
+                ?: prefs.getString("widget_decision_theme", null)
 
             val isBound = decisionId != null && decisionTheme != null
             val title = if (isBound) decisionTheme else "未绑定决定"

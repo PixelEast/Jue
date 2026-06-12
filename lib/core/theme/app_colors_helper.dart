@@ -11,6 +11,12 @@ class AppColorsHelper {
     return Theme.of(context).scaffoldBackgroundColor;
   }
 
+  static Color subPageBackground(BuildContext context) {
+    return Theme.of(context).brightness == Brightness.dark
+        ? const Color(0xFF262626)
+        : const Color(0xFFF9F9F9);
+  }
+
   static Color cardBackground(BuildContext context) {
     return Theme.of(context).brightness == Brightness.dark
         ? const Color(0xFF1E1E1E)

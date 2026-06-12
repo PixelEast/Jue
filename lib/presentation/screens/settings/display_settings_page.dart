@@ -34,7 +34,7 @@ class _DisplaySettingsPageState extends State<DisplaySettingsPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       extendBody: true,
-      backgroundColor: AppColorsHelper.scaffoldBackground(context),
+      backgroundColor: AppColorsHelper.subPageBackground(context),
       body: Stack(
         children: [
           SingleChildScrollView(

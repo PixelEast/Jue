@@ -13,8 +13,14 @@ class AppStorage {
   static const String _usagePatternsKey = 'usage_patterns';
   static const String _darkModeKey = 'dark_mode';
 
+  static SharedPreferences? _prefs;
+
+  static Future<SharedPreferences> _getPrefs() async {
+    return _prefs ??= await SharedPreferences.getInstance();
+  }
+
   static Future<List<Decision>> getDecisions() async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await _getPrefs();
     final data = prefs.getStringList(_decisionsKey) ?? [];
     return data
         .map((e) => Decision.fromJson(jsonDecode(e) as Map<String, dynamic>))
@@ -22,7 +28,7 @@ class AppStorage {
   }
 
   static Future<void> saveDecisions(List<Decision> decisions) async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await _getPrefs();
     await prefs.setStringList(
       _decisionsKey,
       decisions.map((d) => jsonEncode(d.toJson())).toList(),
@@ -48,7 +54,7 @@ class AppStorage {
   }
 
   static Future<List<HistoryRecord>> getHistory() async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await _getPrefs();
     final data = prefs.getStringList(_historyKey) ?? [];
     return data
         .map(
@@ -59,7 +65,7 @@ class AppStorage {
   }
 
   static Future<void> saveHistory(List<HistoryRecord> records) async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await _getPrefs();
     await prefs.setStringList(
       _historyKey,
       records.map((r) => jsonEncode(r.toJson())).toList(),
@@ -100,7 +106,7 @@ class AppStorage {
     required int offset,
     required int limit,
   }) async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await _getPrefs();
     final data = prefs.getStringList(_historyKey) ?? [];
     final allRecords = data
         .map(
@@ -115,7 +121,7 @@ class AppStorage {
   }
 
   static Future<NotificationSettings> getNotificationSettings() async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await _getPrefs();
     final data = prefs.getString(_notificationSettingsKey);
     if (data == null) return NotificationSettings();
     return NotificationSettings.fromJson(
@@ -126,7 +132,7 @@ class AppStorage {
   static Future<void> saveNotificationSettings(
     NotificationSettings settings,
   ) async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await _getPrefs();
     await prefs.setString(
       _notificationSettingsKey,
       jsonEncode(settings.toJson()),
@@ -134,7 +140,7 @@ class AppStorage {
   }
 
   static Future<List<DecisionUsagePattern>> getUsagePatterns() async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await _getPrefs();
     final data = prefs.getStringList(_usagePatternsKey) ?? [];
     return data
         .map(
@@ -148,7 +154,7 @@ class AppStorage {
   static Future<void> saveUsagePatterns(
     List<DecisionUsagePattern> patterns,
   ) async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await _getPrefs();
     await prefs.setStringList(
       _usagePatternsKey,
       patterns.map((p) => jsonEncode(p.toJson())).toList(),
@@ -167,7 +173,7 @@ class AppStorage {
   }
 
   static Future<bool> getDarkMode() async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await _getPrefs();
     final data = prefs.get(_darkModeKey);
     if (data is bool) return data;
     if (data is int) return data != 0;
@@ -175,13 +181,13 @@ class AppStorage {
   }
 
   static Future<void> saveDarkMode(bool isDark) async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await _getPrefs();
     await prefs.setBool(_darkModeKey, isDark);
   }
 
   static Future<int> _getPrefsKeySize(String key) async {
     try {
-      final prefs = await SharedPreferences.getInstance();
+      final prefs = await _getPrefs();
       final value = prefs.get(key);
       if (value == null) return 0;
       if (value is String) return utf8.encode(value).length;
@@ -208,7 +214,7 @@ class AppStorage {
     total += await _getPrefsKeySize(_notificationSettingsKey);
     total += await _getPrefsKeySize(_darkModeKey);
     try {
-      final prefs = await SharedPreferences.getInstance();
+      final prefs = await _getPrefs();
       if (prefs.containsKey('version_history_cache')) {
         total += await _getPrefsKeySize('version_history_cache');
       }
@@ -253,19 +259,19 @@ class AppStorage {
   }
 
   static Future<void> clearDecisions() async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await _getPrefs();
     await prefs.remove(_decisionsKey);
     AppEvents.notifyDecisionsChanged();
   }
 
   static Future<void> clearHistory() async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await _getPrefs();
     await prefs.remove(_historyKey);
     AppEvents.notifyHistoryChanged();
   }
 
   static Future<void> clearOtherData() async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await _getPrefs();
     await prefs.remove(_usagePatternsKey);
     await prefs.remove('version_history_cache');
     final decisions = await getDecisions();

@@ -20,16 +20,18 @@ final ThemeNotifier themeNotifier = ThemeNotifier();
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  tz.initializeTimeZones();
-  tz.setLocalLocation(tz.getLocation('Asia/Shanghai'));
-
-  await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-
-  await NotificationService().init();
-  NotificationScheduler().start();
-  VersionService().checkOnStartup();
+  SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
 
   runApp(const JueApp());
+
+  // Defer all heavy init after first frame
+  WidgetsBinding.instance.addPostFrameCallback((_) async {
+    tz.initializeTimeZones();
+    tz.setLocalLocation(tz.getLocation('Asia/Shanghai'));
+    await NotificationService().init();
+    NotificationScheduler().start();
+    VersionService().checkOnStartup();
+  });
 }
 
 class JueApp extends StatefulWidget {

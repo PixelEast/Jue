@@ -93,8 +93,8 @@ class JueWidgetConfigActivity : android.app.Activity() {
 
             val homeWidgetPrefs = getSharedPreferences("HomeWidgetPreferences", Context.MODE_PRIVATE)
             homeWidgetPrefs.edit()
-                .putString("widget_decision_id", id)
-                .putString("widget_decision_theme", theme)
+                .putString("widget_${appWidgetId}_decision_id", id)
+                .putString("widget_${appWidgetId}_decision_theme", theme)
                 .apply()
 
             val appWidgetManager = AppWidgetManager.getInstance(this)

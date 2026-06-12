@@ -230,7 +230,7 @@ class _DataStoragePageState extends State<DataStoragePage> {
   Widget build(BuildContext context) {
     if (_isLoading) {
       return Scaffold(
-        backgroundColor: AppColorsHelper.scaffoldBackground(context),
+        backgroundColor: AppColorsHelper.subPageBackground(context),
         body: const Center(child: CircularProgressIndicator()),
       );
     }
@@ -240,7 +240,7 @@ class _DataStoragePageState extends State<DataStoragePage> {
 
     return Scaffold(
       extendBody: true,
-      backgroundColor: AppColorsHelper.scaffoldBackground(context),
+      backgroundColor: AppColorsHelper.subPageBackground(context),
       body: Stack(
         children: [
           SingleChildScrollView(
