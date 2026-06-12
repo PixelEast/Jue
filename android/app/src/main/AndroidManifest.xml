@@ -40,6 +40,41 @@
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
+        <receiver
+            android:name=".widget.JueWidgetProvider"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/jue_widget_info" />
+        </receiver>
+        <receiver
+            android:name=".widget.JueWidgetWideProvider"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/jue_widget_wide_info" />
+        </receiver>
+        <receiver
+            android:name=".widget.JueWidgetClickReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.example.jue.WIDGET_CLICK" />
+            </intent-filter>
+        </receiver>
+        <activity
+            android:name=".widget.JueWidgetConfigActivity"
+            android:exported="true"
+            android:theme="@android:style/Theme.DeviceDefault.Light.Dialog.Alert">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" />
+            </intent-filter>
+        </activity>
     </application>
     <!-- Required to query activities that can process text, see:
          https://developer.android.com/training/package-visibility and

@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/widget_background_large">
+
+    <!-- Main content with padding -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:padding="16dp"
+        android:orientation="vertical"
+        android:gravity="top">
+
+        <!-- Top row: icon + app logo -->
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <FrameLayout
+                android:layout_width="38dp"
+                android:layout_height="38dp"
+                android:layout_marginTop="2dp"
+                android:background="@drawable/widget_icon_bg_large">
+
+                <ImageView
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:layout_gravity="center"
+                    android:src="@drawable/widget_ic_lightning" />
+            </FrameLayout>
+
+            <ImageView
+                android:layout_width="14dp"
+                android:layout_height="14dp"
+                android:layout_gravity="top|end"
+                android:layout_marginTop="4dp"
+                android:src="@drawable/widget_ic_app_logo" />
+        </FrameLayout>
+
+        <!-- "小组件 - 决定" below icon -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:text="小组件 - 决定"
+            android:textSize="7sp"
+            android:textStyle="bold"
+            android:textColor="#5E5E5E" />
+
+        <!-- Decision title -->
+        <TextView
+            android:id="@+id/widget_title"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:textSize="26sp"
+            android:textColor="#000000"
+            android:textStyle="bold"
+            android:maxLines="1"
+            android:autoSizeTextType="uniform"
+            android:autoSizeMinTextSize="10sp"
+            android:autoSizeMaxTextSize="26sp" />
+
+        <FrameLayout
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:layout_weight="1" />
+
+        <!-- Button -->
+        <LinearLayout
+            android:id="@+id/widget_button"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:background="@drawable/widget_button_bg_large"
+            android:gravity="center"
+            android:orientation="horizontal">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="即刻判决"
+                android:textSize="14sp"
+                android:textColor="#FFFFFF"
+                android:textStyle="bold" />
+
+            <ImageView
+                android:layout_width="12dp"
+                android:layout_height="12dp"
+                android:layout_marginStart="6dp"
+                android:src="@drawable/widget_ic_lightning_small" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- Subtitle positioned at very bottom of FrameLayout (inside bottom padding area) -->
+    <TextView
+        android:id="@+id/widget_subtitle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        android:gravity="center"
+        android:paddingBottom="4dp"
+        android:text="\u201c\u7531\u903b\u8f91 \u7ec8\u7ed3\u7ea0\u7ed3.\u201d"
+        android:textSize="6sp"
+        android:textColor="#C0C0C0" />
+</FrameLayout>

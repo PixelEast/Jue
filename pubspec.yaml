@@ -65,7 +65,7 @@ dependencies:
   fl_chart: ^0.65.0
   
   # 小组件
-  home_widget: ^0.4.0
+  home_widget: ^0.7.0
 
   # 图标
   cupertino_icons: ^1.0.8

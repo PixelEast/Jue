@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_colors_helper.dart';
+import '../../../core/utils/widget_service.dart';
 import '../../../data/models/app_models.dart';
 import '../../../data/repositories/decision_repository.dart';
 import '../../../core/utils/algorithms.dart';
@@ -82,6 +83,110 @@ class _HomePageState extends State<HomePage> {
       context,
       MaterialPageRoute(builder: (context) => ExecutePage(decision: decision)),
     ).then((_) => _loadDecisions());
+  }
+
+  void _showWidgetMenu(Decision decision) {
+    final isDark = AppColorsHelper.isDark(context);
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        margin: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+          borderRadius: BorderRadius.circular(24),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(height: 12),
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: isDark ? const Color(0xFF3A3A3A) : const Color(0xFFE5E5E5),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: 20),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Text(
+                decision.theme,
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  color: AppColorsHelper.primaryText(context),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            ListTile(
+              leading: Icon(
+                Icons.widgets_outlined,
+                color: AppColorsHelper.primaryText(context),
+              ),
+              title: Text(
+                '添加到桌面小组件',
+                style: TextStyle(
+                  color: AppColorsHelper.primaryText(context),
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              subtitle: Text(
+                '在桌面快速执行此决定',
+                style: TextStyle(
+                  color: AppColorsHelper.secondaryText(context),
+                  fontSize: 12,
+                ),
+              ),
+              onTap: () async {
+                Navigator.pop(context);
+                final messenger = ScaffoldMessenger.of(context);
+                await WidgetService().updateWidgetData(
+                  decisionId: decision.id,
+                  decisionTheme: decision.theme,
+                );
+                if (mounted) {
+                  messenger.showSnackBar(
+                    SnackBar(
+                      content: Text('已将"${decision.theme}"添加到桌面小组件'),
+                      duration: const Duration(seconds: 2),
+                    ),
+                  );
+                }
+              },
+            ),
+            ListTile(
+              leading: Icon(
+                Icons.edit_outlined,
+                color: AppColorsHelper.primaryText(context),
+              ),
+              title: Text(
+                '编辑此决定',
+                style: TextStyle(
+                  color: AppColorsHelper.primaryText(context),
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => CreateDecisionPage(
+                      initialDecision: decision,
+                      isEditing: true,
+                    ),
+                  ),
+                ).then((_) => _loadDecisions());
+              },
+            ),
+            const SizedBox(height: 16),
+          ],
+        ),
+      ),
+    );
   }
 
   Future<void> _animateToggleViewMode() async {
@@ -402,6 +507,7 @@ class _HomePageState extends State<HomePage> {
                 borderRadius: BorderRadius.circular(32),
                 child: InkWell(
                   onTap: () => _navigateToExecute(entry.value),
+                  onLongPress: () => _showWidgetMenu(entry.value),
                   borderRadius: BorderRadius.circular(32),
                   splashColor: Colors.black.withValues(alpha: 0.05),
                   highlightColor: Colors.black.withValues(alpha: 0.02),
@@ -556,6 +662,7 @@ class _HomePageState extends State<HomePage> {
             borderRadius: BorderRadius.circular(32),
             child: InkWell(
               onTap: () => _navigateToExecute(d),
+              onLongPress: () => _showWidgetMenu(d),
               borderRadius: BorderRadius.circular(32),
               splashColor: Colors.black.withValues(alpha: 0.05),
               highlightColor: Colors.black.withValues(alpha: 0.02),

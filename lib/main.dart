@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:timezone/data/latest.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
 import 'dart:ui';
@@ -8,9 +9,11 @@ import 'core/theme/theme_notifier.dart';
 import 'core/utils/version_service.dart';
 import 'core/utils/notification_service.dart';
 import 'core/utils/notification_scheduler.dart';
+import 'data/repositories/decision_repository.dart';
 import 'presentation/screens/home/home_page.dart';
 import 'presentation/screens/history/history_page.dart';
 import 'presentation/screens/settings/settings_page.dart';
+import 'presentation/screens/executer/execute_page.dart';
 
 final ThemeNotifier themeNotifier = ThemeNotifier();
 
@@ -119,11 +122,53 @@ class _MainScreenState extends State<MainScreen> {
     });
   }
 
+  static const _widgetChannel = MethodChannel('com.example.jue/widget');
+
   @override
   void initState() {
     super.initState();
     _instance = this;
     themeNotifier.addListener(_onThemeChanged);
+
+    // Listen for widget click via MethodChannel (app already running)
+    _widgetChannel.setMethodCallHandler((call) async {
+      if (call.method == 'navigateToExecute') {
+        final decisionId = call.arguments as String?;
+        if (decisionId != null && decisionId.isNotEmpty) {
+          await _navigateToExecute(decisionId);
+        }
+      }
+    });
+
+    // Check SharedPreferences on cold start
+    _checkWidgetPendingExecution();
+  }
+
+  Future<void> _checkWidgetPendingExecution() async {
+    await Future.delayed(const Duration(milliseconds: 500));
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final pendingId = prefs.getString('widget_pending_execution');
+      if (pendingId != null && pendingId.isNotEmpty) {
+        // Clear immediately to prevent re-trigger
+        await prefs.remove('widget_pending_execution');
+        await _navigateToExecute(pendingId);
+      }
+    } catch (_) {}
+  }
+
+  Future<void> _navigateToExecute(String decisionId) async {
+    if (!mounted) return;
+    final repo = DecisionRepository();
+    final decision = await repo.getDecisionById(decisionId);
+    if (decision != null && mounted) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => ExecutePage(decision: decision),
+        ),
+      );
+    }
   }
 
   @override

@@ -65,7 +65,10 @@ class _CreateDecisionPageState extends State<CreateDecisionPage> {
       _groupKeys[_optionGroups.first] = GlobalKey();
       _optionVisible[_optionGroups.first.options.first] = true;
       _renderHeavySections = true;
-      _checkDraft();
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        _checkDraft();
+      });
     }
   }
 
